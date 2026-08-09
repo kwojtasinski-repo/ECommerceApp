@@ -20,10 +20,9 @@ slow, and the last one is unreliable in a way that is hard to notice: a model
 that infers an architecture confidently and wrongly produces plausible answers.
 
 The existing retrieval stack does not cover this. ADR-0028's RAG MCP server
-(`ecommerceapp-rag`) does semantic search over *documentation*; ADR-0029's
-`context-mode` sandbox reduces *runtime tool output* in the context window.
-Neither can answer a question whose answer is a path through the code's
-structure, because neither has a structure to walk.
+(`ecommerceapp-rag`) does semantic search over *documentation*; it does not
+answer a question whose answer is a path through the code's structure, because
+it has no structure to walk.
 
 ### Forces
 
@@ -302,4 +301,3 @@ extension of the model: Phase 8 adds no node type, no parser, and no tool.
 - Tools: [`tools/kg/kg-codegen/README.md`](../../../tools/kg/kg-codegen/README.md), [`tools/kg/kg-mcp/README.md`](../../../tools/kg/kg-mcp/README.md)
 - Ontology seed: `tools/kg/seed/ontology.json`, `tools/kg/seed/ontology.cypher`
 - ADR-0028 — RAG MCP server (documentation search; complementary, not overlapping)
-- ADR-0029 — context-mode MCP sandbox (runtime tool output; complementary)

@@ -40,8 +40,8 @@ Always load these files **before** inspecting any changed code:
 
 - For step 2 (project-state) and step 5 (agent-decisions), prefer bare `query_docs("<area>")` to surface the most relevant chunks for the area being reviewed instead of reading the entire file.
 - For ADR-compliance checks (§2 below), use `get_history(id="NNNN")` when you know the ADR number, `query_docs` when you don't.
-- Do NOT call `ctx_*` tools — review is read-only.
-- **NEVER call both RAG and context-mode for the same atomic intent.**
+ - Do NOT call MCP tools — review is read-only.
+ - Use one relevant knowledge source per atomic intent.
 
 Then load **only the relevant** per-stack instructions based on which files changed:
 

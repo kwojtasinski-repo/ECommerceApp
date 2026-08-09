@@ -17,11 +17,9 @@ usage(){
 Usage:
   bash scripts/operations-center.sh                      # menu mode
   bash scripts/operations-center.sh --no-menu --area rag --action create --profile dotnet-http
-  bash scripts/operations-center.sh --no-menu --area contextmode --action add-whitelist --domain example.com
 
-Areas: rag | contextmode
+Areas: rag
 Actions (rag): create|update|force-update|health|profiles
-Actions (contextmode): create|update|force-update|fix|health|add-whitelist|add-blacklist|change-password
 Profiles: python-stdio|python-http|dotnet-stdio|dotnet-http
 EOF
 }
@@ -47,14 +45,6 @@ run_action(){
     rag::health) rag_health ;;
     rag::profiles) show_profiles ;;
 
-    contextmode::create) context_create "${PASSWORD:-ThiIS_StrongP4SSWORD!}" ;;
-    contextmode::update) context_update ;;
-    contextmode::force-update) context_force_update "${PASSWORD:-ThiIS_StrongP4SSWORD!}" ;;
-    contextmode::fix) context_fix ;;
-    contextmode::health) context_health ;;
-    contextmode::add-whitelist) [ -n "$DOMAIN" ] || { echo "--domain required" >&2; exit 2; }; adguard_add_whitelist "$DOMAIN" ;;
-    contextmode::add-blacklist) [ -n "$DOMAIN" ] || { echo "--domain required" >&2; exit 2; }; adguard_add_blacklist "$DOMAIN" ;;
-    contextmode::change-password) [ -n "$PASSWORD" ] || { echo "--password required" >&2; exit 2; }; adguard_change_password "$PASSWORD" ;;
     *) echo "Unsupported area/action: $AREA / $ACTION" >&2; exit 2 ;;
   esac
 }
@@ -86,9 +76,8 @@ while [[ $continueOperations -eq 1 ]]; do
   echo
   echo "ECommerce Operations Center"
   echo "1) RAG"
-  echo "2) ContextMode"
-  echo "3) Exit"
-  read -r -p "Choose area [1-3]: " c
+  echo "2) Exit"
+  read -r -p "Choose area [1-2]: " c
   case "$c" in
     1)
       while true; do
@@ -116,35 +105,7 @@ while [[ $continueOperations -eq 1 ]]; do
         esac
       done
       ;;
-    2)
-      while true; do
-        echo
-        echo "ContextMode Menu"
-        echo "1) Create environment"
-        echo "2) Update environment"
-        echo "3) Force Update"
-        echo "4) Fix Context Mode"
-        echo "5) Add whitelist domain"
-        echo "6) Add blacklist domain"
-        echo "7) Change AdGuard password"
-        echo "8) ContextMode health checks"
-        echo "9) Back"
-        read -r -p "Choose option [1-9]: " cc
-        case "$cc" in
-          1) context_create "ThiIS_StrongP4SSWORD!" ;;
-          2) context_update ;;
-          3) context_force_update "ThiIS_StrongP4SSWORD!" ;;
-          4) context_fix ;;
-          5) read -r -p "Domain (example.com): " d; adguard_add_whitelist "$d" ;;
-          6) read -r -p "Domain (example.com): " d; adguard_add_blacklist "$d" ;;
-          7) read -r -p "New AdGuard password: " p; adguard_change_password "$p" ;;
-          8) context_health ;;
-          9) break ;;
-          *) warn "Choose 1-9" ;;
-        esac
-      done
-      ;;
-    3) continueOperations=0 ;;
-    *) warn "Choose 1-3" ;;
+    2) continueOperations=0 ;;
+    *) warn "Choose 1-2" ;;
   esac
 done

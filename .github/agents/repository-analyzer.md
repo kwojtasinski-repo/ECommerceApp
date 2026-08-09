@@ -4,7 +4,7 @@ description: >
   Gathers evidence in the frozen source priority order (Business Specification →
   Architecture Specification → ADR → Repository Code → External Knowledge) and
   surfaces gaps explicitly. Does not reimplement retrieval — uses existing RAG /
-  context-mode MCP tools per this repository's standard routing rules.
+  RAG and KG MCP tools per this repository's standard routing rules.
   Trigger phrases: analyze evidence, collect sources, repository analyzer, evidence inventory.
 name: repository-analyzer
 max-iterations: 2
@@ -42,9 +42,9 @@ Follow this repository's `mcp-routing.instructions.md`:
 
 - Docs/ADR/known-issues/project-state knowledge → RAG (`query_docs`, `read_docs`,
   `get_history`, `list_adrs`).
-- Local file/code inspection → classic tools first for exact bytes; context-mode only if
-  genuinely deriving/transforming, per existing routing rules.
-- Never call both RAG and context-mode for the same atomic lookup.
+- Local file/code inspection → classic tools first for exact bytes; use bounded direct tools
+  for derivation.
+- Never call unrelated MCP families for the same atomic lookup.
 
 ## Output format (required)
 
@@ -83,4 +83,4 @@ does not.
 - Never silently skip a source in the priority order.
 - Always list gaps explicitly, even minor ones — downstream confidence depends on this.
 - Never classify the problem or propose a solution — that is out of scope for this agent.
-- Never call both RAG and context-mode for the same lookup.
+- Never call unrelated MCP families for the same lookup.

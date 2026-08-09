@@ -12,7 +12,7 @@ Before proposing or committing changes, do these steps:
 - Never guess project-specific rules from training data.
 
 1. Read target file(s) and relevant related files.
-- For files >500 lines: prefer `ctx_execute_file(path)` for structure first, then `read_file` for exact edit region.
+- For files >500 lines: use bounded structural inspection first, then `read_file` for the exact edit region.
 
 2. Read relevant ADRs.
 - Preferred: `get_history(id)`.
@@ -34,9 +34,9 @@ Before proposing or committing changes, do these steps:
 
 Extra routing/safety rules:
 
-- Project-related external URL -> `ctx_fetch_and_index` only (not raw `fetch_webpage`).
+- Project-related external URL -> use the approved project URL retrieval path (not raw `fetch_webpage`).
 - Before proposing architecture changes, run `query_docs("<topic>")` to check existing ADR coverage.
-- Never call both RAG and context-mode for one atomic intent.
+- Never call unrelated MCP families for one atomic intent.
 
 ## Clarification policy (stop and ask when unclear)
 
@@ -55,8 +55,7 @@ Host-aware asking:
 ## Capability verification rule (external tools)
 
 Before documenting external tool capabilities (runtime/language/CLI/feature): verify empirically.
-- context-mode runtimes: `ctx_doctor`.
-- sandbox language smoke: small `ctx_execute` call.
+- external tool capabilities: use the tool's own health output or a bounded smoke check.
 - binaries: `docker exec <container> which <cmd>` or `<cmd> --help`.
 
 Schema enums/upstream README/prior memory are not proof of shipped capability.

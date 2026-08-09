@@ -120,19 +120,17 @@ HUMAN runs git commands
 
 | Agent                           | Max iter | Iteration definition                                              | MCP tools allowed |
 | ------------------------------- | -------- | ----------------------------------------------------------------- | ----------------- |
-| `@planner`                      | 3        | One full plan revision (after REVISE)                             | RAG (read-only): `list_adrs`, `query_docs`, `read_docs`, `get_history`. No `ctx_*`. |
-| `@implementer`                  | 5        | One full pass: impl steps + 3 probes + inline review              | RAG + `ctx_execute`, `ctx_execute_file`, `ctx_fetch_and_index` |
+| `@planner`                      | 3        | One full plan revision (after REVISE)                             | RAG (read-only): `list_adrs`, `query_docs`, `read_docs`, `get_history`. |
+| `@implementer`                  | 5        | One full pass: impl steps + 3 probes + inline review              | RAG + bounded direct tools |
 | `@verifier` _(standalone)_      | 1        | One full build + test sweep — no auto-retry (standalone use only) | **NONE** — deterministic only |
-| `@code-reviewer` _(standalone)_ | 3        | One full review pass (re-review after fix = +1, standalone only)  | RAG (read-only). No `ctx_*`. |
+| `@code-reviewer` _(standalone)_ | 3        | One full review pass (re-review after fix = +1, standalone only)  | RAG (read-only). |
 | `@pr-commit`                    | 2        | One commit/PR text revision                                       | RAG (`get_history` for ADR refs only) |
-| `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         | RAG + `ctx_execute_file` (large-file triage) |
+| `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         | RAG + bounded direct tools (large-file triage) |
 | `@adr-generator`                | 2        | One ADR draft (revision after feedback = +1)                      | RAG (`list_adrs` + `query_docs` + `get_history`) |
-| `@copilot-setup-maintainer`     | n/a      | Per-workflow; audit can iterate per finding                       | RAG + `ctx_fetch_and_index` (allowlisted external refs) |
-| `research-gatherer`             | 3        | One research pass (plan + gather + verify + synthesize)           | RAG + context-mode + external web as needed |
+| `@copilot-setup-maintainer`     | n/a      | Per-workflow; audit can iterate per finding                       | RAG + bounded direct tools |
+| `research-gatherer`             | 3        | One research pass (plan + gather + verify + synthesize)           | RAG + approved external web path as needed |
 
-**Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). **NEVER call both RAG and context-mode for the same atomic intent.**
-
-**Path rule for context-mode tools:** any `ctx_execute_file(path, ...)` call must use container mount paths (`/workspace/...` or `$CONTEXT_MODE_WORKSPACE/...`), never host OS absolute paths (for example Windows `c:\...`).
+**Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). Use one relevant MCP family per atomic intent.
 
 After hitting the cap → **STOP, report what was tried, ask the human**. No silent continuation.
 

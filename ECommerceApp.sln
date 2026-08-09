@@ -85,7 +85,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{908C6C00-47A3-455F-82C8-5BBECB045911}"
 	ProjectSection(SolutionItems) = preProject
 		docs\getting-started-ai-mcp-stack.md = docs\getting-started-ai-mcp-stack.md
-		docs\getting-started-context-mode.md = docs\getting-started-context-mode.md
 		docs\README.md = docs\README.md
 		docs\rag\README.md = docs\rag\README.md
 	EndProjectSection
@@ -503,15 +502,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "patterns", "patterns", "{DB95CC21-7869-4EAC-8EB3-F5706D958E0A}"
 	ProjectSection(SolutionItems) = preProject
-		docs\patterns\context-mode-read-write-split.md = docs\patterns\context-mode-read-write-split.md
 		docs\patterns\implementation-patterns.md = docs\patterns\implementation-patterns.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD}"
 	ProjectSection(SolutionItems) = preProject
 		docs\roadmap\chunked-upload.md = docs\roadmap\chunked-upload.md
-		docs\roadmap\context-mode-details.md = docs\roadmap\context-mode-details.md
-		docs\roadmap\context-mode-integration.md = docs\roadmap\context-mode-integration.md
 		docs\roadmap\frontend-pipeline.md = docs\roadmap\frontend-pipeline.md
 		docs\roadmap\iam-atomic-switch.md = docs\roadmap\iam-atomic-switch.md
 		docs\roadmap\iam-refresh-token.md = docs\roadmap\iam-refresh-token.md
@@ -554,7 +550,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hooks", "hooks", "{5A7C54F0-2E0E-4C75-A54A-8BF71003D4C2}"
 	ProjectSection(SolutionItems) = preProject
 		.github\hooks\auto-cache.mjs = .github\hooks\auto-cache.mjs
-		.github\hooks\context-mode.json = .github\hooks\context-mode.json
 		.github\hooks\posttooluse-chain.mjs = .github\hooks\posttooluse-chain.mjs
 		.github\hooks\posttooluse-chain.sh = .github\hooks\posttooluse-chain.sh
 		.github\hooks\session-policy.mjs = .github\hooks\session-policy.mjs
@@ -562,7 +557,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hooks", "hooks", "{5A7C54F0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reference", "reference", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 	ProjectSection(SolutionItems) = preProject
-		docs\reference\context-mode-tools.md = docs\reference\context-mode-tools.md
 		docs\reference\endpoint-map.md = docs\reference\endpoint-map.md
 		docs\reference\kg-mcp-tools.md = docs\reference\kg-mcp-tools.md
 	EndProjectSection
@@ -572,8 +566,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E
 		docs\reports\bc-migration-status.md = docs\reports\bc-migration-status.md
 		docs\reports\cross-bc-integration-test-report.md = docs\reports\cross-bc-integration-test-report.md
 		docs\reports\rag-requirements-compliance-2026-05-29.md = docs\reports\rag-requirements-compliance-2026-05-29.md
-		docs\reports\rag-context-mode-audit-2026-05-28.md = docs\reports\rag-context-mode-audit-2026-05-28.md
-		docs\reports\rag-context-mode-skills-plan-2026-05-28.md = docs\reports\rag-context-mode-skills-plan-2026-05-28.md
 		docs\reports\remaining-work-effort.md = docs\reports\remaining-work-effort.md
 		docs\reports\web-ui-views-report.md = docs\reports\web-ui-views-report.md
 	EndProjectSection
@@ -641,7 +633,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A
 		.github\skills\rag-with-memory\SKILL.md = .github\skills\rag-with-memory\SKILL.md
 		.github\skills\setup-adguard-policy\SKILL.md = .github\skills\setup-adguard-policy\SKILL.md
 		.github\skills\setup-auto-cache-hook\SKILL.md = .github\skills\setup-auto-cache-hook\SKILL.md
-		.github\skills\setup-context-mode-new-project\SKILL.md = .github\skills\setup-context-mode-new-project\SKILL.md
 		.github\skills\setup-mcp-clients\SKILL.md = .github\skills\setup-mcp-clients\SKILL.md
 		.github\skills\setup-rag-new-project\SKILL.md = .github\skills\setup-rag-new-project\SKILL.md
 		.github\skills\tune-rag-weights\SKILL.md = .github\skills\tune-rag-weights\SKILL.md
@@ -824,7 +815,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-eval-coverage", "rag-ev
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "playbooks", "playbooks", "{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B2}"
 	ProjectSection(SolutionItems) = preProject
-		docs\playbooks\context-mode-bootstrap.md = docs\playbooks\context-mode-bootstrap.md
 		docs\playbooks\rag-bootstrap.md = docs\playbooks\rag-bootstrap.md
 		docs\playbooks\rag-standalone-global.md = docs\playbooks\rag-standalone-global.md
 		docs\playbooks\README.md = docs\playbooks\README.md

@@ -39,7 +39,7 @@ In this exact order:
 - **Always** use `query_docs` / `read_docs` / `get_history` to confirm every ADR and instruction you cite — never quote from memory.
 - Use `list_adrs()` once at the start to confirm the ADR number(s) you'll reference exist.
 - Use `get_history(id)` for the BC's governing ADR — not `query_docs` — when you know the ADR number.
-- Do NOT call `ctx_*` tools — planner is read-only and produces no executable artefacts.
+ - Do NOT call MCP tools beyond read-only RAG lookups — planner produces no executable artefacts.
 
 > **Context budget**: at most 2 ADRs + 2 per-stack instruction files. If the change spans more,
 > split into multiple sub-plans and surface that to the human.

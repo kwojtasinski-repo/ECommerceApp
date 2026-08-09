@@ -31,7 +31,7 @@ You **do not** run `git`. You **do not** push. The human pastes your output and 
 **MCP usage** (per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md)):
 
 - For any ADR cited in the PR body (`Refs: ADR-NNNN`), verify it exists via `get_history(id="NNNN")` before writing the line. Do NOT cite ADRs from memory.
-- Do NOT call `ctx_*` tools — pr-commit produces text only.
+ - Do NOT call MCP tools beyond read-only ADR lookups — pr-commit produces text only.
 
 If pre-conditions fail → reply:
 

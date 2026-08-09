@@ -13,4 +13,4 @@
 - Design + phase ledger: [`docs/architecture/knowledge-graph-ontology-design.md`](../../architecture/knowledge-graph-ontology-design.md)
 - Tool: [`tools/kg/kg-codegen/README.md`](../../../tools/kg/kg-codegen/README.md)
 - Ontology seed: `tools/kg/seed/ontology.json`, `tools/kg/seed/ontology.cypher`
-- Complementary retrieval ADRs: [`0028`](../0028) (RAG over docs), [`0029`](../0029) (context-mode sandbox)
+- Complementary retrieval ADR: [`0028`](../0028) (RAG over docs)

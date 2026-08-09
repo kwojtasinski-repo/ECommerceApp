@@ -7,8 +7,8 @@ between stages.
 
 ## When to read a playbook (vs a skill)
 
-- **Read a skill** when you need to do **one thing** (define an AdGuard allowlist,
-  install a runtime, register an MCP client). Skills are focused, 200–300 lines,
+- **Read a skill** when you need to do **one thing** (ingest documents or register
+  an MCP client). Skills are focused, 200–300 lines,
   worked-example-driven.
 - **Read a playbook** when you need to do **everything for a stack** in one sitting —
   brand-new project, fresh dev box, post-disaster restore. Playbooks reference the
@@ -18,23 +18,20 @@ between stages.
 
 | Playbook | What it covers | Skills invoked | Time |
 |---|---|---|---|
-| [context-mode-bootstrap.md](context-mode-bootstrap.md) | Stand up the context-mode sandbox: AdGuard, Qdrant, SQLite, runtime image, MCP client, optional auto-cache hook | D1, D2, D3, E2, E3, E4, E5 | 60–90 min |
-| [rag-bootstrap.md](rag-bootstrap.md) | Stand up RAG: Qdrant, Python + .NET HTTP servers, ingest, MCP client, optional auto-cache hook | E1, E4, optional E5 | 45–75 min |
+| [rag-bootstrap.md](rag-bootstrap.md) | Stand up RAG: Qdrant, Python + .NET HTTP servers, ingest, and MCP client | E1, E4 | 45–75 min |
 | [rag-standalone-global.md](rag-standalone-global.md) | Build a standalone multi-project RAG platform and migrate from embedded setup | E1, E4, optional E5 | 60–120 min |
 
 ## Order of operations for a brand-new project
 
-If you're standing up BOTH RAG and context-mode for the first time:
+If you're standing up the repository retrieval stack for the first time:
 
 ```text
-1. rag-bootstrap.md             (Stages 0–5: RAG up, ingested, smoke-tested)
-2. context-mode-bootstrap.md    (Stages 0–6: sandbox up, hook wired)
-   ↑ rag-bootstrap Stage 7 (auto-cache) WILL be skipped — context-mode isn't up yet
-3. rag-bootstrap.md Stage 7     (auto-cache hook now installable; both halves present)
+1. rag-bootstrap.md             (RAG up, ingested, smoke-tested)
+2. Configure the active MCP clients and `ecommerceapp-kg` server as needed.
 ```
 
-If you only need ONE of the two, run that playbook end-to-end and skip the
-cross-references to the other.
+If you only need RAG, run the RAG playbook end-to-end and skip the MCP client
+configuration steps that do not apply to your environment.
 
 ## Conventions across all playbooks
 

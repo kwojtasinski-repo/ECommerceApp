@@ -58,11 +58,11 @@ Reroute via @planner or provide an APPROVED plan.
 
 **MCP usage during implementation** (per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md)):
 
-- Before editing a file >500 lines, prefer `ctx_execute_file(path)` over a full `read_file` to get a structural summary first. Then `read_file` only the region you'll change.
-- Use `ctx_execute(lang, code)` for sandboxed scratch — regex tests, format-string checks, small parses. Never for production logic.
-- If the user pastes an external URL while you implement, route through `ctx_fetch_and_index` — never raw `fetch_webpage`.
+- Before editing a file >500 lines, use bounded structural inspection before `read_file` and read only the region you'll change.
+- Use local tools for scratch regex tests, format-string checks, and small parses; never use scratch execution for production logic.
+- If the user pastes an external URL while you implement, use the approved project URL retrieval path — never raw `fetch_webpage`.
 - For any rule/pattern reference, confirm via `read_docs` rather than recalling from memory.
-- **NEVER call both RAG and context-mode for the same atomic intent.**
+- Use one relevant MCP family per atomic intent.
 
 ---
 

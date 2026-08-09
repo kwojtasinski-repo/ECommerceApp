@@ -24,11 +24,11 @@ applyTo: "**"
 
 Per [mcp-routing.instructions.md](mcp-routing.instructions.md) rule #3:
 
-- **For any project-related URL** (ADR references, docs, GitHub links, package registries cited in repo work) → use `ctx_fetch_and_index(url)` (AdGuard allowlist). **Never** raw `fetch_webpage`.
+- **For any project-related URL** (ADR references, docs, GitHub links, package registries cited in repo work) → use the approved project URL retrieval path. **Never** route through the retired context-mode integration.
 - **Carve-out**: non-project URLs the user explicitly asks you to read in raw form (e.g. "read this random blog post for me") may use direct `fetch_webpage`, but say so in the answer.
-- Until context-mode is live: raw `fetch_webpage` is the only option — use it sparingly and only for clearly necessary lookups; never for content already in the indexed `docs/`.
+- Use raw `fetch_webpage` sparingly and only for clearly necessary non-project lookups; never for content already in the indexed `docs/`.
 
 ## MCP tool restrictions
 
 - **`@verifier`** (and any deterministic verification step) MUST NOT call MCP tools — see `agents/verifier.md`.
-- **NEVER call both RAG and context-mode for the same atomic intent.**
+- **NEVER call unrelated MCP families for the same atomic intent.**

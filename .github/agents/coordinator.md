@@ -43,7 +43,7 @@ BLOCKER — see Escalation below. You do not have authority to reinterpret them.
 
 | Responsibility | Delegate to | Notes |
 |---|---|---|
-| Repository/evidence inspection (Stage 1 source priority) | `@repository-analyzer` | New agent. Uses RAG/context-mode per existing MCP routing rules — does not reimplement retrieval. |
+| Repository/evidence inspection (Stage 1 source priority) | `@repository-analyzer` | New agent. Uses RAG/KG per existing MCP routing rules — does not reimplement retrieval. |
 | Blueprint stage readiness / DoD verification | `@stage-validator` | New agent. Checks `IMPLEMENTATION_STATE.md` against Blueprint criteria. |
 | Frozen-architecture conformance / blocker judgment for the Architect Consultant framework | `@architecture-guardian` | New agent. Escalates, does not decide alone. |
 | Knowledge library (5 roles, front matter, seeds) maintenance | `@knowledge-librarian` | New agent. Consumes repo docs; does not duplicate them. |

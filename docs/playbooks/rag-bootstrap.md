@@ -314,29 +314,6 @@ or [.github/skills/tune-rag-weights/SKILL.md](../../.github/skills/tune-rag-weig
 
 ---
 
-## Stage 7 — Optional: auto-cache hook (E5)
-
-Only if context-mode is also up (see [context-mode-bootstrap.md](context-mode-bootstrap.md)).
-The L3 hook removes the need to manually cache RAG results.
-
-```sh
-mkdir -p .github/hooks
-cp <ecommerceapp-checkout>/.github/hooks/{auto-cache.mjs,auto-cache.probes.mjs,posttooluse-chain.mjs,posttooluse-chain.sh,context-mode.json} .github/hooks/
-chmod +x .github/hooks/posttooluse-chain.sh
-node .github/hooks/auto-cache.probes.mjs
-```
-
-Smoke (in chat):
-
-```
-query_docs("anything")
-ctx_search(["anything"], "rag-auto-")
-```
-
-Expected: the same chunk RAG returned, now in the FTS5 store.
-
----
-
 ## Troubleshooting flowchart
 
 ```text
@@ -366,8 +343,6 @@ Polish/German query returns wrong doc?
 
 ## What to do next
 
-- Run [context-mode-bootstrap.md](context-mode-bootstrap.md) if context-mode isn't
-  up yet — auto-cache hook needs both halves.
 - Use [`generate-eval-questions`](../../.github/skills/generate-eval-questions/SKILL.md)
   to grow `queries.yaml` past the initial seed.
 - Schedule periodic re-ingest: `python tools/rag/ingest.py` after each docs PR.
@@ -382,5 +357,4 @@ Polish/German query returns wrong doc?
 - [docs/rag/rag-architecture.md](../rag/rag-architecture.md)
 - [.github/skills/setup-rag-new-project/SKILL.md](../../.github/skills/setup-rag-new-project/SKILL.md)
 - [.github/skills/setup-mcp-clients/SKILL.md](../../.github/skills/setup-mcp-clients/SKILL.md)
-- [.github/skills/setup-auto-cache-hook/SKILL.md](../../.github/skills/setup-auto-cache-hook/SKILL.md)
 - [.github/skills/diagnose-rag/SKILL.md](../../.github/skills/diagnose-rag/SKILL.md) — diagnostics when bootstrap goes sideways

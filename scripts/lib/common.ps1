@@ -81,27 +81,6 @@ function Ensure-RagPythonStatsFile {
     }
 }
 
-function Ensure-AdGuardPolicyFiles {
-    $repo = Get-RepoRoot
-    $wl = Join-Path $repo 'docker/adguard/team-whitelist.txt'
-    $bl = Join-Path $repo 'docker/adguard/team-blacklist.txt'
-
-    if (-not (Test-Path $wl)) {
-        New-Item -ItemType File -Path $wl -Force | Out-Null
-        Add-Content -Path $wl -Value '# Team whitelist (allow overrides)'
-    }
-    if (-not (Test-Path $bl)) {
-        New-Item -ItemType File -Path $bl -Force | Out-Null
-        Add-Content -Path $bl -Value '# Team blacklist (block rules)'
-    }
-
-    $blRules = Get-Content $bl -ErrorAction SilentlyContinue
-    if ($blRules -notcontains '||*^') {
-        Add-Content -Path $bl -Value '||*^'
-        Write-Warn 'Added strict deny-all baseline rule to team-blacklist.txt: ||*^'
-    }
-}
-
 function Invoke-RagCreate {
     param([string]$Profile)
     Assert-RagProfile $Profile
@@ -183,77 +162,6 @@ function Invoke-RagHealth {
     Invoke-RepoCommand 'docker ps --format "table {{.Names}}\t{{.Status}}"'
     Invoke-RepoCommand 'docker logs --tail 20 ecommerceapp-rag-dotnet-http-1'
     Invoke-RepoCommand 'docker logs --tail 20 ecommerceapp-rag-python-http-1'
-}
-
-function Invoke-ContextCreate {
-    param([string]$Password = 'ThiIS_StrongP4SSWORD!')
-    Assert-Prereqs
-    Ensure-AdGuardPolicyFiles
-    $repo = Get-RepoRoot
-    $script = Join-Path $repo 'scripts/context-mode-bootstrap.ps1'
-    Invoke-RepoCommand "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -AdGuardPassword `"$Password`" -ForceRegenerateAdGuard"
-    Write-Ok 'ContextMode create completed.'
-}
-
-function Invoke-ContextUpdate {
-    Assert-Prereqs
-    Ensure-AdGuardPolicyFiles
-    Invoke-RepoCommand 'docker compose --profile monitoring --profile context-mode build context-mode'
-    Invoke-RepoCommand 'docker compose --profile monitoring --profile context-mode up -d --force-recreate adguard context-mode'
-    Write-Ok 'ContextMode update completed.'
-}
-
-function Invoke-ContextForceUpdate {
-    param([string]$Password = 'ThiIS_StrongP4SSWORD!')
-    Assert-Prereqs
-    Ensure-AdGuardPolicyFiles
-    Invoke-RepoCommand 'docker compose --profile monitoring --profile context-mode build --no-cache context-mode'
-    Invoke-RepoCommand 'docker compose --profile monitoring --profile context-mode up -d --force-recreate adguard context-mode'
-    $repo = Get-RepoRoot
-    $script = Join-Path $repo 'scripts/context-mode-bootstrap.ps1'
-    Invoke-RepoCommand "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -AdGuardPassword `"$Password`" -ForceRegenerateAdGuard -SkipBuild"
-    Write-Ok 'ContextMode force update completed.'
-}
-
-function Invoke-ContextFix {
-    Assert-Prereqs
-    Invoke-RepoCommand 'docker compose --profile monitoring --profile context-mode up -d adguard context-mode'
-    $repo = Get-RepoRoot
-    Invoke-RepoCommand "powershell -NoProfile -File `"$repo/scripts/test-mcp-handshake.ps1`""
-    Invoke-RepoCommand "powershell -NoProfile -File `"$repo/scripts/test-ctx-doctor.ps1`""
-    Invoke-RepoCommand 'docker logs --tail 25 ecommerceapp-context-mode'
-    Write-Ok 'ContextMode fix sequence completed.'
-}
-
-function Invoke-ContextHealth {
-    Assert-Prereqs
-    Invoke-RepoCommand 'docker inspect ecommerceapp-context-mode --format "Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} Running={{.State.Running}}"'
-    Invoke-RepoCommand 'docker logs --tail 25 ecommerceapp-context-mode'
-}
-
-function Invoke-AdGuardAddWhitelist {
-    param([Parameter(Mandatory = $true)][string]$Domain)
-    Assert-Prereqs
-    $repo = Get-RepoRoot
-    $cmd = "powershell -NoProfile -File `"$repo/scripts/adguard/domain-policy.ps1`" add whitelist `"@@||$Domain^`""
-    Invoke-RepoCommand $cmd
-}
-
-function Invoke-AdGuardAddBlacklist {
-    param([Parameter(Mandatory = $true)][string]$Domain)
-    Assert-Prereqs
-    $repo = Get-RepoRoot
-    $cmd = "powershell -NoProfile -File `"$repo/scripts/adguard/domain-policy.ps1`" add blacklist `"||$Domain^`""
-    Invoke-RepoCommand $cmd
-}
-
-function Invoke-AdGuardChangePassword {
-    param([Parameter(Mandatory = $true)][string]$Password)
-    Assert-Prereqs
-    $repo = Get-RepoRoot
-    $script = Join-Path $repo 'scripts/context-mode-bootstrap.ps1'
-    Invoke-RepoCommand "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -AdGuardPassword `"$Password`" -ForceRegenerateAdGuard -SkipBuild"
-    Write-Ok 'AdGuard password rotated.'
 }
 
 function Show-RagProfiles {

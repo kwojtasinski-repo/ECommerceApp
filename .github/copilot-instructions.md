@@ -91,22 +91,16 @@ Canonical maintenance rule: keep full routing logic in the canonical file above.
 
 Non-negotiable summary:
 
-- **Core precedence is mandatory**: knowledge intent → RAG, execution/analysis intent → context-mode, project URLs → `ctx_fetch_and_index`, never both MCPs for one atomic intent.
+- **Core precedence is mandatory**: knowledge intent → RAG; structural intent → KG; local execution/analysis → bounded direct tools.
 - **Structural intent uses KG**: questions about code connections, blast radius, contract handlers, module ownership, schedulers, or governed actions route to the local read-only `ecommerceapp-kg` server; documentation rationale remains a separate RAG lookup.
-- **Intent inference is mandatory**: do not wait for the user to name a tool. Infer RAG vs context-mode from the task shape and target files.
-- **Context-mode definition**: the local sandbox for thinking in code. Use it to read local files/snippets, search indexed session data, compute reductions, compare outputs, generate code fragments, and turn repo facts into a concrete result before touching files.
-- **Derived-result rule is mandatory**: if you need code, math, a table, a transformed dataset, or a summary generated from repo knowledge, first retrieve the source with RAG if needed, then do the derivation with `ctx_execute` / `ctx_batch_execute` / `ctx_execute_file`, and cache reusable outputs with `ctx_index`.
-- **RAG-fail fallback rule is mandatory**: if RAG is empty/unavailable, do not jump straight to classic tools; use context-mode on local files or captured snippets first, and only then fall back to classic tools if the MCP path still fails.
-- **Context-mode first probe is mandatory**: for implementation tasks, start with bounded context-mode probing on the target files/snippets before using classic repo reads; `read_file` / `grep_search` are only allowed after context-mode returns no useful signal or when exact bytes are needed for the final edit.
+- **Intent inference is mandatory**: do not wait for the user to name a tool. Infer RAG, KG, or direct local tools from the task shape and target files.
+- **Derived-result rule is mandatory**: retrieve repository knowledge with RAG/KG when needed, then perform bounded derivation with local tools.
 - **First-move discipline is mandatory**: no `read_file`/`grep_search` first on protected knowledge paths when RAG should answer.
-- **Integrity and resilience are mandatory**: `ctx_stats` is KPI source of truth; canceled calls require retry/fallback/partial reporting.
+- **Integrity and resilience are mandatory**: MCP failures require bounded retry, fallback, and explicit partial-result reporting.
 - **Long-wait default is mandatory**: for potentially long MCP calls, use a 5-minute threshold (`timeout=300000` where supported) before treating the step as canceled.
 - **Retry contract is mandatory**: after cancel/timeout, retry with lighter shape up to 5 times; do not repeat the same command shape verbatim.
-- **Runtime default is mandatory**: for context-mode processing, default to `javascript`; any non-`javascript` runtime requires availability verification first, then fallback to `javascript`/bounded `shell` if unavailable.
-- **End-of-run telemetry is mandatory**: if any `ctx_*` tool was used, include raw `ctx_stats` in the final answer (unless user explicitly asks to skip metadata).
+- **Runtime default is mandatory**: use the runtime required by the active tool; verify availability before relying on a non-default runtime.
 - **Graceful degradation is mandatory**: when a canceled step cannot be recovered, emit explicit inability (`UNABLE_TO_PROCESS` + reason), mark run `PARTIAL`, and continue remaining independent steps.
-- **Known-bad shape guard is mandatory**: do not dispatch known cancellation-prone unbounded shell scans to context-mode; short-circuit with explicit inability and continue using safe rewritten shape.
-- **Path and retry safety are mandatory**: `ctx_execute_file` path normalization plus empty-RAG retry sequence before fallback.
 
 Operational details and exact wording live in canonical sections:
 

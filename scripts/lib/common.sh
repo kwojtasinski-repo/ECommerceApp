@@ -34,17 +34,6 @@ ensure_rag_python_stats_file(){
   [ -f "$REPO_ROOT/.rag/index-stats.md" ] || printf '# RAG Index Stats\n' > "$REPO_ROOT/.rag/index-stats.md"
 }
 
-ensure_adguard_policy_files(){
-  local wl="$REPO_ROOT/docker/adguard/team-whitelist.txt"
-  local bl="$REPO_ROOT/docker/adguard/team-blacklist.txt"
-  [ -f "$wl" ] || { printf '# Team whitelist (allow overrides)\n' > "$wl"; }
-  [ -f "$bl" ] || { printf '# Team blacklist (block rules)\n' > "$bl"; }
-  if ! grep -Fxq '||*^' "$bl"; then
-    printf '||*^\n' >> "$bl"
-    warn 'Added strict deny-all baseline rule to team-blacklist.txt: ||*^'
-  fi
-}
-
 rag_create(){
   local profile="${1:-}"
   is_valid_profile "$profile" || { echo "Invalid profile: $profile" >&2; exit 2; }
@@ -102,66 +91,6 @@ rag_health(){
   run_repo "docker ps --format 'table {{.Names}}\t{{.Status}}'"
   run_repo "docker logs --tail 20 ecommerceapp-rag-dotnet-http-1 || true"
   run_repo "docker logs --tail 20 ecommerceapp-rag-python-http-1 || true"
-}
-
-context_create(){
-  local password="${1:-ThiIS_StrongP4SSWORD!}"
-  assert_docker
-  ensure_adguard_policy_files
-  run_repo "FORCE_REGENERATE=1 ADGUARD_PASSWORD='$password' bash scripts/context-mode-bootstrap.sh"
-  ok "ContextMode create completed"
-}
-
-context_update(){
-  assert_docker
-  ensure_adguard_policy_files
-  run_repo "docker compose --profile monitoring --profile context-mode build context-mode"
-  run_repo "docker compose --profile monitoring --profile context-mode up -d --force-recreate adguard context-mode"
-  ok "ContextMode update completed"
-}
-
-context_force_update(){
-  local password="${1:-ThiIS_StrongP4SSWORD!}"
-  assert_docker
-  ensure_adguard_policy_files
-  run_repo "docker compose --profile monitoring --profile context-mode build --no-cache context-mode"
-  run_repo "docker compose --profile monitoring --profile context-mode up -d --force-recreate adguard context-mode"
-  run_repo "FORCE_REGENERATE=1 SKIP_BUILD=1 ADGUARD_PASSWORD='$password' bash scripts/context-mode-bootstrap.sh"
-  ok "ContextMode force update completed"
-}
-
-context_fix(){
-  assert_docker
-  run_repo "docker compose --profile monitoring --profile context-mode up -d adguard context-mode"
-  run_repo "bash scripts/test-mcp-handshake.sh"
-  run_repo "bash scripts/test-ctx-doctor.sh"
-  run_repo "docker logs --tail 25 ecommerceapp-context-mode"
-  ok "ContextMode fix sequence completed"
-}
-
-context_health(){
-  assert_docker
-  run_repo "docker inspect ecommerceapp-context-mode --format 'Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} Running={{.State.Running}}'"
-  run_repo "docker logs --tail 25 ecommerceapp-context-mode"
-}
-
-adguard_add_whitelist(){
-  local d="$1"
-  assert_docker
-  run_repo "bash scripts/adguard/domain-policy.sh add whitelist '@@||$d^'"
-}
-
-adguard_add_blacklist(){
-  local d="$1"
-  assert_docker
-  run_repo "bash scripts/adguard/domain-policy.sh add blacklist '||$d^'"
-}
-
-adguard_change_password(){
-  local password="$1"
-  assert_docker
-  run_repo "FORCE_REGENERATE=1 SKIP_BUILD=1 ADGUARD_PASSWORD='$password' bash scripts/context-mode-bootstrap.sh"
-  ok "AdGuard password rotated"
 }
 
 show_profiles(){

@@ -12,8 +12,8 @@ applyTo: "**"
 - Do not wait for the user to name a tool. Infer the path from task shape and target files.
 - One atomic intent gets one MCP path.
 - Docs / ADRs / known issues / project state / roadmap / config meaning -> RAG first.
-- Logs / local code / analysis / derivation / transformation -> context-mode first.
-- Implementation work -> bounded context-mode probe on the smallest relevant files, then exact patching with classic tools only if needed.
+- Logs / local code / analysis / derivation / transformation -> bounded direct tools.
+- Implementation work -> inspect the smallest relevant files, then exact patching with classic tools.
 - Research / evidence gathering / source verification -> `research-gatherer` skill first, with human approval gates unless `--yolo` is explicit.
 - Domain modeling / concept distillation / boundary finding -> `context-distiller` skill first.
 

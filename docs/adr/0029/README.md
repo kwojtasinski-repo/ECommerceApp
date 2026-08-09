@@ -1,16 +1,16 @@
-# ADR-0029 — context-mode MCP sandbox + DNS firewall
+# ADR-0029: context-mode MCP sandbox + DNS firewall
 
-> **Status: Accepted.**
+> **Status: Retired (2026-08-10).**
 
-## Files in this folder
+ADR-0029 documented the former context-mode MCP sandbox and its DNS-firewall
+integration. The runtime, hooks, and active setup documentation have been
+removed because the project no longer uses context-mode.
 
-| File | Purpose |
-|---|---|
-| [`0029-context-mode-mcp-sandbox.md`](./0029-context-mode-mcp-sandbox.md) | Main ADR — decision, context, alternatives |
-| [`amendments/0029-001-host-side-rag-auto-cache.md`](./amendments/0029-001-host-side-rag-auto-cache.md) | Amendment 1 (Accepted) — host-side PostToolUse hook that auto-indexes RAG results into FTS5 |
+The ADR remains as a historical record. Its amendment is retired as well:
 
-## Related
+- [Main decision](./0029-context-mode-mcp-sandbox.md)
+- [Amendment 1: host-side RAG auto-cache](./amendments/0029-001-host-side-rag-auto-cache.md)
 
-- Roadmap: [`docs/roadmap/context-mode-integration.md`](../../roadmap/context-mode-integration.md)
-- Details: [`docs/roadmap/context-mode-details.md`](../../roadmap/context-mode-details.md)
-- External MCP: [github.com/mksglu/context-mode](https://github.com/mksglu/context-mode) (Elastic License 2.0)
+Current knowledge services are documented separately in [ADR-0028](../0028/)
+for RAG and [ADR-0031](../0031/0031-structural-knowledge-graph.md) for the
+`ecommerceapp-kg` structural knowledge graph.
