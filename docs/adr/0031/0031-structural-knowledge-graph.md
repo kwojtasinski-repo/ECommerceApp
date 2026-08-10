@@ -215,11 +215,17 @@ adapter callers do not emit Action nodes — they are now reported with
 `ambiguous` confidence and that reason, rather than omitted.
 
 Phase 7 completes the **build** roadmap: the ontology, the generator, the loader,
-and the query server all exist and are validated. It does not complete
-**adoption**. As of this ADR the toolchain is unused by the working loop — no
-skill teaches an agent to query the graph, no pipeline agent consults it, and
-`--check` runs in no workflow, so the "staleness is a build signal" force above
-is still an aspiration rather than a fact. That gap is scoped in
+and the query server all exist and are validated. Initial **adoption** is now
+documented for both supported local clients: `.github/skills/ecommerceapp-kg-query/SKILL.md`
+teaches GitHub Copilot to use the live `ecommerceapp-kg` tools, while
+`.claude/skills/ecommerceapp-kg-query/SKILL.md` teaches Claude Code to load the
+same tools on demand. The repository routing instructions also send structural
+questions to KG and documentation questions to RAG.
+
+The toolchain is not yet part of the implementation pipeline: no pipeline agent
+automatically consults it, and `--check` runs in no workflow, so the
+"staleness is a build signal" force above is still an aspiration rather than a
+CI fact. That remaining gap is scoped in
 `.github/plans/08-phase-kg-workflow-adoption-*.md` and is deliberately not an
 extension of the model: Phase 8 adds no node type, no parser, and no tool.
 

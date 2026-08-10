@@ -12,5 +12,8 @@
 
 - Design + phase ledger: [`docs/architecture/knowledge-graph-ontology-design.md`](../../architecture/knowledge-graph-ontology-design.md)
 - Tool: [`tools/kg/kg-codegen/README.md`](../../../tools/kg/kg-codegen/README.md)
+- MCP tool contracts: [`docs/reference/kg-mcp-tools.md`](../../reference/kg-mcp-tools.md)
+- GitHub Copilot query skill: [`.github/skills/ecommerceapp-kg-query/SKILL.md`](../../../.github/skills/ecommerceapp-kg-query/SKILL.md)
+- Claude Code query skill: [`.claude/skills/ecommerceapp-kg-query/SKILL.md`](../../../.claude/skills/ecommerceapp-kg-query/SKILL.md)
 - Ontology seed: `tools/kg/seed/ontology.json`, `tools/kg/seed/ontology.cypher`
 - Complementary retrieval ADR: [`0028`](../0028) (RAG over docs)

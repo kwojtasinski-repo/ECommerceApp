@@ -607,6 +607,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A
 		.github\skills\create-unit-test\SKILL.md = .github\skills\create-unit-test\SKILL.md
 		.github\skills\create-validator\SKILL.md = .github\skills\create-validator\SKILL.md
 		.github\skills\knowledge-management-archetype-mapper\SKILL.md = .github\skills\knowledge-management-archetype-mapper\SKILL.md
+		.github\skills\ecommerceapp-kg-query\SKILL.md = .github\skills\ecommerceapp-kg-query\SKILL.md
+		.github\skills\kg-implementation-planner\SKILL.md = .github\skills\kg-implementation-planner\SKILL.md
+		.github\skills\kg-ontology-designer\SKILL.md = .github\skills\kg-ontology-designer\SKILL.md
 		.github\skills\metaprogram-classifier\SKILL.md = .github\skills\metaprogram-classifier\SKILL.md
 		.github\skills\mermaid-diagram\SKILL.md = .github\skills\mermaid-diagram\SKILL.md
 		.github\skills\pricing-archetype-mapper\SKILL.md = .github\skills\pricing-archetype-mapper\SKILL.md
@@ -619,20 +622,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A
 		.github\skills\research-gatherer\SKILL.md = .github\skills\research-gatherer\SKILL.md
 		.github\skills\transcript-critic\SKILL.md = .github\skills\transcript-critic\SKILL.md
 		.github\skills\test-strategy-reviewer\SKILL.md = .github\skills\test-strategy-reviewer\SKILL.md
-		.github\skills\ctx-bootstrap-network\SKILL.md = .github\skills\ctx-bootstrap-network\SKILL.md
-		.github\skills\ctx-bootstrap-runtimes\SKILL.md = .github\skills\ctx-bootstrap-runtimes\SKILL.md
-		.github\skills\ctx-bootstrap-storage\SKILL.md = .github\skills\ctx-bootstrap-storage\SKILL.md
-		.github\skills\ctx-doctor-playbook\SKILL.md = .github\skills\ctx-doctor-playbook\SKILL.md
-		.github\skills\ctx-hardening-audit\SKILL.md = .github\skills\ctx-hardening-audit\SKILL.md
-		.github\skills\ctx-sandbox-bootstrap-verify\SKILL.md = .github\skills\ctx-sandbox-bootstrap-verify\SKILL.md
 		.github\skills\rag-collection-rebuild\SKILL.md = .github\skills\rag-collection-rebuild\SKILL.md
 		.github\skills\rag-eval-coverage\SKILL.md = .github\skills\rag-eval-coverage\SKILL.md
 		.github\skills\rag-multilang-test\SKILL.md = .github\skills\rag-multilang-test\SKILL.md
 		.github\skills\rag-query-debug\SKILL.md = .github\skills\rag-query-debug\SKILL.md
 		.github\skills\rag-reindex-decision\SKILL.md = .github\skills\rag-reindex-decision\SKILL.md
-		.github\skills\rag-with-memory\SKILL.md = .github\skills\rag-with-memory\SKILL.md
-		.github\skills\setup-adguard-policy\SKILL.md = .github\skills\setup-adguard-policy\SKILL.md
-		.github\skills\setup-auto-cache-hook\SKILL.md = .github\skills\setup-auto-cache-hook\SKILL.md
 		.github\skills\setup-mcp-clients\SKILL.md = .github\skills\setup-mcp-clients\SKILL.md
 		.github\skills\setup-rag-new-project\SKILL.md = .github\skills\setup-rag-new-project\SKILL.md
 		.github\skills\tune-rag-weights\SKILL.md = .github\skills\tune-rag-weights\SKILL.md
@@ -728,26 +722,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "generate-eval-questions", "
 		.github\skills\generate-eval-questions\SKILL.md = .github\skills\generate-eval-questions\SKILL.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-with-memory", "rag-with-memory", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567806}"
-	ProjectSection(SolutionItems) = preProject
-		.github\skills\rag-with-memory\SKILL.md = .github\skills\rag-with-memory\SKILL.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-sandbox-bootstrap-verify", "ctx-sandbox-bootstrap-verify", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567807}"
-	ProjectSection(SolutionItems) = preProject
-		.github\skills\ctx-sandbox-bootstrap-verify\SKILL.md = .github\skills\ctx-sandbox-bootstrap-verify\SKILL.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-doctor-playbook", "ctx-doctor-playbook", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567808}"
-	ProjectSection(SolutionItems) = preProject
-		.github\skills\ctx-doctor-playbook\SKILL.md = .github\skills\ctx-doctor-playbook\SKILL.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-hardening-audit", "ctx-hardening-audit", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567809}"
-	ProjectSection(SolutionItems) = preProject
-		.github\skills\ctx-hardening-audit\SKILL.md = .github\skills\ctx-hardening-audit\SKILL.md
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-reindex-decision", "rag-reindex-decision", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780A}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\rag-reindex-decision\SKILL.md = .github\skills\rag-reindex-decision\SKILL.md
@@ -768,19 +742,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-multilang-test", "rag-m
 		.github\skills\rag-multilang-test\SKILL.md = .github\skills\rag-multilang-test\SKILL.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-bootstrap-network", "ctx-bootstrap-network", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ecommerceapp-kg-query", "ecommerceapp-kg-query", "{B1C2D3E4-F5A6-4789-ABCD-EF1234567816}"
 	ProjectSection(SolutionItems) = preProject
-		.github\skills\ctx-bootstrap-network\SKILL.md = .github\skills\ctx-bootstrap-network\SKILL.md
+		.github\skills\ecommerceapp-kg-query\SKILL.md = .github\skills\ecommerceapp-kg-query\SKILL.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-bootstrap-storage", "ctx-bootstrap-storage", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "kg-implementation-planner", "kg-implementation-planner", "{B1C2D3E4-F5A6-4789-ABCD-EF1234567817}"
 	ProjectSection(SolutionItems) = preProject
-		.github\skills\ctx-bootstrap-storage\SKILL.md = .github\skills\ctx-bootstrap-storage\SKILL.md
+		.github\skills\kg-implementation-planner\SKILL.md = .github\skills\kg-implementation-planner\SKILL.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-bootstrap-runtimes", "ctx-bootstrap-runtimes", "{A74FDA63-8BF0-4EF2-BF77-06CA23A1C869}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "kg-ontology-designer", "kg-ontology-designer", "{B1C2D3E4-F5A6-4789-ABCD-EF1234567818}"
 	ProjectSection(SolutionItems) = preProject
-		.github\skills\ctx-bootstrap-runtimes\SKILL.md = .github\skills\ctx-bootstrap-runtimes\SKILL.md
+		.github\skills\kg-ontology-designer\SKILL.md = .github\skills\kg-ontology-designer\SKILL.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-rag-new-project", "setup-rag-new-project", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567811}"
@@ -788,24 +762,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-rag-new-project", "se
 		.github\skills\setup-rag-new-project\SKILL.md = .github\skills\setup-rag-new-project\SKILL.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-context-mode-new-project", "setup-context-mode-new-project", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567812}"
-	ProjectSection(SolutionItems) = preProject
-		.github\skills\setup-context-mode-new-project\SKILL.md = .github\skills\setup-context-mode-new-project\SKILL.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-adguard-policy", "setup-adguard-policy", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567813}"
-	ProjectSection(SolutionItems) = preProject
-		.github\skills\setup-adguard-policy\SKILL.md = .github\skills\setup-adguard-policy\SKILL.md
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-mcp-clients", "setup-mcp-clients", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567814}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\setup-mcp-clients\SKILL.md = .github\skills\setup-mcp-clients\SKILL.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-auto-cache-hook", "setup-auto-cache-hook", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567815}"
-	ProjectSection(SolutionItems) = preProject
-		.github\skills\setup-auto-cache-hook\SKILL.md = .github\skills\setup-auto-cache-hook\SKILL.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-eval-coverage", "rag-eval-coverage", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567816}"
