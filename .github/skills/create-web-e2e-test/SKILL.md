@@ -146,6 +146,18 @@ The hierarchy is `Scenario -> POM -> Component`:
   page selection. For a same-page modal, the POM owns `Open...` and may return the modal/component
   interface.
 
+The reference Scenario is
+[`GuestOrderLifecycleScenario`](../../../../ECommerceApp.Web.E2E/Scenarios/GuestOrderLifecycleScenario.cs).
+It composes storefront, checkout, payment, shipment creation, and shipment-state POMs, receives
+already-authenticated pages from its host, and returns the immutable `OrderLifecycleResult`.
+It does not create browser contexts or perform login.
+
+Same-tab server redirects that keep using the same `IPage` may be followed by a POM constructing
+the next POM. This applies to ordinary checkout and shipment redirects. It does not transfer
+ownership of popups, new tabs, new windows, or persona changes to a POM. A workflow that changes
+persona must use a separate `BrowserContext` and `IPage`, both created and authenticated by the
+test or Scenario host.
+
 POM actions may return `Task` or a narrow `Task<IPom>` when the action remains on the same surface
 and fluent chaining helps readability. A redirecting action normally returns `Task` so the host can
 observe the new surface. The call-site form for a same-page fluent operation is:

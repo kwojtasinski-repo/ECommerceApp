@@ -12,7 +12,8 @@ using Xunit;
 
 namespace ECommerceApp.Web.E2E
 {
-    public sealed class OutboxDispatchWatcherTests : IClassFixture<PlaywrightWebApplicationFactory>
+    [Collection(PlaywrightCollection.Name)]
+    public sealed class OutboxDispatchWatcherTests
     {
         private readonly PlaywrightWebApplicationFactory _factory;
 

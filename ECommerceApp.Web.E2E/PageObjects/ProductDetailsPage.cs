@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.E2E.PageObjects
 {
-    public sealed class ProductDetailsPage
+    public sealed class ProductDetailsPage : IProductDetailsPage
     {
         private readonly IPage _page;
 
-        public ProductDetailsPage(IPage page)
+        internal ProductDetailsPage(IPage page)
         {
             _page = page;
         }

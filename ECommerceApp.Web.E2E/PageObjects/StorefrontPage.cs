@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.E2E.PageObjects
 {
-    public sealed class StorefrontPage
+    public sealed class StorefrontPage : IStorefrontPage
     {
         private readonly IPage _page;
 
@@ -15,7 +15,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
 
         public static async Task<StorefrontPage> NavigateAsync(IPage page, string baseAddress)
         {
-            var response = await page.GotoAsync($"{baseAddress}/offers");
+            var response = await page.GotoAsync($"{baseAddress}/offers?e2eRefresh={Guid.NewGuid():N}");
             await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             if (response is null || !response.Ok)
             {
@@ -30,9 +30,17 @@ namespace ECommerceApp.Web.E2E.PageObjects
             return new StorefrontPage(page);
         }
 
-        public async Task<ProductDetailsPage> OpenProductAsync(string productName)
+        public async Task<IProductDetailsPage> OpenProductAsync(string productName)
         {
             var productCard = _page.Locator(".card").Filter(new LocatorFilterOptions { HasText = productName });
+            if (await productCard.CountAsync() == 0)
+            {
+                var baseAddress = new Uri(_page.Url).GetLeftPart(UriPartial.Authority);
+                await _page.GotoAsync($"{baseAddress}/offers?searchString={Uri.EscapeDataString(productName)}&e2eRefresh={Guid.NewGuid():N}");
+                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                productCard = _page.Locator(".card").Filter(new LocatorFilterOptions { HasText = productName });
+            }
+
             if (await productCard.CountAsync() == 0)
             {
                 var bodyText = await _page.Locator("body").InnerTextAsync();
@@ -43,6 +51,20 @@ namespace ECommerceApp.Web.E2E.PageObjects
 
             await productCard.GetByRole(AriaRole.Link, new() { Name = "Szczegóły" }).ClickAsync();
             await _page.WaitForURLAsync("**/offers/**");
+            return new ProductDetailsPage(_page);
+        }
+
+        public async Task<IProductDetailsPage> OpenProductAsync(int productId)
+        {
+            var baseAddress = new Uri(_page.Url).GetLeftPart(UriPartial.Authority);
+            var response = await _page.GotoAsync($"{baseAddress}/offers/{productId}");
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            if (response is null || !response.Ok)
+            {
+                throw new InvalidOperationException(
+                    $"Product details navigation failed. Product ID: {productId}; URL: {_page.Url}; status: {response?.Status}");
+            }
+
             return new ProductDetailsPage(_page);
         }
     }

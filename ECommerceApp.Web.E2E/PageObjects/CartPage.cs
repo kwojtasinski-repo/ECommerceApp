@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.E2E.PageObjects
 {
-    public sealed class CartPage
+    public sealed class CartPage : ICartPage
     {
         private readonly IPage _page;
 
@@ -19,7 +19,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
             return new CartPage(page);
         }
 
-        public async Task<CartPage> ShouldContainProductAsync(string productName, int quantity)
+        public async Task<ICartPage> ShouldContainProductAsync(string productName, int quantity)
         {
             var row = _page.Locator("tbody tr").Filter(new LocatorFilterOptions { HasText = productName });
             (await row.CountAsync()).ShouldBe(1);
@@ -27,7 +27,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
             return this;
         }
 
-        public async Task<PlaceOrderPage> ProceedToOrderAsync()
+        public async Task<IPlaceOrderPage> ProceedToOrderAsync()
         {
             await _page.GetByRole(AriaRole.Link, new() { Name = "Przejdź do zamówienia" }).ClickAsync();
             await _page.WaitForURLAsync("**/Presale/Checkout/PlaceOrder");

@@ -3,16 +3,16 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.E2E.PageObjects
 {
-    public sealed class PlaceOrderPage
+    public sealed class PlaceOrderPage : IPlaceOrderPage
     {
         private readonly IPage _page;
 
-        public PlaceOrderPage(IPage page)
+        internal PlaceOrderPage(IPage page)
         {
             _page = page;
         }
 
-        public async Task<PlaceOrderPage> FillCustomerAsync()
+        public async Task<IPlaceOrderPage> FillCustomerAsync()
         {
             await _page.WaitForFunctionAsync("() => Number(document.getElementById('CustomerId').value) > 0");
             await _page.Locator("#FirstName").FillAsync("Jan");
@@ -27,7 +27,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
             return this;
         }
 
-        public async Task<OrderSummaryPage> SubmitAsync()
+        public async Task<IOrderSummaryPage> SubmitAsync()
         {
             await _page.GetByRole(AriaRole.Button, new() { Name = "Zamów" }).ClickAsync();
             await _page.WaitForURLAsync("**/Presale/Checkout/Summary/*");

@@ -1,5 +1,6 @@
 using ECommerceApp.Web.E2E.Infrastructure;
 using ECommerceApp.Web.E2E.PageObjects;
+using ECommerceApp.Web.E2E.Scenarios;
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.AccountProfile.DTOs;
@@ -19,7 +20,7 @@ using Xunit;
 namespace ECommerceApp.Web.E2E
 {
     [Collection(PlaywrightCollection.Name)]
-    public sealed class PlaywrightFixtureSmokeTests : IClassFixture<PlaywrightWebApplicationFactory>
+    public sealed class PlaywrightFixtureSmokeTests
     {
         private readonly PlaywrightBrowserFixture _browserFixture;
         private readonly PlaywrightWebApplicationFactory _factory;
@@ -82,7 +83,7 @@ namespace ECommerceApp.Web.E2E
             var secondProduct = await storefront.OpenProductAsync("E2E Basket Product B");
             await secondProduct.AddToCartAsync(productIds[1], 3);
 
-            var cart = await CartPage.NavigateAsync(page, _factory.ServerAddress);
+            ICartPage cart = await CartPage.NavigateAsync(page, _factory.ServerAddress);
             cart = await cart.ShouldContainProductAsync("E2E Basket Product A", 2);
             await cart.ShouldContainProductAsync("E2E Basket Product B", 3);
 
@@ -91,6 +92,66 @@ namespace ECommerceApp.Web.E2E
             var summary = await orderForm.SubmitAsync();
 
             await summary.ShouldConfirmOrderAsync();
+        }
+
+        [Fact]
+        public async Task GuestOrderLifecycle_ProductsToDelivery_CompletesAcrossBothPersonas()
+        {
+            _factory.Sink.SetOutput(_output);
+            var services = _factory.StartKestrelHost();
+            await SeedBrowserUserAsync(services);
+            await SeedBrowserAdminAsync(services);
+            var productIds = await SeedLifecycleProductsAsync(services);
+
+            await using var customerContext = await _browserFixture.Browser.NewContextAsync();
+            await using var adminContext = await _browserFixture.Browser.NewContextAsync();
+            var customerPage = await customerContext.NewPageAsync();
+            var adminPage = await adminContext.NewPageAsync();
+
+            var customerLogin = await LoginPage.NavigateAsync(customerPage, _factory.ServerAddress);
+            await customerLogin.LoginAsync("e2e-order@example.com", "E2e@test12");
+            var adminLogin = await LoginPage.NavigateAsync(adminPage, _factory.ServerAddress);
+            await adminLogin.LoginAsync("e2e-admin@example.com", "E2e@test12");
+
+            var result = await new GuestOrderLifecycleScenario().ExecuteAsync(
+                customerPage,
+                adminPage,
+                _factory.ServerAddress,
+                productIds[0],
+                productIds[1]);
+
+            result.PaymentConfirmed.ShouldBeTrue();
+            result.FinalShipmentStatus.ShouldBe("Delivered");
+        }
+
+        [Fact]
+        public async Task GuestOrderLifecycle_ProductsFromStorefrontListing_CompletesAcrossBothPersonas()
+        {
+            _factory.Sink.SetOutput(_output);
+            var services = _factory.StartKestrelHost();
+            await SeedBrowserUserAsync(services);
+            await SeedBrowserAdminAsync(services);
+            var productIds = await SeedLifecycleProductsAsync(services);
+
+            await using var customerContext = await _browserFixture.Browser.NewContextAsync();
+            await using var adminContext = await _browserFixture.Browser.NewContextAsync();
+            var customerPage = await customerContext.NewPageAsync();
+            var adminPage = await adminContext.NewPageAsync();
+
+            var customerLogin = await LoginPage.NavigateAsync(customerPage, _factory.ServerAddress);
+            await customerLogin.LoginAsync("e2e-order@example.com", "E2e@test12");
+            var adminLogin = await LoginPage.NavigateAsync(adminPage, _factory.ServerAddress);
+            await adminLogin.LoginAsync("e2e-admin@example.com", "E2e@test12");
+
+            var result = await new GuestOrderLifecycleScenario().ExecuteThroughStorefrontListingAsync(
+                customerPage,
+                adminPage,
+                _factory.ServerAddress,
+                productIds[0],
+                productIds[1]);
+
+            result.PaymentConfirmed.ShouldBeTrue();
+            result.FinalShipmentStatus.ShouldBe("Delivered");
         }
 
         private static async Task SeedBrowserUserAsync(IServiceProvider services)
@@ -132,6 +193,63 @@ namespace ECommerceApp.Web.E2E
                 "00-001",
                 "Warszawa",
                 "PL"))).ShouldBeTrue();
+        }
+
+        private static async Task SeedBrowserAdminAsync(IServiceProvider services)
+        {
+            using var scope = services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            if (!await roleManager.RoleExistsAsync("Administrator"))
+            {
+                (await roleManager.CreateAsync(new IdentityRole("Administrator"))).Succeeded.ShouldBeTrue();
+            }
+
+            var email = "e2e-admin@example.com";
+            var user = await userManager.FindByEmailAsync(email);
+            if (user is null)
+            {
+                user = new ApplicationUser
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true
+                };
+                var result = await userManager.CreateAsync(user, "E2e@test12");
+                result.Succeeded.ShouldBeTrue(string.Join("; ", result.Errors));
+            }
+
+            if (!await userManager.IsInRoleAsync(user, "Administrator"))
+            {
+                (await userManager.AddToRoleAsync(user, "Administrator"))
+                    .Succeeded.ShouldBeTrue();
+            }
+        }
+
+        private static async Task<IReadOnlyList<int>> SeedLifecycleProductsAsync(IServiceProvider services)
+        {
+            using var scope = services.CreateScope();
+            var categoryRepository = scope.ServiceProvider.GetRequiredService<ICategoryRepository>();
+            var categoryId = await categoryRepository.AddAsync(Category.Create("E2E Lifecycle Category"));
+            var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+            var stockRepository = scope.ServiceProvider.GetRequiredService<IStockSnapshotRepository>();
+
+            var productIds = new List<int>();
+            foreach (var product in new[]
+            {
+                (Name: "E2E Lifecycle Product A", Price: 19.99m),
+                (Name: "E2E Lifecycle Product B", Price: 29.99m)
+            })
+            {
+                var productId = await productService.AddProduct(new CreateProductDto(
+                    product.Name, product.Price, "E2E lifecycle product", categoryId.Value, new List<int>()));
+                await productService.PublishProduct(productId);
+                await stockRepository.AddAsync(StockSnapshot.Create(productId, 100, DateTime.UtcNow));
+                productIds.Add(productId);
+            }
+
+            return productIds;
         }
 
         private static async Task<IReadOnlyList<int>> SeedProductsAsync(IServiceProvider services)
