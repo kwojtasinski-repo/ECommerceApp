@@ -92,16 +92,20 @@ namespace ECommerceApp.Shared.TestInfrastructure
             }
             catch (Exception ex)
             {
-                // IamDbContext is swapped to one fixed InMemory database name shared by every
-                // BcWebApplicationFactory/CustomWebApplicationFactory instance (not a per-instance GUID
-                // like the BC-specific DbContexts get) — with xunit.runner.json's
-                // parallelizeTestCollections now true, two test classes' constructors can race to seed
-                // the same fixed-Id test users concurrently. Whichever wins leaves the data every
-                // instance reads from the same named store anyway; the loser here just needs to not
-                // crash its own host startup over it, matching CustomWebApplicationFactory's own
-                // try/catch around this same seeding call.
+                // Defensive only — do not let a seeding failure take down host startup, matching
+                // CustomWebApplicationFactory's own try/catch around this same call.
+                //
+                // This used to claim IamDbContext lands on one fixed InMemory database name shared by
+                // every factory instance, and that concurrent test classes could therefore race to seed
+                // the same store. That premise is wrong, and measuring it is what corrected it:
+                // IamDbContext is registered with a plain AddDbContext, so the
+                // ReplaceAllBcDbContextsWithInMemory sweep called above re-points it at a
+                // BcTestDb_IamDbContext_<guid> store exactly like every bounded-context DbContext. Each
+                // factory instance therefore seeds its own store and no cross-instance race is possible
+                // here. (CustomWebApplicationFactory's IamDatabaseName default does name one fixed store,
+                // but only for factories that never run this sweep.)
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<BcWebApplicationFactory>>();
-                logger.LogWarning(ex, "IAM user seeding raced with another test host — continuing.");
+                logger.LogWarning(ex, "IAM user seeding failed — continuing without seeded users.");
             }
         }
     }
