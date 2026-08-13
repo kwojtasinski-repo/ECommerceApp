@@ -16,6 +16,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
         public static async Task<CartPage> NavigateAsync(IPage page, string baseAddress)
         {
             await page.GotoAsync($"{baseAddress}/Presale/Checkout/Cart");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             return new CartPage(page);
         }
 
@@ -31,6 +32,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
         {
             await _page.GetByRole(AriaRole.Link, new() { Name = "Przejdź do zamówienia" }).ClickAsync();
             await _page.WaitForURLAsync("**/Presale/Checkout/PlaceOrder");
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             return new PlaceOrderPage(_page);
         }
     }

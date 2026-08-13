@@ -58,8 +58,15 @@ Browser E2E tests (Playwright) — `ECommerceApp.Web.E2E`
 - Always host through `PlaywrightWebApplicationFactory.StartKestrelHost()` / `.ServerAddress`.
   Never use the inherited `Services`/`CreateClient()`/`Server` — they build a second, disconnected
   TestServer-backed host with its own InMemory database (see the class's own XML doc for why).
-- Share the browser process via `[Collection(PlaywrightCollection.Name)]` — never launch a second
-  `IBrowser`/`IPlaywright` per test class.
+- Share the browser process via the assembly fixture (`[assembly: AssemblyFixture(typeof(
+  PlaywrightBrowserFixture))]`, declared in `AssemblyFixtureConfiguration.cs`); take
+  `PlaywrightBrowserFixture` as a constructor argument. Never launch a second `IBrowser`/`IPlaywright`
+  per test class, and do not reintroduce a shared `[Collection]` for it — a collection is xunit's unit
+  of parallelism, so that would serialize the whole suite.
+- This project runs test collections in parallel (`xunit.runner.json`, capped at 4 threads). One test
+  class = one collection, so put slow flows in their own class. Each test constructs its **own**
+  `PlaywrightWebApplicationFactory` (own port, own IAM + bounded-context InMemory databases) and its
+  own `BrowserContext`; never share a factory across tests via `IClassFixture`/`ICollectionFixture`.
 
 CI
 - CI must run unit and integration tests on PRs.

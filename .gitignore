@@ -19,6 +19,13 @@ tools/kg/.load-seed.staged.cypher
 !.github/hooks/*.json
 !tools/kg/seed/*.json
 !tools/kg/kg-codegen/KgCodegen.Tests/Fixtures/*.json
+# Test-run config for ECommerceApp.Web.E2E. The older test projects already track
+# theirs; these were swallowed by *.json above, which left the xunit parallelization
+# setting untracked and made appsettings.test.json (loaded with optional: false)
+# missing on a fresh clone. ECommerceApp.E2E.Backend has the same gap — deliberately
+# left alone here so it can be fixed alongside its own test run.
+!ECommerceApp.Web.E2E/xunit.runner.json
+!ECommerceApp.Web.E2E/appsettings.test.json
 *.config
 *.doc
 *.docx

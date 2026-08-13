@@ -37,25 +37,29 @@ namespace ECommerceApp.Web.E2E.Infrastructure
 
         public string ServerAddress { get; private set; } = default!;
 
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        /// <summary>
+        /// Runs inside the base factory's own <c>ConfigureServices</c> callback, before it builds its
+        /// provider and seeds IAM. That ordering matters: <c>IamDbContext</c> is registered with a plain
+        /// <c>AddDbContext</c>, so <see cref="BcDbContextTestSetup.ReplaceAllBcDbContextsWithInMemory"/>
+        /// re-points it at a fresh InMemory store like any other context — which is also what gives each
+        /// factory its own isolated IAM data. Doing this from a *second*
+        /// <c>ConfigureServices</c> callback — which runs after the base has already seeded — left the
+        /// seeded users (including <c>test@test</c>) stranded in a store the running host never opens.
+        /// </summary>
+        protected override void OverrideServicesImplementation(IServiceCollection services)
         {
-            base.ConfigureWebHost(builder);
+            BcDbContextTestSetup.ReplaceAllBcDbContextsWithInMemory(services);
+            BcDbContextTestSetup.MakeAllBcDbContextsTransient(services);
+            BcDbContextTestSetup.ReplaceDbContextMigratorsWithNoOp(services);
+            BcDbContextTestSetup.EnsureAllBcDbContextsCreated(services);
 
-            builder.ConfigureServices(services =>
+            var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ICategoryService));
+            if (descriptor != null)
             {
-                BcDbContextTestSetup.ReplaceAllBcDbContextsWithInMemory(services);
-                BcDbContextTestSetup.MakeAllBcDbContextsTransient(services);
-                BcDbContextTestSetup.ReplaceDbContextMigratorsWithNoOp(services);
-                BcDbContextTestSetup.EnsureAllBcDbContextsCreated(services);
+                services.Remove(descriptor);
+            }
 
-                var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ICategoryService));
-                if (descriptor != null)
-                {
-                    services.Remove(descriptor);
-                }
-
-                services.AddScoped<ICategoryService, NullCategoryService>();
-            });
+            services.AddScoped<ICategoryService, NullCategoryService>();
         }
 
         /// <summary>

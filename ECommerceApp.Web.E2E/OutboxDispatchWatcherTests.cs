@@ -12,20 +12,13 @@ using Xunit;
 
 namespace ECommerceApp.Web.E2E
 {
-    [Collection(PlaywrightCollection.Name)]
     public sealed class OutboxDispatchWatcherTests
     {
-        private readonly PlaywrightWebApplicationFactory _factory;
-
-        public OutboxDispatchWatcherTests(PlaywrightWebApplicationFactory factory)
-        {
-            _factory = factory;
-        }
-
         [Fact]
         public async Task WaitForDispatchedAsync_ObservesProductPublishedAndTimesOutForMissingMessage()
         {
-            var services = _factory.StartKestrelHost();
+            using var factory = new PlaywrightWebApplicationFactory();
+            var services = factory.StartKestrelHost();
             using var scope = services.CreateScope();
             var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
             var categoryRepository = scope.ServiceProvider.GetRequiredService<ICategoryRepository>();

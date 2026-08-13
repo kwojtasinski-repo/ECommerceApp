@@ -39,8 +39,8 @@ this repo runs the broker **synchronously** on purpose, for easy assertions — 
 
 | Class | Lifetime | Purpose |
 |---|---|---|
-| `PlaywrightBrowserFixture` | `ICollectionFixture`, one per test run (via `[Collection(PlaywrightCollection.Name)]`) | Owns the expensive `IPlaywright`/`IBrowser` (Chromium, headless). Never create a second one. |
-| `PlaywrightWebApplicationFactory` | `IClassFixture`, one per test class | Hosts `ECommerceApp.Web` on a real, dynamically-allocated Kestrel port. InMemory DB for all BC DbContexts, `ICategoryService` stubbed (known EF InMemory / `CategoryName` value-object limitation — do not try to "fix" this by touching Catalog code), **real** `IMessageBroker` + `BackgroundMessageDispatcher` + `OutboxPollerService` (short `OutboxPollInterval`, see `appsettings.test.json`). |
+| `PlaywrightBrowserFixture` | `[assembly: AssemblyFixture(...)]`, one per test run | Owns the expensive `IPlaywright`/`IBrowser` (Chromium, headless). Never create a second one. Deliberately **not** an `ICollectionFixture`: a collection is xunit's unit of parallelism, so sharing it that way would force every browser test into one collection and serialize the suite. |
+| `PlaywrightWebApplicationFactory` | `using var`, one per **test**, never a fixture | Hosts `ECommerceApp.Web` on a real, dynamically-allocated Kestrel port. InMemory DB for all BC DbContexts, `ICategoryService` stubbed (known EF InMemory / `CategoryName` value-object limitation — do not try to "fix" this by touching Catalog code), **real** `IMessageBroker` + `BackgroundMessageDispatcher` + `OutboxPollerService` (short `OutboxPollInterval`, see `appsettings.test.json`). |
 | `OutboxDispatchWatcher` | Constructed per use (not a singleton, not a static helper) | Polls `IOutboxRepository.GetSinceAsync` until a specific message type/predicate reaches `OutboxStatus.Dispatched`, or throws `TimeoutException` with the candidates it actually saw. |
 
 ## Non-negotiable rule: only use `StartKestrelHost()`
@@ -68,26 +68,28 @@ using Xunit;
 
 namespace ECommerceApp.Web.E2E
 {
-    [Collection(PlaywrightCollection.Name)]
-    public sealed class {{Flow}}Tests : IClassFixture<PlaywrightWebApplicationFactory>
+    // No [Collection]: one class = one collection = one unit of parallelism. Give a slow flow its
+    // own class so it runs alongside the others rather than behind them.
+    public sealed class {{Flow}}Tests
     {
         private readonly PlaywrightBrowserFixture _browserFixture;
-        private readonly PlaywrightWebApplicationFactory _factory;
 
-        public {{Flow}}Tests(PlaywrightBrowserFixture browserFixture, PlaywrightWebApplicationFactory factory)
+        public {{Flow}}Tests(PlaywrightBrowserFixture browserFixture)
         {
             _browserFixture = browserFixture;
-            _factory = factory;
         }
 
         [Fact]
         public async Task {{Method}}_{{Conditions}}_{{ExpectedResult}}()
         {
-            _factory.StartKestrelHost();
+            // Own host per test: own Kestrel port, own IAM and bounded-context InMemory databases.
+            // This is what makes the classes safe to run in parallel — do not hoist it into a fixture.
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.StartKestrelHost();
             await using var context = await _browserFixture.Browser.NewContextAsync();
             var page = await context.NewPageAsync();
 
-            await page.GotoAsync($"{_factory.ServerAddress}/{{Route}}");
+            await page.GotoAsync($"{factory.ServerAddress}/{{Route}}");
 
             // ... interact / assert via page.Locator(...) ...
         }
