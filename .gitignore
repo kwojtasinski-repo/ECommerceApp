@@ -19,13 +19,16 @@ tools/kg/.load-seed.staged.cypher
 !.github/hooks/*.json
 !tools/kg/seed/*.json
 !tools/kg/kg-codegen/KgCodegen.Tests/Fixtures/*.json
-# Test-run config for ECommerceApp.Web.E2E. The older test projects already track
-# theirs; these were swallowed by *.json above, which left the xunit parallelization
-# setting untracked and made appsettings.test.json (loaded with optional: false)
-# missing on a fresh clone. ECommerceApp.E2E.Backend has the same gap — deliberately
-# left alone here so it can be fixed alongside its own test run.
+# Test-run config for the two newer E2E projects. The older test projects already
+# track theirs; these were swallowed by *.json above, which left each project's xunit
+# parallelization setting untracked and made appsettings.test.json (loaded with
+# optional: false) missing on a fresh clone. For ECommerceApp.E2E.Backend that matters
+# most: it deliberately runs sequentially against one shared SQL Server container, and
+# without its xunit.runner.json a clone silently defaults to parallel collections.
 !ECommerceApp.Web.E2E/xunit.runner.json
 !ECommerceApp.Web.E2E/appsettings.test.json
+!ECommerceApp.E2E.Backend/xunit.runner.json
+!ECommerceApp.E2E.Backend/appsettings.test.json
 *.config
 *.doc
 *.docx
