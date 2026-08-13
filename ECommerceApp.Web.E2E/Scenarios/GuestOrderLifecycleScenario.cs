@@ -75,13 +75,21 @@ namespace ECommerceApp.Web.E2E.Scenarios
                 adminPage,
                 baseAddress,
                 orderId);
+
+            // Read from the admin's page rather than assuming: this is what proves the customer's
+            // payment actually reached the read model the back office works from.
+            var orderStatusAfterPayment = await fulfillment.GetOrderStatusAsync();
+
             IShipmentCreatePage shipmentCreate = await fulfillment.OpenCreateShipmentAsync();
             IOrderShipmentsPage orderShipments = await shipmentCreate.CreateShipmentAsync();
             IShipmentDetailsPage shipment = await orderShipments.OpenLatestShipmentDetailsAsync();
             shipment = await shipment.DispatchAsync();
             shipment = await shipment.DeliverAsync();
 
-            return new OrderLifecycleResult(orderId, true, await shipment.GetStatusAsync());
+            return new OrderLifecycleResult(
+                orderId,
+                orderStatusAfterPayment == "PaymentConfirmed",
+                await shipment.GetStatusAsync());
         }
     }
 }
