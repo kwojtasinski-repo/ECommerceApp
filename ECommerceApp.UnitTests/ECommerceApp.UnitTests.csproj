@@ -39,6 +39,7 @@
     <ProjectReference Include="..\ECommerceApp.Application\ECommerceApp.Application.csproj" />
     <ProjectReference Include="..\ECommerceApp.Domain\ECommerceApp.Domain.csproj" />
     <ProjectReference Include="..\ECommerceApp.Infrastructure\ECommerceApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\ECommerceApp.Web\ECommerceApp.Web.csproj" />
   </ItemGroup>
 
 </Project>

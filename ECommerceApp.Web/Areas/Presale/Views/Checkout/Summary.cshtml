@@ -21,4 +21,16 @@
             Moje zamówienia
         </a>
     </div>
+
+    @if (ViewBag.GuestProfileId is int guestProfileId)
+    {
+        <form asp-area="Presale" asp-controller="Checkout" asp-action="CreateAccount" method="post" class="mt-4 mx-auto" style="max-width: 28rem;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="orderId" value="@orderId" />
+            <input type="hidden" name="profileId" value="@guestProfileId" />
+            <label for="password" class="form-label">Utwórz konto z tymi danymi</label>
+            <input id="password" name="password" type="password" class="form-control mb-2" required minlength="8" />
+            <button type="submit" class="btn btn-outline-primary">Utwórz konto</button>
+        </form>
+    }
 </div>

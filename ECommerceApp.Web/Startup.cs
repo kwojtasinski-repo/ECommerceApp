@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Localization;
 using ECommerceApp.Web.Filters;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Options;
+using ECommerceApp.Web.Areas.Presale.Services;
 using ECommerceApp.Web.Services;
 using ECommerceApp.Infrastructure.Supporting.Communication;
 
@@ -38,6 +39,7 @@ namespace ECommerceApp.Web
             services.Configure<CatalogOptions>(Configuration.GetSection(CatalogOptions.SectionName));
             services.AddApplication();
             services.AddInfrastructure(Configuration);
+            services.AddScoped<IShopperIdentityResolver, ShopperIdentityResolver>();
 
             services.AddControllersWithViews(options =>
             {

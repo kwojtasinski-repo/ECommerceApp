@@ -6,6 +6,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
     public interface IAccountProfileClient
     {
         Task<CheckoutProfileVm> GetProfileAsync(string userId, CancellationToken ct = default);
+        Task<int> EnsureGuestCustomerAsync(string userId, CheckoutCustomer customer, CancellationToken ct = default);
     }
 
     public sealed record CheckoutProfileVm(

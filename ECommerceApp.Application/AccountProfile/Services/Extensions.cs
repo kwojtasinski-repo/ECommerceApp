@@ -6,7 +6,9 @@ namespace ECommerceApp.Application.AccountProfile.Services
     {
         public static IServiceCollection AddUserProfileServices(this IServiceCollection services)
         {
-            return services.AddScoped<IUserProfileService, UserProfileService>();
+            return services
+                .AddScoped<IUserProfileService, UserProfileService>()
+                .AddScoped<IGuestPromotionService, GuestPromotionService>();
         }
     }
 }

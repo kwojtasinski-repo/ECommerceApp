@@ -3,6 +3,7 @@ using ECommerceApp.Application.AccountProfile.ViewModels;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.AccountProfile;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.AccountProfile.Services
@@ -28,6 +29,16 @@ namespace ECommerceApp.Application.AccountProfile.Services
                 dto.Email,
                 dto.PhoneNumber);
 
+            return (await _repository.AddAsync(profile)).Value;
+        }
+
+        public async Task<int> GetOrCreateForGuestAsync(string userId, string firstName, string lastName, bool isCompany, string nip, string companyName, string email, string phoneNumber, CancellationToken ct = default)
+        {
+            var existing = await _repository.GetByUserIdAsync(userId);
+            if (existing is not null)
+                return existing.Id.Value;
+
+            var profile = UserProfile.Create(userId, firstName, lastName, isCompany, nip, companyName, email, phoneNumber);
             return (await _repository.AddAsync(profile)).Value;
         }
 

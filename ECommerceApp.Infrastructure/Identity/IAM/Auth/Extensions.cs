@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Identity.IAM.Services;
+using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Domain.Identity.IAM;
@@ -41,7 +42,9 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                     sp.GetRequiredService<IOptions<AuthOptions>>().Value)
                 .AddScoped<IRefreshTokenRepository, RefreshTokenRepository>()
                 .AddScoped<IUserContext, UserContext>()
-                .AddScoped<IUserEmailResolver, UserEmailResolverAdapter>();
+                .AddScoped<IUserEmailResolver, UserEmailResolverAdapter>()
+                .AddScoped<IGuestAccountProvisioner, GuestAccountProvisioner>();
+
         }
     }
 }

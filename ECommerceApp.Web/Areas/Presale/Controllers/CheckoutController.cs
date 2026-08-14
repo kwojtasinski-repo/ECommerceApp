@@ -4,8 +4,11 @@ using ECommerceApp.Application.Presale.Checkout.Options;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
+using ECommerceApp.Application.AccountProfile.Results;
+using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Web.Controllers;
+using ECommerceApp.Web.Areas.Presale.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -21,19 +24,24 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         private readonly ICartService _cartService;
         private readonly ICheckoutService _checkoutService;
         private readonly IAccountProfileClient _accountProfileClient;
+        private readonly IShopperIdentityResolver _shopperIdentityResolver;
+        private readonly IGuestPromotionService _guestPromotionService;
 
-        public CheckoutController(ICartService cartService, ICheckoutService checkoutService, IAccountProfileClient accountProfileClient)
+        public CheckoutController(ICartService cartService, ICheckoutService checkoutService, IAccountProfileClient accountProfileClient, IShopperIdentityResolver shopperIdentityResolver, IGuestPromotionService guestPromotionService)
         {
             _cartService = cartService;
             _checkoutService = checkoutService;
             _accountProfileClient = accountProfileClient;
+            _shopperIdentityResolver = shopperIdentityResolver;
+            _guestPromotionService = guestPromotionService;
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> Cart()
         {
             var requestStartedAt = DateTime.UtcNow;
-            var userId = new PresaleUserId(GetUserId());
+            var userId = _shopperIdentityResolver.Resolve(HttpContext);
             var cart = await _cartService.GetCartAsync(userId);
             var secondsRemaining = await _checkoutService.GetSecondsRemainingAsync(userId, requestStartedAt);
             var hasActive = secondsRemaining.HasValue;
@@ -44,9 +52,10 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> PlaceOrder()
         {
-            var userId = new PresaleUserId(GetUserId());
+            var userId = _shopperIdentityResolver.Resolve(HttpContext);
             var result = await _checkoutService.InitiateAsync(userId);
 
             return result switch
@@ -77,10 +86,11 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> CheckoutStatus()
         {
             var requestStartedAt = DateTime.UtcNow;
-            var userId = new PresaleUserId(GetUserId());
+            var userId = _shopperIdentityResolver.Resolve(HttpContext);
             var secondsRemaining = await _checkoutService.GetSecondsRemainingAsync(userId, requestStartedAt);
             if (secondsRemaining is null)
                 return Json(new { active = false, secondsRemaining = (int?)null });
@@ -88,6 +98,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PlaceOrder(PlaceOrderVm vm)
         {
@@ -96,11 +107,27 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
                 vm.IsCompany, vm.CompanyName, vm.Nip,
                 vm.Street, vm.BuildingNumber, vm.FlatNumber,
                 vm.ZipCode, vm.City, vm.Country);
-            var userId = new PresaleUserId(GetUserId());
-            var result = await _checkoutService.PlaceOrderAsync(userId, vm.CustomerId, vm.CurrencyId, customer);
+                var userId = _shopperIdentityResolver.Resolve(HttpContext);
+                int customerId;
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    if (!vm.CustomerId.HasValue)
+                    {
+                        ModelState.AddModelError(nameof(vm.CustomerId), "CustomerId is required.");
+                        return View(vm);
+                    }
+
+                    customerId = vm.CustomerId.Value;
+                }
+                else
+                {
+                    customerId = await _accountProfileClient.EnsureGuestCustomerAsync(userId.Value, customer);
+                }
+
+                var result = await _checkoutService.PlaceOrderAsync(userId, customerId, vm.CurrencyId, customer);
             return result switch
             {
-                CheckoutResult.Success s => RedirectToAction(nameof(Summary), new { id = s.OrderId }),
+                CheckoutResult.Success s => RedirectToAction(nameof(Summary), new { id = s.OrderId, profileId = customerId, guest = User.Identity?.IsAuthenticated != true }),
                 CheckoutResult.NoSoftReservations => RedirectToAction(nameof(Cart)),
                 CheckoutResult.ReservationsExpired => RedirectToAction(nameof(Cart)),
                 _ => View(vm)
@@ -108,10 +135,11 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelCheckout()
         {
-            var userId = new PresaleUserId(GetUserId());
+            var userId = _shopperIdentityResolver.Resolve(HttpContext);
             await _checkoutService.CancelAsync(userId);
             return RedirectToAction(nameof(Cart));
         }
@@ -123,9 +151,29 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpGet]
-        public IActionResult Summary(int id)
+        [AllowAnonymous]
+        public IActionResult Summary(int id, int? profileId, bool guest = false)
         {
+            ViewBag.GuestProfileId = guest ? profileId : null;
             return View(model: id);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAccount(int orderId, int profileId, string password)
+        {
+            var requestingUserId = _shopperIdentityResolver.Resolve(HttpContext).Value;
+            var result = await _guestPromotionService.PromoteAsync(profileId, requestingUserId, password);
+            return result.Status switch
+            {
+                PromotionStatus.Success => RedirectToAction(nameof(Summary), new { id = orderId }),
+                PromotionStatus.ProfileNotFound => NotFound(),
+                PromotionStatus.NotOwner => Forbid(),
+                PromotionStatus.AlreadyRegistered => Conflict(),
+                PromotionStatus.IdentityCreationFailed => BadRequest(result.Errors),
+                _ => BadRequest()
+            };
         }
 
         [HttpGet]
@@ -147,19 +195,13 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddToCart(int productId, int quantity, string returnUrl)
         {
-            if (!User.Identity.IsAuthenticated)
-            {
-                var safeReturn = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
-                    ? returnUrl : Url.Action(nameof(Cart));
-                return RedirectToPage("/Account/Login", new { area = "Identity", returnUrl = safeReturn });
-            }
             if (quantity < 1)
             {
                 return BadRequest();
             }
 
-            var userId = GetUserId();
-            var result = await _cartService.AddToCartAsync(new AddToCartDto(userId, productId, quantity));
+            var userId = _shopperIdentityResolver.Resolve(HttpContext);
+            var result = await _cartService.AddToCartAsync(new AddToCartDto(userId.Value, productId, quantity));
             return result switch
             {
                 AddToCartResult.Success => !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)

@@ -7,6 +7,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
     public interface IUserProfileService
     {
         Task<int> CreateAsync(CreateUserProfileDto dto);
+        Task<int> GetOrCreateForGuestAsync(string userId, string firstName, string lastName, bool isCompany, string nip, string companyName, string email, string phoneNumber, System.Threading.CancellationToken ct = default);
         Task<bool> UpdatePersonalInfoAsync(UpdateUserProfileDto dto);
         Task<bool> UpdateContactInfoAsync(UpdateContactInfoDto dto);
         Task<bool> DeleteAsync(int id);

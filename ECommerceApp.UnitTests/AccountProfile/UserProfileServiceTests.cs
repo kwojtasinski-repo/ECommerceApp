@@ -39,6 +39,32 @@ namespace ECommerceApp.UnitTests.AccountProfile
         }
 
         [Fact]
+        public async Task GetOrCreateForGuestAsync_NoExistingProfile_CreatesNewProfile()
+        {
+            _repository.Setup(r => r.GetByUserIdAsync("gst_1", false)).ReturnsAsync((UserProfile)null);
+            _repository.Setup(r => r.AddAsync(It.IsAny<UserProfile>())).ReturnsAsync(new UserProfileId(7));
+
+            var result = await CreateService().GetOrCreateForGuestAsync("gst_1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123456789");
+
+            result.Should().Be(7);
+            _repository.Verify(r => r.GetByUserIdAsync("gst_1", false), Times.Once);
+            _repository.Verify(r => r.AddAsync(It.Is<UserProfile>(p => p.UserId == "gst_1")), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetOrCreateForGuestAsync_ExistingProfileForUserId_ReturnsExistingIdWithoutDuplicating()
+        {
+            var existing = CreateProfile();
+            typeof(UserProfile).GetProperty(nameof(UserProfile.Id))!.SetValue(existing, new UserProfileId(9));
+            _repository.Setup(r => r.GetByUserIdAsync("user-1", false)).ReturnsAsync(existing);
+
+            var result = await CreateService().GetOrCreateForGuestAsync("user-1", "Anna", "Nowak", false, null, null, "anna@test.com", "987654321");
+
+            result.Should().Be(9);
+            _repository.Verify(r => r.AddAsync(It.IsAny<UserProfile>()), Times.Never);
+        }
+
+        [Fact]
         public async Task UpdatePersonalInfoAsync_ProfileNotFound_ShouldThrowBusinessException()
         {
             var dto = new UpdateUserProfileDto(99, "Jan", "Kowalski", false, null, null);

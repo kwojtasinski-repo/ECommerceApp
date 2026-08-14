@@ -78,6 +78,14 @@ namespace ECommerceApp.Domain.AccountProfile
             CompanyName = companyName != null ? new CompanyName(companyName) : null;
         }
 
+        public void ReassignOwner(string newUserId)
+        {
+            if (string.IsNullOrWhiteSpace(newUserId))
+                throw new ArgumentException("UserId is required.", nameof(newUserId));
+
+            UserId = newUserId;
+        }
+
         public void UpdateContactInfo(string email, string phoneNumber)
         {
             if (string.IsNullOrWhiteSpace(email))

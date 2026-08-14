@@ -4,20 +4,41 @@
 Proposed
 
 ## Date
-2026-07-26
+2026-07-26 (original) — revised 2026-08-14
+
+## Revision note (2026-08-14)
+The original draft (§1–§8 below, mostly intact) scoped this change to `ECommerceApp.API`. Design
+review before implementation started changed four things, reflected throughout this revision:
+
+1. **Scope moves entirely to `ECommerceApp.Web` (the MVC storefront). `ECommerceApp.API` is not
+   touched.** Guest checkout is a storefront capability, not a public REST surface. See §2.
+2. **No `BaseController` helper.** Guest identity resolution is a dedicated, explicitly-injected
+   service (`IShopperIdentityResolver`), not a method inherited by every controller in the project.
+   See §1.
+3. **§6 ("deferred fallback") is no longer deferred.** It is in scope for v1, redesigned around a
+   new shared primitive (`VerificationCode`, §9) and an interim admin-operated substitute for real
+   email (§10), because no outbound-email infrastructure exists yet in this codebase.
+4. **A new concern not in the original draft: returning to view/pay an order after the guest
+   session cookie is gone.** See §11 (order access & recovery).
+
+Session isolation (§12) is promoted from an implicit property of the design to an explicit,
+tested requirement.
 
 ## Context
 
-**Problem 1 — No anonymous order placement exists.** `CartController` and `CheckoutController`
-(`ECommerceApp.API/Controllers/Presale/`) carry a class-level `[Authorize]`, and the mutating
-actions (`AddToCart`, `Initiate`, `Confirm`) additionally require
-`[Authorize(Policy = ApiPolicies.TrustedApiUser)]`. `BaseController.GetUserId()` reads
-`ClaimTypes.NameIdentifier` and throws `ArgumentNullException` if the claim is absent — there is
-no fallback for an unauthenticated caller. The Web MVC checkout
-(`ECommerceApp.Web/Areas/Presale/Controllers/CheckoutController.cs`) explicitly redirects an
-anonymous visitor's `AddToCart` to `/Account/Login`. This is a deliberate current constraint, not
-an oversight, but it blocks a common e-commerce requirement: placing an order without creating an
-account.
+**Problem 1 — No anonymous order placement exists.** `CheckoutController`
+(`ECommerceApp.Web/Areas/Presale/Controllers/CheckoutController.cs`) carries a class-level
+`[Authorize]`. Its `AddToCart` action is `[AllowAnonymous]` but immediately redirects an
+unauthenticated caller to `/Account/Login` (`CheckoutController.cs:150-155`) rather than letting
+the add proceed. `Cart` and `PlaceOrder` (GET) have no `[AllowAnonymous]` at all — an anonymous
+request never reaches them; ASP.NET's authorization middleware redirects to login first. This is a
+deliberate current constraint, not an oversight, but it blocks a common e-commerce requirement:
+placing an order without creating an account.
+
+`ECommerceApp.API/Controllers/Presale/{Cart,Checkout}Controller.cs` carry the same
+`[Authorize]`/`[Authorize(Policy = ApiPolicies.TrustedApiUser)]` shape. **This ADR does not change
+them.** The API is a separate, independently-authenticated surface (for future SPA/mobile
+consumers); anonymous checkout through it is an explicit non-goal — see Decision §2.
 
 **Problem 2 — `Order.CustomerId` must stay a required, positive `int`.** `Order.Create`
 (`ECommerceApp.Domain/Sales/Orders/Order.cs`) throws `DomainException("CustomerId must be
@@ -31,33 +52,43 @@ were considered and rejected during design discussion:
   scattered through application code (`if (customer.IsGuest) ...`) instead of the entity's type
   or its relationships carrying the meaning — an anemic-model smell.
 - Creating a real, login-capable `ApplicationUser` (ASP.NET Identity) for every guest, purely so
-  the existing `[Authorize]`/JWT pipeline keeps working unmodified. This manufactures a security
-  surface (a "throwaway account" with no password, requiring careful lockout handling) for
-  something that is not actually an authentication concept.
+  the existing `[Authorize]`/cookie-auth pipeline keeps working unmodified. This manufactures a
+  security surface (a "throwaway account" with no password, requiring careful lockout handling)
+  for something that is not actually an authentication concept.
 
 **Problem 4 — reconciling a guest's later account with their past guest orders must not leak
 data.** A synchronous "we found previous orders for this e-mail" response at registration time is
 a user-enumeration oracle: an attacker can script registration attempts against a list of e-mail
 addresses and observe which ones return a hit. Any account-linking flow must not reveal a match
-in-band.
+in-band. The same concern applies to a new surface this revision adds: recovering access to a
+placed order after the session cookie is gone (§11) must not become a way to enumerate or mass-scan
+order data — see §11's threat model.
+
+**Problem 5 — there is no outbound email infrastructure today.** `IEmailSender` (ASP.NET Core
+Identity UI's interface, referenced only by `Areas/Identity/Pages/Account/*.cshtml.cs`) has no
+custom implementation — it resolves to Identity UI's default no-op sender. Nothing in this
+codebase actually delivers an email today. This is planned to change later, but not on this ADR's
+timeline. Every flow below that would normally "send an email" instead persists what would have
+been sent and exposes it through an admin-only interim view (§10) until real email delivery
+exists — designed so swapping in real delivery later requires no redesign, only wiring a real
+`IEmailSender`-equivalent where the interim admin view currently reads.
 
 **Key existing capabilities that materially reduce the size of this change** (discovered during
 investigation, not assumed up front):
 
 1. `PresaleUserId` (`ECommerceApp.Domain/Presale/Checkout/PresaleUserId.cs`) is a bare
    `TypedId<string>` wrapper. Nothing about `CartLine`, `SoftReservation`, `CartService`, or
-   `SoftReservationService` requires this string to originate from a JWT claim — it is populated
-   from `ClaimTypes.NameIdentifier` today purely by caller convention
-   (`CheckoutController.cs:30,52`: `new PresaleUserId(GetUserId())`). The entire cart/soft-reservation
-   flow is already decoupled from ASP.NET Identity.
-2. `IOrderService.PlaceOrderFromPresaleAsync` (ADR-0012 §13, the **live** checkout path) builds
-   `OrderCustomer` directly from the caller-supplied `CheckoutCustomer` payload and calls
-   `Order.Create(dto.CustomerId, ...)` **without** calling `ICustomerExistenceChecker` or
-   `IOrderCustomerResolver`. Those verifications only run on the legacy `CartItemIds` path
-   (`PlaceOrderAsync`), which co-exists by design (ADR-0012 §13) but is not what the presale
-   checkout UI calls. `CheckoutController.Confirm`'s own comment already states: *"No server-side
-   customer lookup is performed."* — the domain model does not need to change to accept a guest's
-   `CustomerId`; only how that `CustomerId` is produced needs to change.
+   `SoftReservationService` requires this string to originate from a JWT/cookie claim — it is
+   populated from `ClaimTypes.NameIdentifier` today purely by caller convention
+   (`CheckoutController.cs`: `new PresaleUserId(GetUserId())` at `Cart`, `PlaceOrder` GET,
+   `PlaceOrder` POST, `CheckoutStatus`, `CancelCheckout`). The entire cart/soft-reservation flow is
+   already decoupled from ASP.NET Identity.
+2. `ICheckoutService.PlaceOrderAsync(PresaleUserId userId, int customerId, int currencyId,
+   CheckoutCustomer customer, ...)` (the **live** checkout path, called from `CheckoutController`'s
+   `PlaceOrder` POST action) builds `OrderCustomer` directly from the caller-supplied
+   `CheckoutCustomer` payload and calls `Order.Create(customerId, ...)` **without** calling
+   `ICustomerExistenceChecker` or `IOrderCustomerResolver`. The domain model does not need to
+   change to accept a guest's `CustomerId`; only how that `CustomerId` is produced needs to change.
 3. `UserProfile` (`ECommerceApp.Domain/AccountProfile/UserProfile.cs`) already supports a
    **one-to-many** relationship from `UserId` (string) to `UserProfile` rows. ADR-0005 §6
    deliberately removed the unique index on `UserProfileConfiguration.UserId`:
@@ -72,60 +103,103 @@ investigation, not assumed up front):
 4. `IAccountProfileClient` (`ECommerceApp.Application/Presale/Checkout/Contracts/`) is the
    existing Presale → AccountProfile ACL adapter (implemented by `AccountProfileClientAdapter`),
    today used only to prefill the checkout form (`GetProfileAsync`). It is the natural place to
-   add the guest-provisioning method (Decision §3).
+   add the guest-provisioning method (Decision §3), and it is the pattern this ADR reuses again
+   for `VerificationCode` (§9).
+5. `Order.CustomerId`'s companion, `Payment`, already has a working, enforced expiry mechanism:
+   `OrderService` sets `Payment.ExpiresAt = DateTime.UtcNow.AddDays(3)` at order-placement time
+   (`OrderService.cs:91,392`), and `PaymentWindowExpiredJob`
+   (`Sales/Payments/Handlers/PaymentWindowExpiredJob.cs`), scheduled by `OrderPlacedHandler` via
+   `IDeferredJobScheduler`, automatically expires an unpaid `Payment` at that instant. §11 reuses
+   this existing clock instead of inventing a second one.
+6. `JobManagementController` (`ECommerceApp.Web/Areas/Jobs/Controllers/`) already gates on
+   `[Authorize(Roles = UserPermissions.Roles.Administrator)]` directly — a narrower cut than the
+   `ManagingRole`/`MaintenanceRole` groups every other Backoffice controller uses. §10's admin view
+   follows this same narrow-role precedent, not the broader groups.
 
 Because of (2) and (3), this ADR requires **no changes to the `Order` aggregate, no nullable
-columns, and no new tables** — it reuses `UserProfile` exactly as it already behaves, and adds one
-new small domain operation (`ReassignOwner`) plus a session-identity resolution step ahead of the
-existing checkout call.
+columns** for `Order`/`Payment`, and reuses `UserProfile` exactly as it already behaves. New
+storage is limited to: one new generic table for `VerificationCode` (§9) and one new column/table
+for the order-access token (§11).
 
 ## Decision
 
-### 1. Guest shopper identity — cookie-carried `PresaleUserId`, never an `ApplicationUser`
+### 1. Guest shopper identity — cookie-carried `PresaleUserId`, resolved by a dedicated service
 
-`BaseController` gains `GetOrCreateShopperId()`, used only by `CartController` and
-`CheckoutController` in place of the current `new PresaleUserId(GetUserId())`:
+A new `IShopperIdentityResolver` (namespace `ECommerceApp.Web.Areas.Presale.Services` or
+equivalent — confirm exact placement at implementation time), **not** a `BaseController` method:
 
 ```csharp
-// ECommerceApp.API/Controllers/BaseController.cs
-protected PresaleUserId GetOrCreateShopperId()
+public interface IShopperIdentityResolver
 {
-    if (User.Identity?.IsAuthenticated == true)
-        return new PresaleUserId(GetUserId());
+    PresaleUserId Resolve(HttpContext context);
+}
 
-    var existing = Request.Cookies[GuestSession.CookieName];
-    if (!string.IsNullOrEmpty(existing))
-        return new PresaleUserId(existing);
+internal sealed class ShopperIdentityResolver : IShopperIdentityResolver
+{
+    public PresaleUserId Resolve(HttpContext context)
+    {
+        if (context.User.Identity?.IsAuthenticated == true)
+            return new PresaleUserId(GetUserId(context));
 
-    var token = GuestSession.NewToken(); // cryptographically random, prefixed (see §7)
-    Response.Cookies.Append(GuestSession.CookieName, token, GuestSession.CookieOptions);
-    return new PresaleUserId(token);
+        var existing = context.Request.Cookies[GuestSession.CookieName];
+        if (!string.IsNullOrEmpty(existing))
+            return new PresaleUserId(existing);
+
+        var token = GuestSession.NewToken(); // cryptographically random, prefixed (see §1a)
+        context.Response.Cookies.Append(GuestSession.CookieName, token, GuestSession.CookieOptions);
+        return new PresaleUserId(token);
+    }
 }
 ```
 
-No new authentication scheme, no guest JWT. `PresaleUserId` remains, as it is today, an opaque
-string the domain never interprets — it is a session-scoped shopping identity, not a credential.
-Everything downstream of it (`CartService`, `SoftReservationService`, `CheckoutService`) is
-**unchanged**, per Context point (1).
+Registered `AddScoped<IShopperIdentityResolver, ShopperIdentityResolver>()` and constructor-injected
+**only** into `CheckoutController` — no other controller in `ECommerceApp.Web` takes a dependency
+on it. This was chosen explicitly over adding a method to `ECommerceApp.Web/Controllers/BaseController.cs`
+(inherited today by every Web area controller, including Backoffice, Sales, Inventory — none of
+which have any business resolving a shopper identity): a shared base class gives every subclass the
+*capability* whether or not it uses it; a narrow, explicitly-injected service gives it only to the
+one controller that declared the dependency. There is no existing precedent in this codebase for
+narrow, 1-controller logic living on `BaseController` (it currently carries only broadly-used
+error-mapping helpers) — the established pattern for feature-specific logic is a dedicated
+Application-layer service, which this follows.
 
-### 2. Authorization — `[AllowAnonymous]` replaces `TrustedApiUser` on cart/checkout endpoints
+#### 1a. Guest session cookie
+- Value: cryptographically random ≥128-bit token, prefixed (e.g. `gst_<token>`) so it can never
+  collide with an `AspNetUsers.Id` (GUID) by construction — belt-and-suspenders for the
+  `IsUnclaimed` check in §5, which otherwise relies on a negative lookup.
+- Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`.
+- Lifetime: bounded to the checkout window — same order of magnitude as
+  `PresaleOptions.SoftReservationTtl` (15 min) plus a short confirmation grace period, **not**
+  a long-lived persistent cookie. Losing the cookie loses the *cart*, not any placed order (see §11
+  for what happens to an already-placed order).
+- Never treated as a credential, never accepted by `[Authorize]` — read exclusively by
+  `IShopperIdentityResolver` for `CheckoutController`'s actions.
 
-`CartController` and `CheckoutController` actions (`AddToCart`, `Initiate`, `Confirm`, and the
-read actions) move from `[Authorize]` / `[Authorize(Policy = ApiPolicies.TrustedApiUser)]` to
-`[AllowAnonymous]`. Trust is no longer "does a JWT exist" — it is "does the caller have a valid
-shopper identity," resolved explicitly by `GetOrCreateShopperId()` rather than by a declarative
-policy. This is intentionally explicit code instead of a custom `IAuthorizationHandler` — see
-Alternatives.
+### 2. Authorization — Web MVC only; `ECommerceApp.API` is explicitly out of scope
 
-`ApiPolicies.TrustedApiUser` is **not removed or weakened** — it continues to gate whatever
-higher-trust actions used it before (e.g. any endpoint not part of the guest-eligible checkout
-surface). Guest checkout does not need `api:purchase` or role claims because trust here is scoped
-per-session (the cookie), not per-account.
+`CheckoutController` (`ECommerceApp.Web`) actions change:
+- `Cart` (GET), `PlaceOrder` (GET), `PlaceOrder` (POST), `CheckoutStatus`, `CancelCheckout` gain
+  `[AllowAnonymous]`; each replaces `new PresaleUserId(GetUserId())` with
+  `_shopperIdentityResolver.Resolve(HttpContext)`.
+- `AddToCart`'s existing `[AllowAnonymous]` is kept, but the `if (!User.Identity.IsAuthenticated)
+  { return RedirectToPage("/Account/Login", ...); }` branch (`CheckoutController.cs:150-155`) is
+  **removed** — an anonymous add now resolves a shopper identity and proceeds, it no longer
+  redirects to login. This is the one behavioral flip that makes the rest of the flow reachable.
+
+`ECommerceApp.API/Controllers/Presale/{Cart,Checkout}Controller.cs` are **not modified by this
+ADR**. They keep `[Authorize]`/`[Authorize(Policy = ApiPolicies.TrustedApiUser)]` exactly as they
+are today. Rationale: the API is a distinct, independently-versioned surface intended for future
+SPA/mobile/third-party consumers; opening it to anonymous checkout is a separate decision with its
+own abuse-surface analysis (rate limiting, quota, API-key-less traffic shaping) that this ADR does
+not make. If a future ADR wants API-level guest checkout, it can reuse `IShopperIdentityResolver`'s
+design (a parallel implementation reading the same cookie convention) — nothing here precludes it,
+but nothing here builds it either.
 
 ### 3. Resolving `CustomerId` for a guest order — reuse `UserProfile`, not a new type
 
-`ConfirmCheckoutRequest.CustomerId` becomes optional. When absent (guest flow), `CheckoutController`
-resolves it via the existing Presale → AccountProfile ACL:
+`PlaceOrderVm.CustomerId` (`ECommerceApp.Application/Presale/Checkout/ViewModels/PlaceOrderVm.cs`)
+becomes `int?`. `CheckoutController.PlaceOrder` (POST) resolves it via the existing Presale →
+AccountProfile ACL:
 
 ```csharp
 // ECommerceApp.Application/Presale/Checkout/Contracts/IAccountProfileClient.cs
@@ -134,7 +208,7 @@ public interface IAccountProfileClient
     Task<CheckoutProfileVm> GetProfileAsync(string userId, CancellationToken ct = default);
 
     // New: idempotent per PresaleUserId — returns the same UserProfileId on repeated calls
-    // within the same guest session (e.g. Initiate retried, or Confirm resubmitted).
+    // within the same guest session (e.g. PlaceOrder GET revisited, or POST resubmitted).
     Task<int> EnsureGuestCustomerAsync(string userId, CheckoutCustomer customer, CancellationToken ct = default);
 }
 ```
@@ -143,35 +217,33 @@ public interface IAccountProfileClient
 `IUserProfileService.GetOrCreateForGuestAsync(string userId, ...)`, which:
 
 1. Calls `IUserProfileRepository.GetByUserIdAsync(userId)` (already exists). If found, returns its
-   `UserProfileId.Value` unchanged — a guest resubmitting `Confirm`, or calling `Initiate` again,
-   does not create duplicate profiles.
+   `UserProfileId.Value` unchanged.
 2. Otherwise calls `UserProfile.Create(userId: guestToken, firstName, lastName, ..., email, phoneNumber)`
    — the **same factory method** used for registered profiles, with the guest session token in the
-   `UserId` slot instead of an `AspNetUsers.Id` — and persists it via `IUserProfileRepository.AddAsync`.
+   `UserId` slot — and persists it via `IUserProfileRepository.AddAsync`. (`UserProfile.Create`
+   does not raise a `UserProfileCreated` domain event today — that type exists in
+   `Domain/AccountProfile/UserProfileCreated.cs` but is never published anywhere in the current
+   codebase. This ADR does not start publishing it; note this explicitly so implementation doesn't
+   go looking for an existing call site to mirror.)
 
-The resulting `UserProfileId.Value` is passed as `Order.CustomerId`, satisfying the existing
-`> 0` invariant with zero changes to `Order` or `OrderCustomer`. For the authenticated flow,
-nothing changes: the frontend continues to supply `CustomerId` exactly as it does today.
+The resulting `UserProfileId.Value` is passed as `Order.CustomerId`. For the authenticated flow,
+`CustomerId` is still required — `CheckoutController` rejects a missing value with the same
+`BadRequest`/model-error behavior as today when the caller is authenticated.
 
 ### 4. No stored "is this a guest" flag — it is a derived fact, checked only where needed
-
-Nothing in `UserProfile` or `Order` records guest-ness. Where it matters (e.g. an admin view, or
-the linking flow in §6), it is computed on demand:
 
 ```csharp
 bool isUnclaimed = await _userManager.FindByIdAsync(profile.UserId) is null;
 ```
 
-This keeps `UserProfile` exactly the type it already is — the "guest" character of a row is a
-statement about the *absence* of a matching `ApplicationUser`, not a property of `UserProfile`
-itself.
+Guest-ness is a statement about the *absence* of a matching `ApplicationUser`, never a stored
+property.
 
 ### 5. In-place promotion — "create an account" at end of checkout
 
 `UserProfile` gains one new domain method:
 
 ```csharp
-// ECommerceApp.Domain/AccountProfile/UserProfile.cs
 public void ReassignOwner(string newUserId)
 {
     if (string.IsNullOrWhiteSpace(newUserId))
@@ -180,159 +252,247 @@ public void ReassignOwner(string newUserId)
 }
 ```
 
-When a guest opts in ("create an account with these details" checkbox on the order-confirmation
-screen), a new `IGuestPromotionService.PromoteAsync(int profileId, string password)`:
-
-1. Creates the `ApplicationUser` via `UserManager.CreateAsync` (email = `UserProfile.Email.Value`).
-2. Calls `UserProfile.ReassignOwner(applicationUser.Id)` and persists via
-   `IUserProfileRepository.UpdateAsync`.
+`IGuestPromotionService.PromoteAsync(int profileId, string requestingUserId, string password)`:
+1. Verifies `requestingUserId` (the calling session's own `PresaleUserId`, from
+   `IShopperIdentityResolver`) equals `UserProfile.UserId` for `profileId` — **before** anything
+   else. Return `NotOwner` (map to 403, not 404 — avoid confirming the id exists) if it fails. Any
+   anonymous caller could otherwise promote *any* guest profile by guessing `profileId`.
+2. Creates the `ApplicationUser` via `UserManager.CreateAsync`.
+3. Calls `UserProfile.ReassignOwner(applicationUser.Id)`, persists via `IUserProfileRepository.UpdateAsync`.
 
 `Order.CustomerId` is untouched — it already points at `UserProfile.Id`, which does not change.
-**No order is rewritten.** This directly answers the "do we rewrite what the guest already did"
-question raised in design discussion: no, because the guest's `UserProfile` row *is* the same row
-that becomes the registered customer's profile — promotion is a single field update, not a copy.
+No order is rewritten.
 
-### 6. Deferred fallback — linking orders when the account is created in a *different* session
+### 6. Guest → registered-account linking (formerly deferred; in scope now)
 
-Out of scope for v1 (see roadmap), documented here because it shapes §3–§5 so it can be added
-without further domain changes. If a person guest-checks-out, closes the browser (loses the
-cookie), and registers a real account later with the same e-mail:
+Scenario: a person guest-checks-out, possibly several times under the same email but different
+guest tokens (cookie cleared/expired between visits — see §3's "Same guest checks out multiple
+times" edge case, unchanged), then registers a real account later in a **different** session.
 
-- Registration (`RegisterModel.OnPostAsync`) returns an **identical response regardless of
-  whether a match exists** — this closes the enumeration channel from Problem 4.
-- A handler on successful registration queries `UserProfile`s by `Email` where
-  `IsUnclaimed(profile)` (§4) is true. `Email` has no unique constraint (confirmed in
-  `UserProfileConfiguration`), so **all** matches are candidates, not just one.
-- If any match exists, a **separate email** is sent containing a signed, single-use, expiring
-  token. Nothing is shown in the registration response or UI.
-- Only clicking that link (proof of mailbox ownership) triggers `ReassignOwner` for each matched
-  profile. A scan of the database by e-mail therefore produces no observable signal to the
-  attacker — the match is never surfaced synchronously.
+- `RegisterModel.OnPostAsync` returns an **identical response regardless of whether a match
+  exists** — closes the enumeration channel from Problem 4.
+- On success, a background step queries `UserProfile`s by `Email` where `IsUnclaimed` (§4) is
+  true. `Email` has no unique constraint, so **all** matches are candidates.
+- If any match exists, a `VerificationCode` (§9) is generated with `Purpose = GuestAccountLink`
+  and `SubjectKey = email`. Nothing is shown in the registration response or UI. Until real email
+  exists, the pending code surfaces only in the admin-only interim view (§10).
+- Redeeming the code (link click → enter code, or code entered directly) triggers `ReassignOwner`
+  for **every** matched profile — not just one. This is intentionally the opposite scoping rule
+  from §11's order-recovery flow: linking an account is a deliberate, one-time "merge my past
+  guest activity" action where breadth is the point; recovering access to view one order is a
+  frequent, low-stakes action where each code should unlock the least it can.
 
-### 7. Guest session cookie
-
-- Value: cryptographically random ≥128-bit token, prefixed (e.g. `gst_<token>`) so it can never
-  collide with an `AspNetUsers.Id` (GUID) by construction — belt-and-suspenders for the `IsUnclaimed`
-  check in §4, which otherwise relies on a negative lookup.
-- Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`.
-- Lifetime: bounded to the checkout window — same order of magnitude as
-  `PresaleOptions.SoftReservationTtl` (15 min) plus a short confirmation grace period, **not**
-  a long-lived persistent cookie. Losing the cookie loses the *cart*, not any placed order.
-- The cookie is never treated as a credential and never accepted by `[Authorize]` — it is read
-  exclusively by `GetOrCreateShopperId()` for the guest-eligible Presale endpoints.
-
-### 8. Abuse surface is deliberately narrow
+### 7. Abuse surface is deliberately narrow
 
 No `ApplicationUser` is ever created for browsing/cart/soft-reservation activity — only a
-`UserProfile` row, and only once, at `Confirm` time. There is no "fake account creation" attack
-surface in the Identity sense (no password, no login capability, no session token tied to it).
-The residual risk is the same as any public form that triggers an email send: someone can submit
-another person's real address at checkout, causing them to receive an unwanted order-confirmation
-email. This is mitigated by standard rate limiting on `POST /api/checkout/confirm` (and on guest
-cookie minting) per IP/session — a general public-endpoint hardening concern, not something
-specific to this feature, and not re-implemented here (see migration-plan prerequisite).
+`UserProfile` row, and only once, at order placement. There is no "fake account creation" attack
+surface in the Identity sense (no password, no login capability tied to it). The residual risk —
+someone submits another person's real email at checkout, causing an unwanted order-confirmation
+touch — is bounded further by §11: order-view access is never granted by email alone, only by
+already possessing the order's own opaque token (URL) *and* a code sent to the address on file.
 
-## Consequences
+## §8. Consequences
 
 ### Positive
-- **Zero changes to `Order` invariants.** `CustomerId` stays a required positive `int`; no
-  nullable columns, no new discriminators on the aggregate.
-- **No new domain type or table.** Guest and registered customers are both plain `UserProfile`
-  rows; the only difference is whether `UserId` currently resolves to an `ApplicationUser`, which
-  is never stored, only computed.
-- **No anemic flag.** There is no `IsGuest` property anywhere; "guest-ness" is derived, and no
-  code branches on it except the two places that legitimately need it (§4, §6).
-- **In-place promotion, not migration.** Creating an account from a completed guest checkout is a
-  one-field update (`UserId`) on the existing `UserProfile` row. Past orders need no rewriting
-  because `Order.CustomerId` never changes.
-- **Small blast radius.** The cart/soft-reservation pipeline (ADR-0012) is reused unmodified; the
-  only new code is shopper-identity resolution (§1), an authorization change (§2), one new ACL
-  method (§3), and one new domain method (§5).
-- **No new guest-specific authentication surface.** No guest JWT, no second auth scheme — the
-  `[Authorize]`/JWT Bearer pipeline continues to mean exactly one thing: a real account.
+- Zero changes to `Order`/`Payment` invariants.
+- No new domain type or table for guest identity itself — `UserProfile` reused exactly as it
+  already behaves.
+- No anemic flag anywhere.
+- In-place promotion, not migration — one field update, no order rewriting.
+- `ECommerceApp.API` untouched — no new abuse surface on the versioned public API.
+- `VerificationCode` (§9) is one generic mechanism reused by two features (§6, §11) instead of two
+  bespoke token schemes, and is designed so a future passwordless-login feature for real accounts
+  could become a third consumer without rework — **not built now**; that is a materially different
+  risk class (a code would open a privileged account, not a read-only guest view) and needs its
+  own ADR if pursued.
 
 ### Negative
-- **Orphaned `UserProfile` rows accumulate** for guests who never complete promotion (§5) and are
-  never claimed (§6). Requires a retention/cleanup job (see Risks).
-- **`Email` has no unique constraint**, so the linking flow (§6) may match multiple `UserProfile`
-  rows for one address over time (e.g. several guest checkouts before ever registering). All
-  matches must be reassigned, not just the first.
-- **Guest cart lifetime is now cookie-bound.** Clearing cookies mid-session loses the cart (same
-  behavior as most e-commerce sites; acceptable, but a UX regression relative to a logged-in
-  user's server-persisted cart, which survives across devices).
-- `CheckoutCustomer`/`ConfirmCheckoutRequest` gains a conditional-required field
-  (`CustomerId` becomes optional, validity depends on `[AllowAnonymous]` vs authenticated caller) —
-  slightly weakens the request contract's self-description; needs explicit validation and a clear
-  error message when a guest omits required contact fields.
+- Orphaned `UserProfile` rows accumulate for guests who never complete promotion/linking — needs
+  the retention/cleanup job (Phase 4, unchanged by this revision).
+- `Email` has no unique constraint, so the linking flow (§6) may reassign several `UserProfile`
+  rows at once — by design.
+- Guest cart lifetime is cookie-bound (15 min) — same as before this revision.
+- The admin-only interim view (§10) is a manual process (an admin relays a link/code by hand)
+  until real email delivery exists — accepted as temporary, not hidden as if it were the final
+  design.
 
 ### Risks and mitigations
-- **Risk**: guest session token guessing or fixation.
-  **Mitigation**: high-entropy random token (§7), `HttpOnly`/`Secure`/`SameSite=Lax`. Logging into
-  a real account mid-session does not reuse this cookie — the authenticated flow's identity comes
-  from the JWT, independent of the guest cookie, so there is no session-fixation path from guest
-  to authenticated.
-- **Risk**: bulk fake checkouts spamming order-confirmation e-mails to arbitrary addresses.
-  **Mitigation**: rate limiting on `POST /api/checkout/confirm` and guest-cookie issuance per
-  IP/session (prerequisite — confirm what rate-limiting infrastructure already exists before
-  implementation; not assumed present today).
-- **Risk**: unclaimed guest `UserProfile` rows grow unbounded (storage + eventual GDPR/retention
-  concern).
-  **Mitigation**: a scheduled cleanup job (TimeManagement BC, same pattern as
-  `SoftReservationExpiredJob`) purging `UserProfile` rows where `IsUnclaimed` is true, no
-  associated `Order`, and `CreatedAt` exceeds a retention threshold (e.g. 90 days) — TBD in
-  migration plan. Rows with at least one `Order` are retained regardless of claim status, since
-  order records themselves have their own retention requirements.
-- **Risk**: the §6 linking e-mail itself becomes a spam vector if triggered on every registration
-  regardless of match, since sending is conditional on a match — but the *response* must not be.
-  **Mitigation**: the conditional email send happens out-of-band (background handler), the
-  registration HTTP response is identical either way, and the confirmation UI wording is
-  reviewed to avoid any indirect signal (e.g. no "we've sent additional information" text that
-  only appears on a match).
+- **Guest session token guessing/fixation** — high-entropy random token, `HttpOnly`/`Secure`/
+  `SameSite=Lax` (§1a). Logging into a real account mid-session does not reuse this cookie.
+- **Bulk fake checkouts** — rate limiting on `PlaceOrder` POST and guest-cookie issuance per
+  IP/session (prerequisite — confirm what rate-limiting infrastructure exists before shipping;
+  not assumed present today).
+- **Unclaimed `UserProfile` rows grow unbounded** — Phase 4 cleanup job (unchanged), guarded by
+  "never delete a profile with any `Order`."
+- **Order-recovery flow becoming a mass-scan surface** — see §11's threat model; mitigated by
+  requiring an unguessable, pre-issued token before any code can even be requested, so there is no
+  "enter any order number" entry point to iterate over.
+- **Session isolation regression** — see §12; every guest-eligible query is filtered by the
+  caller's own resolved `PresaleUserId`/order-access token, never a client-supplied id alone.
+
+## §9. `VerificationCode` — shared primitive for §6 and §11
+
+Owned by a new `Supporting` sub-area (`ECommerceApp.Domain/Supporting/Verification/`,
+mirroring `Supporting/TimeManagement`'s existing shape), consumed by `AccountProfile` and
+`Presale/Checkout` through their own narrow ACL interfaces — the same cross-BC pattern
+`IAccountProfileClient` already establishes; no shared table crosses a `DbContext` boundary
+directly, only calls through an adapter.
+
+```csharp
+// ECommerceApp.Domain/Supporting/Verification/VerificationCode.cs
+public sealed class VerificationCode
+{
+    public int Id { get; }
+    public VerificationPurpose Purpose { get; }   // enum: GuestAccountLink, GuestOrderAccess (extensible)
+    public string SubjectKey { get; }              // opaque: email for GuestAccountLink, OrderAccessToken for GuestOrderAccess
+    public string Code { get; }                    // cryptographically random, single-use
+    public DateTime ExpiresAt { get; }
+    public DateTime? ConsumedAt { get; private set; }
+
+    public bool IsValid(DateTime now) => ConsumedAt is null && now < ExpiresAt;
+    public void Consume() { /* throws if already consumed/expired */ }
+}
+```
+
+`SubjectKey` is intentionally opaque to `VerificationCode` itself — it does not know or care
+whether it is guarding an email match (§6) or a single order (§11). Each consumer's ACL adapter
+is responsible for interpreting its own `SubjectKey` shape and enforcing its own post-verification
+scope (§6: all profiles matching the email; §11: exactly the one order the token names — see §11).
+`Purpose` exists purely so one code cannot be replayed against the other feature's redemption
+endpoint even if `SubjectKey` values ever collided in shape.
+
+Generic enough that a future `IAM`-owned consumer (real passwordless login) could add
+`Purpose = AccountLogin` and its own ACL later — **explicitly not built as part of this ADR** (§8).
+
+## §10. Admin-only interim view (substitute for real email)
+
+New `ECommerceApp.Web/Areas/Backoffice/Controllers/GuestVerificationController.cs` (name TBD at
+implementation time), `[Authorize(Roles = UserPermissions.Roles.Administrator)]` — **narrower**
+than the `ManagingRole` every other Backoffice controller uses (precedent:
+`JobManagementController`, Context point 6). Lists pending, unexpired, unconsumed
+`VerificationCode`s (both purposes) with the full link an email would have contained, so an admin
+can relay it manually. This is explicitly temporary scaffolding: when real email delivery exists,
+the generation step gains a real send and this view becomes an operational fallback/audit tool
+rather than the primary channel — not thrown away, repurposed.
+
+## §11. Order access & recovery
+
+Three lifecycle states, each with an already-existing or newly-defined clock — no invented TTLs
+beyond one:
+
+1. **Cart / pre-order** (`SoftReservation` window, 15 min, unchanged) — losing the guest cookie
+   here loses the cart. No order exists yet, nothing to recover.
+2. **Order placed, unpaid** — `Payment.ExpiresAt` (existing, `DateTime.UtcNow.AddDays(3)`,
+   enforced by `PaymentWindowExpiredJob`, Context point 5) already governs whether the order can
+   still be paid. This ADR does not add a second timer for "can I still act on this order" — the
+   server checks `Payment.Status`/`Payment.ExpiresAt` directly, not any cookie's own lifetime.
+3. **Order placed (paid or not)** — a new **order-access token**, minted silently at `PlaceOrder`
+   POST success (no separate action from the guest — they already proved control of the browser by
+   completing checkout in it):
+   - Cryptographically random, ≥128-bit, one per `Order`/`UserProfile` pair. Stored once, used
+     twice: (a) as the value of a cookie set immediately so the confirmation page and any
+     same-session return visits just work, and (b) as the opaque path segment in the URL a
+     confirmation email would contain (`/Presale/Checkout/Order/{token}` or similar — exact route
+     TBD at implementation time). One artifact, not two token schemes.
+   - GUID-shaped (or equivalent ≥128-bit random), **not** a hashid/encoded sequential id — this
+     codebase's existing convention for this class of secret (§1a's guest cookie, §9's
+     `VerificationCode.Code`) is a genuine random token, not a reversible encoding of an integer.
+     An encoded id is a weaker security property for no benefit here.
+
+### Recovery when the order-access cookie is lost
+Entry point is the **existing** `/Identity/Account/Login` page, not a new parallel page — a
+"kontynuuj jako gość" section at the bottom, active only when the URL carries a valid
+order-access token (i.e., the guest arrived via the token-bearing link, not by browsing to
+`/Identity/Account/Login` directly with nothing in the URL). Flow:
+
+1. Guest lands on `/Identity/Account/Login?guestOrder={token}` (from a past confirmation email, or
+   today, from the admin interim view §10).
+2. Enters an email in the guest-continuation form. The system does **not** send the code to
+   whatever was typed — it sends to the email already on file for the `UserProfile` the token
+   resolves to. A mismatch is not distinguished in the response (same anti-enumeration posture as
+   §6).
+3. A `VerificationCode` is generated, `Purpose = GuestOrderAccess`, `SubjectKey` naming exactly
+   that one `OrderId`/`UserProfileId` pair (not the email alone) — redemption unlocks **only** that
+   order, never "everything for this email" (deliberately the opposite scoping rule from §6 — see
+   §6's rationale).
+4. On successful code entry, a fresh order-access cookie is (re)issued for that order and the
+   guest is redirected to its summary/payment page.
+
+### Threat model — why this does not become a mass-scan surface
+There is no endpoint anywhere that accepts a bare order number/id and offers to email a code for
+it. The **only** entry point is a pre-issued, unguessable token already embedded in a URL the
+guest received out of band (confirmation email, or today, the admin view). Guessing a valid token
+is computationally infeasible at the same entropy class as §1a's guest cookie. Even a leaked or
+forwarded URL is insufficient alone — the code step still requires reading the code from the
+actual mailbox on file, not the one the visitor types. `PlaceOrder` POST and code-request/redemption
+endpoints remain subject to the same per-IP/session rate limiting prerequisite noted in §8.
+
+## §12. Session isolation — explicit requirement, not an implicit property
+
+Every guest-eligible action resolves and filters exclusively by the caller's own identity
+(`IShopperIdentityResolver`'s `PresaleUserId` pre-order, the order-access token post-order) — never
+by a client-supplied id used as the sole authority, and never by email as an access grant outside
+the proven paths in §6/§11. Concretely:
+- `CartService`/`SoftReservationService` calls are keyed by the resolved `PresaleUserId` only.
+- `EnsureGuestCustomerAsync`/order-summary lookups are keyed by the resolved
+  `PresaleUserId`/order-access token only.
+- `IGuestPromotionService.PromoteAsync`'s ownership check (§5) is the existing template for this
+  rule; it now generalizes to every guest-reachable action, not just promotion.
+- The set of Web endpoints reachable without authentication is a **closed, explicit list**
+  (`Cart`, `PlaceOrder` GET/POST, `AddToCart`, `CheckoutStatus`, `CancelCheckout`, the order-summary
+  view, the order-access recovery flow) — nothing else gains `[AllowAnonymous]` as a side effect of
+  this work, including `AccountProfile`/`Identity/Manage` areas, which remain fully
+  authentication-gated.
+
+Validated by a regression test (Phase 8) that seeds concurrent decoy sessions (one guest, one
+authenticated) and asserts the session under test cannot read or act on either decoy's cart/order
+data by any means, including guessing/substituting the decoys' own ids — generalized so the same
+test pattern also protects the existing authenticated-user isolation guarantee, not just the new
+guest path.
 
 ## Alternatives considered
 
-- **Nullable `Order.CustomerId`.** Common in other systems (e.g. general DDD guidance suggests
-  nullable `CustomerId` + email as the unique key for guests). Rejected per explicit preference:
-  it would ripple `null`-handling through every consumer of `CustomerId` (reporting, admin views,
-  the legacy `CustomerExistenceChecker` path) for a benefit (avoiding one `UserProfile` row per
-  guest) that does not outweigh the cost, given `UserProfile` already supports the reuse in §3
-  at no schema cost.
-- **`IsGuest` boolean flag on `UserProfile` (or a shared `User`/`Customer` entity).** Rejected —
-  anemic-model risk: behavior would branch on the flag throughout application code instead of
-  being expressed through relationships. Guest-ness is fully derivable from whether `UserId`
-  resolves to an `ApplicationUser` (§4), so storing it would be redundant, mutable state that can
-  drift from the truth.
-- **Separate `GuestProfile`/`GuestCustomer` aggregate + table, promoted into `UserProfile` on
-  registration.** Considered seriously (this was the initial direction of the design discussion)
-  and rejected once it became clear `UserProfile` already tolerates a one-to-many, FK-less
-  `UserId` relationship (ADR-0005 §6) and already accepts inline contact data without profile
-  verification on the live checkout path (ADR-0012 §13). A second table would duplicate the exact
-  same field set (name, address, contact info) and require a cross-table "promote" migration step
-  that `ReassignOwner` (§5) achieves in a single field update on one row.
-- **Minting a guest JWT via a dedicated `/guest-session` endpoint, reusing the JWT Bearer scheme.**
-  Considered during design discussion. Rejected in favor of a plain opaque cookie plus explicit
-  `GetOrCreateShopperId()` (§1): stretches JWT semantics (issuer/audience/expiry validation) for
-  something that is not an authentication credential, and would mean `[Authorize]` no longer
-  reliably means "this is a real account" — a distinction worth preserving for anything
-  security-sensitive added later (e.g. order history, saved payment methods).
+- **Nullable `Order.CustomerId`.** Rejected — would ripple `null`-handling through every consumer
+  of `CustomerId` for a benefit that does not outweigh the cost, given `UserProfile` already
+  supports the reuse in §3 at no schema cost.
+- **`IsGuest` boolean flag.** Rejected — anemic-model risk; guest-ness is fully derivable (§4).
+- **Separate `GuestProfile`/`GuestCustomer` aggregate + table.** Rejected — `UserProfile` already
+  tolerates the one-to-many, FK-less `UserId` relationship (ADR-0005 §6) at no extra schema cost;
+  `ReassignOwner` achieves promotion in one field update.
+- **Guest identity resolution on `BaseController`.** Rejected in this revision (was the original
+  §1 design) — no precedent in this codebase for narrow, few-consumer logic on a shared base class;
+  a dedicated injected service keeps the capability scoped to the controllers that declare it.
+- **Hashid/encoded-sequential-id for the order-access token (§11).** Rejected in favor of a genuine
+  random token — reversible/weaker for no benefit, and inconsistent with every other secret token
+  already in this design.
+- **Order-view access granted by email match alone.** Rejected — this was the original naive
+  design for §11 and is exactly the "problem" surfaced during design review: matching by email
+  without first possessing the order's own token would let anyone probe order data by guessing
+  emails. The two-factor shape (token in URL + code to the address on file) closes this.
+- **Minting a guest JWT via a dedicated `/guest-session` endpoint.** Rejected — stretches JWT
+  semantics for something that is not an authentication credential; `[Authorize]` should keep
+  reliably meaning "this is a real account."
 - **Custom `IAuthorizationHandler`/policy for "authenticated or valid guest cookie."** Rejected in
-  favor of `[AllowAnonymous]` + explicit resolution in `GetOrCreateShopperId()` (§2). This
-  codebase does not otherwise use custom authorization handlers; an explicit, readable guard in
-  one method is more consistent with its existing style of explicit ACL/adapter interfaces over
-  framework-declarative mechanisms, and keeps the security-relevant branch visible at the call
-  site instead of hidden in policy configuration.
-- **Synchronous "we found previous orders for this e-mail, link them?" prompt at registration
-  (Magento's "Guest to Customer" pattern).** Rejected — user-enumeration oracle (Problem 4).
-  Replaced by the always-identical response + out-of-band emailed link in §6.
+  favor of `[AllowAnonymous]` + explicit resolution in `IShopperIdentityResolver` — consistent with
+  this codebase's preference for explicit, readable guards over framework-declarative mechanisms.
+- **Synchronous "we found previous orders for this e-mail, link them?" prompt at registration.**
+  Rejected — user-enumeration oracle (Problem 4). Replaced by §6's always-identical response +
+  out-of-band code.
+- **Building real passwordless login for registered accounts now, reusing `VerificationCode`.**
+  Considered (it came up naturally once `VerificationCode` was generalized) and explicitly
+  deferred — opening a privileged account by code is a different risk class than a read-only guest
+  view (needs its own rate-limiting/phishing-resistance/session-elevation analysis) and deserves
+  its own ADR, not a rider on guest checkout.
 
 ## References
 
 - Related ADRs:
-  - [ADR-0005 — AccountProfile BC: UserProfile Aggregate Design](../0005/0005-accountprofile-bc-userprofile-aggregate-design.md) (`UserProfile.UserId` one-to-many, no unique index — §6 basis for guest reuse)
-  - [ADR-0012 — Presale/Checkout BC Design](../0012/0012-presale-checkout-bc-design.md) (`PresaleUserId`, `SoftReservation`, `CheckoutService`, `IAccountProfileClient`, `PlaceOrderFromPresaleAsync` — all reused unmodified)
-  - [ADR-0013 — Per-BC DbContext Interfaces](../0013/0013-per-bc-dbcontext-interfaces.md) (no cross-schema FK — why `UserProfile.UserId` can safely hold a non-Identity token)
-  - [ADR-0014 — Sales/Orders BC Design](../0014/0014-sales-orders-bc-design.md) (`Order.CustomerId` invariant, `OrderCustomer`)
-  - [ADR-0025 — API Tiered Access: Trusted Purchase Policy](../0025/0025-api-tiered-access-trusted-purchase-policy.md) (`ApiPolicies.TrustedApiUser`, unchanged by this ADR; guest endpoints move to `[AllowAnonymous]` instead of relaxing this policy)
+  - [ADR-0005 — AccountProfile BC: UserProfile Aggregate Design](../0005/0005-accountprofile-bc-userprofile-aggregate-design.md)
+  - [ADR-0012 — Presale/Checkout BC Design](../0012/0012-presale-checkout-bc-design.md)
+  - [ADR-0013 — Per-BC DbContext Interfaces](../0013/0013-per-bc-dbcontext-interfaces.md)
+  - [ADR-0014 — Sales/Orders BC Design](../0014/0014-sales-orders-bc-design.md)
+  - [ADR-0025 — API Tiered Access: Trusted Purchase Policy](../0025/0025-api-tiered-access-trusted-purchase-policy.md) (unchanged — `ECommerceApp.API` is out of scope for this ADR, §2)
+  - [ADR-0009 — Job Management Access Control](../0009/) (`Administrator`-only precedent used by §10)
 - Architecture map:
   - [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md)
 - Roadmap:

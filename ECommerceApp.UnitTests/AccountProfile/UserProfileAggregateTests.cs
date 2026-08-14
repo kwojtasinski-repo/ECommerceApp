@@ -86,6 +86,26 @@ namespace ECommerceApp.UnitTests.AccountProfile
             act.Should().Throw<ArgumentException>().WithMessage("*FirstName*");
         }
 
+        [Fact]
+        public void ReassignOwner_EmptyOrWhitespaceUserId_ThrowsArgumentException()
+        {
+            var profile = UserProfile.Create("gst_1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+
+            Action act = () => profile.ReassignOwner(" ");
+
+            act.Should().Throw<ArgumentException>().WithMessage("*UserId*");
+        }
+
+        [Fact]
+        public void ReassignOwner_ValidUserId_UpdatesUserId()
+        {
+            var profile = UserProfile.Create("gst_1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+
+            profile.ReassignOwner("registered-1");
+
+            profile.UserId.Should().Be("registered-1");
+        }
+
         // UpdateContactInfo
 
         [Fact]

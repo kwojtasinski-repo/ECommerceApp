@@ -38,5 +38,17 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
                 addr?.City,
                 addr?.Country);
         }
+
+        public Task<int> EnsureGuestCustomerAsync(string userId, CheckoutCustomer customer, CancellationToken ct = default)
+            => _userProfileService.GetOrCreateForGuestAsync(
+                userId,
+                customer.FirstName,
+                customer.LastName,
+                customer.IsCompany,
+                customer.Nip,
+                customer.CompanyName,
+                customer.Email,
+                customer.PhoneNumber,
+                ct);
     }
 }
