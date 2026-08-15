@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Application.AccountProfile.Services
@@ -8,7 +9,8 @@ namespace ECommerceApp.Application.AccountProfile.Services
         {
             return services
                 .AddScoped<IUserProfileService, UserProfileService>()
-                .AddScoped<IGuestPromotionService, GuestPromotionService>();
+                .AddScoped<IGuestPromotionService, GuestPromotionService>()
+                .AddScoped<IScheduledTask, UnclaimedGuestProfileCleanupTask>();
         }
     }
 }

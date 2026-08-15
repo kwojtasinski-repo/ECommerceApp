@@ -27,7 +27,7 @@ login.
 | 01 | `01-phase-guest-shopper-identity-*` | §1, §1a, §2 | Done — independently validated PASS 2026-08-14 |
 | 02 | `02-phase-guest-customer-provisioning-*` | §3 | Done — independently validated PASS 2026-08-14 |
 | 03 | `03-phase-guest-account-promotion-*` | §5 | Done — independently validated PASS 2026-08-14 |
-| 04 | `04-phase-guest-profile-cleanup-*` | Consequences (Negative) | Not started (unaffected by revision) |
+| 04 | `04-phase-guest-profile-cleanup-*` | Consequences (Negative) | Done — implemented and self-verified 2026-08-15 (build + 1092 unit + 249 integration tests green); pending independent validation pass |
 | 05 | `05-phase-verification-code-primitive-*` | §9 | Not started (new) |
 | 06 | `06-phase-guest-account-linking-*` | §6, §10 | Not started (new) |
 | 07 | `07-phase-guest-order-access-recovery-*` | §11 | Not started (new) |

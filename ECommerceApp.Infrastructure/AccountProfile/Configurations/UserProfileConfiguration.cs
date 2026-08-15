@@ -49,8 +49,13 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Configurations
                    .IsRequired()
                    .HasConversion(x => x.Value, v => new PhoneNumber(v));
 
+            builder.Property(p => p.CreatedAt)
+                   .IsRequired()
+                   .HasDefaultValueSql("GETUTCDATE()");
+
             builder.HasIndex(p => p.UserId);
             builder.HasIndex(p => p.NIP);
+            builder.HasIndex(p => p.CreatedAt);
 
             builder.OwnsMany(p => p.Addresses, new AddressOwnedTypeConfiguration().Configure);
 

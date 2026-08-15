@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Constants;
+﻿using ECommerceApp.Application.AccountProfile.Options;
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Infrastructure.AccountProfile;
 using ECommerceApp.Infrastructure.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
@@ -25,6 +26,7 @@ namespace ECommerceApp.Infrastructure
             // Override Application-layer defaults with values from appsettings.
             services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
             services.Configure<RetryPolicyOptions>(configuration.GetSection(RetryPolicyOptions.SectionName));
+            services.Configure<GuestProfileCleanupOptions>(configuration.GetSection(GuestProfileCleanupOptions.SectionName));
             services.AddDatabase(configuration);
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);

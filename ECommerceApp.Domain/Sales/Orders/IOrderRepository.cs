@@ -19,5 +19,6 @@ namespace ECommerceApp.Domain.Sales.Orders
         Task<IReadOnlyList<Order>> GetAllPaidAsync(int pageSize, int pageNo, string search, CancellationToken ct = default);
         Task<int> GetAllPaidCountAsync(string search, CancellationToken ct = default);
         Task<int?> GetCustomerIdAsync(int orderId, CancellationToken ct = default);
+        Task<IReadOnlySet<int>> GetCustomerIdsWithOrdersAsync(IReadOnlyCollection<int> customerIds, CancellationToken ct = default);
     }
 }

@@ -15,6 +15,7 @@ namespace ECommerceApp.Domain.AccountProfile
         public CompanyName CompanyName { get; private set; }
         public Email Email { get; private set; } = default!;
         public PhoneNumber PhoneNumber { get; private set; } = default!;
+        public DateTime CreatedAt { get; private set; }
 
         private readonly List<Address> _addresses = new();
         public IReadOnlyList<Address> Addresses => _addresses.AsReadOnly();
@@ -53,7 +54,8 @@ namespace ECommerceApp.Domain.AccountProfile
                 NIP = nip != null ? new Nip(nip) : null,
                 CompanyName = companyName != null ? new CompanyName(companyName) : null,
                 Email = new Email(email),
-                PhoneNumber = new PhoneNumber(phoneNumber)
+                PhoneNumber = new PhoneNumber(phoneNumber),
+                CreatedAt = DateTime.UtcNow
             };
         }
 

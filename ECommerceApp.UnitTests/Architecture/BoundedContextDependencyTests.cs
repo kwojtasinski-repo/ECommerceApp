@@ -420,7 +420,8 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(DomainAccountProfile)
                         .And().AreNot(SharedDomain)
                         .And().AreNot(SharedApplication)
-                        .And().AreNot(Messaging))
+                        .And().AreNot(Messaging)
+                        .And().AreNot(AppTimeManagement))  // UnclaimedGuestProfileCleanupTask implements IScheduledTask
                 .Because("AccountProfile application must not depend on other BCs")
                 .Check(Architecture);
         }

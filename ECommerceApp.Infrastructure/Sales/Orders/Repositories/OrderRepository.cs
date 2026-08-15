@@ -135,5 +135,16 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
                 .Where(o => o.Id == new OrderId(orderId))
                 .Select(o => (int?)o.CustomerId)
                 .FirstOrDefaultAsync(ct);
+
+        public async Task<IReadOnlySet<int>> GetCustomerIdsWithOrdersAsync(IReadOnlyCollection<int> customerIds, CancellationToken ct = default)
+        {
+            var found = await _context.Orders
+                .AsNoTracking()
+                .Where(o => customerIds.Contains(o.CustomerId))
+                .Select(o => o.CustomerId)
+                .Distinct()
+                .ToListAsync(ct);
+            return found.ToHashSet();
+        }
     }
 }

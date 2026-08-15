@@ -282,6 +282,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         public Task<int?> GetCustomerIdAsync(int orderId, CancellationToken ct = default)
             => _orderRepo.GetCustomerIdAsync(orderId, ct);
 
+        public Task<IReadOnlySet<int>> GetCustomerIdsWithOrdersAsync(IReadOnlyCollection<int> customerIds, CancellationToken ct = default)
+            => _orderRepo.GetCustomerIdsWithOrdersAsync(customerIds, ct);
+
         public async Task<OrderOperationResult> MarkAsPaidAsync(int orderId, int paymentId, CancellationToken ct = default)
         {
             var order = await _orderRepo.GetByIdAsync(orderId, ct);

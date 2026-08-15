@@ -1,5 +1,6 @@
 using ECommerceApp.Domain.AccountProfile;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -123,6 +124,13 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
                 .IgnoreAutoIncludes()
                 .Where(p => p.UserId == userId)
                 .Take(UserProfileConstants.MaxUnpaginatedResults)
+                .ToListAsync();
+
+        public async Task<List<UserProfile>> GetOlderThanAsync(DateTime cutoff)
+            => await _context.UserProfiles
+                .AsNoTracking()
+                .IgnoreAutoIncludes()
+                .Where(p => p.CreatedAt < cutoff)
                 .ToListAsync();
     }
 }

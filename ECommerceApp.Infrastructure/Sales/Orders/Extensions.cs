@@ -10,6 +10,7 @@ using ECommerceApp.Infrastructure.Sales.Orders.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Infrastructure.Sales.Orders
 {
@@ -34,6 +35,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddScoped<IOrderUserResolver, OrderUserResolverAdapter>();
             services.AddScoped<IQueryHandler<OrderExistsQuery, bool>, OrderExistsQueryHandler>();
             services.AddScoped<IQueryHandler<CompletedOrderCountQuery, int>, CompletedOrderCountQueryHandler>();
+            services.AddScoped<IQueryHandler<CustomersWithOrdersQuery, IReadOnlySet<int>>, CustomersWithOrdersQueryHandler>();
 
             return services;
         }

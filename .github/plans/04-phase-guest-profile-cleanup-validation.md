@@ -12,6 +12,7 @@
 - [ ] If a migration was added for `CreatedAt` (or equivalent): confirm it was reviewed and explicitly approved by a human per `safety.instructions.md` — check for that approval record/comment before treating this as PASS
 
 ### 2. Test-coverage checklist
+- [ ] (Optional, carried over from Phase 3, not blocking) `Promotion_ThenLogin_SucceedsWithSubmittedPassword` exists in `GuestPromotionIntegrationTests.cs` — if not present, note it as still-parked rather than treating it as a Phase 4 failure
 - [ ] `ExecuteAsync_UnclaimedProfileWithAnOrder_DoesNotDeleteIt` exists and passes — this is the single most important test in this phase
 - [ ] `ExecuteAsync_ClaimedProfile_DoesNotDeleteIt` exists (a promoted/registered profile is never touched regardless of age)
 - [ ] `ExecuteAsync_ProfileNewerThanThreshold_DoesNotDeleteIt` exists
@@ -40,7 +41,8 @@
 
 ### Outcome
 
-- [ ] **PASS** — proceed to cleanup below. This is the last phase — see the final step.
+- [ ] **PASS** — proceed to cleanup below. This is Phase 4 of 8 — do **not** mark ADR-0030 Accepted
+      or delete `.github/plans/` here; Phases 5–8 still have work outstanding.
 - [ ] **FAIL** — do not clean up. Report findings below, route to human: fix directly / send back for fixes / abort. Given this phase deletes data, prefer "fix and re-validate" over "ship with a known gap."
 
 **Findings (if FAIL):**
@@ -49,9 +51,11 @@
 ---
 
 ### Cleanup (only after PASS)
-1. Delete this file and `04-phase-guest-profile-cleanup-implementation.md`.
-2. Since this is the last of the four phases for ADR-0030's v1 scope, delete the `.github/plans/` folder itself **only if** no other unrelated phase files are present in it (check first — do not assume it's empty).
-3. Update `docs/roadmap/guest-checkout.md`: mark all v1 Steps (1–6) and Acceptance Criteria as complete; update the header Status line from "🔶 Proposed — design only, not started" to reflect implementation completion (confirm exact wording convention against another completed roadmap page, e.g. `presale-slice2.md`, before writing it).
-4. Update `docs/adr/0030/0030-guest-checkout-anonymous-order-placement.md` Status from `Proposed` to `Accepted` (only after all 4 phases are independently validated as PASS) and add a `## Implementation Status` table per the `bc-implementation.prompt.md` convention, marking each row `✅ Done`.
-5. Update `docs/adr/0030/checklist.md` — every row addressed by Phases 1–4 should now be checked `[x]`. The deferred account-linking flow (§6/migration-plan step 9) intentionally remains unimplemented — leave its related checklist rows unchecked with a note that it's tracked separately, not forgotten.
-6. Update `docs/roadmap/README.md`'s Active roadmaps row for guest checkout from "🔶 Proposed" to the appropriate completion status.
+1. Delete this file and `04-phase-guest-profile-cleanup-implementation.md` — no other phase's
+   files.
+2. Do **not** delete `.github/plans/` yet — Phases 5–8 files still live there.
+3. Update `docs/roadmap/guest-checkout.md`'s phase-mapping table row for Phase 04 to "Done"; update
+   `docs/adr/0030/checklist.md`'s rows this phase satisfies (the guest-provisioning/promotion rows
+   this job depends on being already-PASS, plus its own retention/order-guard rows).
+4. Do **not** touch ADR-0030's Status or `docs/roadmap/README.md`'s roadmap-index row yet — that
+   happens once, at the end of Phase 8, once all 8 phases are independently PASS.

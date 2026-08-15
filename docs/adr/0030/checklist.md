@@ -55,6 +55,30 @@
       at read time — never persisted as a column (confirmed: `GuestAccountProvisioner.IsRegisteredAsync`,
       `ECommerceApp.Infrastructure/Identity/IAM/Adapters/GuestAccountProvisioner.cs:21-22`)
 
+### Unclaimed profile cleanup job (§8 Risks) — Phase 4, verified PASS (2026-08-14)
+- [x] Depends on Phase 2 (unclaimed guest profiles must exist) — verified PASS above
+- [x] The "has an order" check is a real cross-BC query
+      (`CustomersWithOrdersQuery`/`CustomersWithOrdersQueryHandler` via `IModuleClient.SendAsync`,
+      `ECommerceApp.Application/Sales/Orders/Queries/CustomersWithOrdersQuery.cs`,
+      `ECommerceApp.Infrastructure/Sales/Orders/Handlers/CustomersWithOrdersQueryHandler.cs`) —
+      batched (one query for N candidates), not N+1
+- [x] The check happens before deletion for every candidate row (`UnclaimedGuestProfileCleanupTask.ExecuteAsync`)
+- [x] `UnclaimedGuestProfileCleanupTask` follows the exact `IScheduledTask` shape used by
+      `RefreshTokenCleanupTask` (constructor injection, `TaskName`, `ExecuteAsync(JobExecutionContext, CancellationToken)`, try/catch → `ReportSuccess`/`ReportFailure`)
+- [x] Retention threshold (90 days, ADR-0030's placeholder) and an `Enabled` toggle are configuration-bound
+      (`GuestProfileCleanupOptions`, `GuestProfileCleanup` section in appsettings.json) rather than
+      hardcoded — **90 days is the shipped default, not a confirmed business/legal decision**; flagged
+      for follow-up discussion (see `.github/plans/04-phase-guest-profile-cleanup-implementation.md`
+      Risks section, resolved 2026-08-14)
+- [x] `UserProfile.ReassignOwner` (Phase 3) is untouched by this phase — cleanup only ever deletes
+- [x] `UnclaimedGuestProfileCleanupTask` is `internal sealed`; the cross-BC check is batched; no raw SQL
+- [x] `UserProfile.CreatedAt` migration is additive only (new column with `GETUTCDATE()` default,
+      backfills existing rows to migration-apply time rather than treating them as ancient) — human
+      approved 2026-08-14 per `safety.instructions.md`
+- [ ] Recurring cron cadence registration (via `JobManagementController`/Jobs area) — deliberately
+      **not** part of this phase; it's a runtime/operational registration step, not code (see plan's
+      Risks section)
+
 ### `VerificationCode` primitive (§9)
 - [ ] `VerificationCode`/`VerificationCodeService` contain no branching on `Purpose` and no
       interpretation of `SubjectKey`'s shape — that logic lives only in each consumer's own ACL

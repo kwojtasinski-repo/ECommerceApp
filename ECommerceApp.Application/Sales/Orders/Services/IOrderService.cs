@@ -24,6 +24,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         Task<IReadOnlyList<OrderForListVm>> GetOrdersByCustomerIdAsync(int customerId, CancellationToken ct = default);
         Task<OrderListVm> GetAllPaidOrdersAsync(int pageSize, int pageNo, string search, CancellationToken ct = default);
         Task<int?> GetCustomerIdAsync(int orderId, CancellationToken ct = default);
+        Task<IReadOnlySet<int>> GetCustomerIdsWithOrdersAsync(IReadOnlyCollection<int> customerIds, CancellationToken ct = default);
         Task<OrderOperationResult> MarkAsPaidAsync(int orderId, int paymentId, CancellationToken ct = default);
         Task<OrderOperationResult> CancelOrderAsync(int orderId, CancellationToken ct = default);
     }

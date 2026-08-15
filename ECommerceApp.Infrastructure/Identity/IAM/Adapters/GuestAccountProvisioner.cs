@@ -3,6 +3,7 @@ using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Identity.IAM;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,6 +21,15 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Adapters
 
         public async Task<bool> IsRegisteredAsync(string userId)
             => await _userManager.FindByIdAsync(userId) is not null;
+
+        public async Task<IReadOnlySet<string>> GetRegisteredUserIdsAsync(IReadOnlyCollection<string> userIds)
+        {
+            var found = await _userManager.Users
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => u.Id)
+                .ToListAsync();
+            return found.ToHashSet();
+        }
 
         public async Task<GuestAccountProvisioningResult> CreateAsync(string email, string password)
         {

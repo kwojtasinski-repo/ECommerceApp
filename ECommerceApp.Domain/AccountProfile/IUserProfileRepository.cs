@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -18,5 +19,6 @@ namespace ECommerceApp.Domain.AccountProfile
         Task<List<UserProfile>> GetAllByUserIdAsync(string userId, int pageSize, int pageNo, string searchString);
         Task<int> CountByUserIdAsync(string userId, string searchString);
         Task<List<UserProfile>> GetAllByUserIdAsync(string userId);
+        Task<List<UserProfile>> GetOlderThanAsync(DateTime cutoff);
     }
 }
