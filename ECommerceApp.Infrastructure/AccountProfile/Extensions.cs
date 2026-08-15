@@ -4,6 +4,7 @@ using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace ECommerceApp.Infrastructure.AccountProfile
 {
@@ -17,6 +18,8 @@ namespace ECommerceApp.Infrastructure.AccountProfile
             services.AddScoped<IUserProfileDbContext>(sp => sp.GetRequiredService<UserProfileDbContext>());
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<UserProfileDbContext>>();
+
+            services.AddHostedService<GuestProfileCleanupScheduledJobReconciler>();
 
             return services
                 .AddScoped<IUserProfileRepository, UserProfileRepository>();

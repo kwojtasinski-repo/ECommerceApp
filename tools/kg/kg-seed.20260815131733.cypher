@@ -181,6 +181,7 @@ MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderServic
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetAllOrdersAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetAllPaidOrdersAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetCustomerIdAsync'});
+MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetCustomerIdsWithOrdersAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrderDetailsAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrdersByCustomerIdAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrdersByUserIdAsync'});
@@ -302,6 +303,7 @@ MERGE (n:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.JobExecution
 MERGE (n:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.ScheduledJob', table: 'ScheduledJobs'});
 MERGE (n:Host {id: 'ApiHost', path: 'ECommerceApp.API'});
 MERGE (n:Host {id: 'WebHost', path: 'ECommerceApp.Web'});
+MERGE (n:Job {id: 'ECommerceApp.Application.AccountProfile.Services.UnclaimedGuestProfileCleanupTask', taskName: 'UnclaimedGuestProfileCleanup'});
 MERGE (n:Job {id: 'ECommerceApp.Application.Identity.IAM.Services.RefreshTokenCleanupTask', taskName: 'RefreshTokenCleanup'});
 MERGE (n:Job {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentWindowTimeoutJob', taskName: 'PaymentWindowTimeoutJob', triggerMode: 'Deferred'});
 MERGE (n:Job {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.StockAdjustmentJob', taskName: 'StockAdjustmentJob', triggerMode: 'Deferred'});
@@ -583,10 +585,12 @@ MERGE (n:Page {id: 'ECommerceApp.Web.Controllers.HomeController.Index'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Controllers.HomeController.Privacy'});
 MERGE (n:Policy {id: 'TrustedApiUser'});
 MERGE (n:Query {id: 'ECommerceApp.Application.Messaging.CompletedOrderCountQuery', resultType: 'int'});
+MERGE (n:Query {id: 'ECommerceApp.Application.Messaging.CustomersWithOrdersQuery', resultType: 'IReadOnlySet<int>'});
 MERGE (n:Query {id: 'ECommerceApp.Application.Messaging.OrderExistsQuery', resultType: 'bool'});
 MERGE (n:Query {id: 'ECommerceApp.Application.Messaging.StockAvailableQuery', resultType: 'bool'});
 MERGE (n:QueryHandler {id: 'ECommerceApp.Infrastructure.Inventory.Handlers.StockAvailableQueryHandler', resultType: 'bool'});
 MERGE (n:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.CompletedOrderCountQueryHandler', resultType: 'int'});
+MERGE (n:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.CustomersWithOrdersQueryHandler', resultType: 'IReadOnlySet<int>'});
 MERGE (n:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.OrderExistsQueryHandler', resultType: 'bool'});
 MERGE (n:Repository {id: 'ECommerceApp.Domain.AccountProfile.IUserProfileRepository'});
 MERGE (n:Repository {id: 'ECommerceApp.Domain.Catalog.Products.ICategoryRepository'});
@@ -631,6 +635,7 @@ MERGE (n:ScriptModule {id: 'modalService'});
 MERGE (n:ScriptModule {id: 'validations'});
 MERGE (n:System {id: 'ECommerceApp'});
 MATCH (s:Module {id: 'AccountProfile'}), (t:Action {id: 'ECommerceApp.Application.AccountProfile.Services.GuestPromotionService.PromoteAsync'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'AccountProfile'}), (t:Job {id: 'ECommerceApp.Application.AccountProfile.Services.UnclaimedGuestProfileCleanupTask'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'AccountProfile'}), (t:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.AddAddressAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'AccountProfile'}), (t:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.CreateAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'AccountProfile'}), (t:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.DeleteAsync'}) MERGE (s)-[:CONTAINS]->(t);
@@ -978,6 +983,7 @@ MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetAllOrdersAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetAllPaidOrdersAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetCustomerIdAsync'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetCustomerIdsWithOrdersAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrderDetailsAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrdersByCustomerIdAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrdersByUserIdAsync'}) MERGE (s)-[:CONTAINS]->(t);
@@ -994,6 +1000,7 @@ MATCH (s:Module {id: 'Orders'}), (t:Entity {id: 'ECommerceApp.Domain.Sales.Order
 MATCH (s:Module {id: 'Orders'}), (t:Entity {id: 'ECommerceApp.Domain.Sales.Orders.OrderEvent'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Entity {id: 'ECommerceApp.Domain.Sales.Orders.OrderItem'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.CompletedOrderCountQueryHandler'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Orders'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.CustomersWithOrdersQueryHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.OrderExistsQueryHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Payments'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Payments'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacementFailedHandler'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1846,6 +1853,7 @@ MATCH (s:Message {id: 'ECommerceApp.Application.Catalog.Products.Messages.Produc
 MATCH (s:Message {id: 'ECommerceApp.Application.Catalog.Products.Messages.TagNameChanged'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Coupons.Handlers.TagNameChangedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.StockAvailabilityChangedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Query {id: 'ECommerceApp.Application.Messaging.CompletedOrderCountQuery'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.CompletedOrderCountQueryHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
+MATCH (s:Query {id: 'ECommerceApp.Application.Messaging.CustomersWithOrdersQuery'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.CustomersWithOrdersQueryHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Query {id: 'ECommerceApp.Application.Messaging.OrderExistsQuery'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.OrderExistsQueryHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Query {id: 'ECommerceApp.Application.Messaging.StockAvailableQuery'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Inventory.Handlers.StockAvailableQueryHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Coupons.Messages.CouponApplied'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Orders.Handlers.OrderCouponAppliedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
@@ -1892,6 +1900,7 @@ MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentE
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentExpired'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Orders.Handlers.OrderPaymentExpiredHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentExpired'}), (t:MessageHandler {id: 'ECommerceApp.Application.Supporting.Communication.Handlers.PaymentExpiredEmailHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentExpired'}), (t:MessageHandler {id: 'ECommerceApp.Application.Supporting.Communication.Handlers.PaymentExpiredNotificationHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
+MATCH (s:Job {id: 'ECommerceApp.Application.AccountProfile.Services.UnclaimedGuestProfileCleanupTask'}), (t:Entity {id: 'ECommerceApp.Domain.AccountProfile.UserProfile'}) MERGE (s)-[:OPERATES_ON]->(t);
 MATCH (s:Job {id: 'ECommerceApp.Application.Identity.IAM.Services.RefreshTokenCleanupTask'}), (t:Entity {id: 'ECommerceApp.Domain.Identity.IAM.RefreshToken'}) MERGE (s)-[:OPERATES_ON]->(t);
 MATCH (s:Job {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentWindowTimeoutJob'}), (t:Entity {id: 'ECommerceApp.Domain.Inventory.Availability.StockHold'}) MERGE (s)-[:OPERATES_ON]->(t);
 MATCH (s:Job {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentWindowTimeoutJob'}), (t:Entity {id: 'ECommerceApp.Domain.Inventory.Availability.StockItem'}) MERGE (s)-[:OPERATES_ON]->(t);

@@ -55,7 +55,7 @@
       at read time — never persisted as a column (confirmed: `GuestAccountProvisioner.IsRegisteredAsync`,
       `ECommerceApp.Infrastructure/Identity/IAM/Adapters/GuestAccountProvisioner.cs:21-22`)
 
-### Unclaimed profile cleanup job (§8 Risks) — Phase 4, verified PASS (2026-08-14)
+### Unclaimed profile cleanup job (§8 Risks) — Phase 4, verified PASS (independent re-validation, 2026-08-15)
 - [x] Depends on Phase 2 (unclaimed guest profiles must exist) — verified PASS above
 - [x] The "has an order" check is a real cross-BC query
       (`CustomersWithOrdersQuery`/`CustomersWithOrdersQueryHandler` via `IModuleClient.SendAsync`,
@@ -75,9 +75,12 @@
 - [x] `UserProfile.CreatedAt` migration is additive only (new column with `GETUTCDATE()` default,
       backfills existing rows to migration-apply time rather than treating them as ancient) — human
       approved 2026-08-14 per `safety.instructions.md`
-- [ ] Recurring cron cadence registration (via `JobManagementController`/Jobs area) — deliberately
-      **not** part of this phase; it's a runtime/operational registration step, not code (see plan's
-      Risks section)
+- [x] Recurring cron cadence registered (2026-08-15, human-confirmed cadence: daily at 04:00 UTC) via
+      `GuestProfileCleanupScheduledJobReconciler` (`ECommerceApp.Infrastructure/AccountProfile/`), a
+      startup `IHostedService` that reconciles the `ScheduledJob` row by name, mirroring
+      `MessagingScheduledJobReconciler`'s Outbox/Inbox pattern exactly. Config-driven via
+      `GuestProfileCleanupOptions.Schedule` (`GuestProfileCleanup:Schedule` in appsettings.json,
+      default `"0 4 * * *"`)
 
 ### `VerificationCode` primitive (§9)
 - [ ] `VerificationCode`/`VerificationCodeService` contain no branching on `Purpose` and no

@@ -27,7 +27,7 @@ login.
 | 01 | `01-phase-guest-shopper-identity-*` | §1, §1a, §2 | Done — independently validated PASS 2026-08-14 |
 | 02 | `02-phase-guest-customer-provisioning-*` | §3 | Done — independently validated PASS 2026-08-14 |
 | 03 | `03-phase-guest-account-promotion-*` | §5 | Done — independently validated PASS 2026-08-14 |
-| 04 | `04-phase-guest-profile-cleanup-*` | Consequences (Negative) | Done — implemented and self-verified 2026-08-15 (build + 1092 unit + 249 integration tests green); pending independent validation pass |
+| 04 | `04-phase-guest-profile-cleanup-*` | Consequences (Negative) | Done — independently validated PASS 2026-08-15 |
 | 05 | `05-phase-verification-code-primitive-*` | §9 | Not started (new) |
 | 06 | `06-phase-guest-account-linking-*` | §6, §10 | Not started (new) |
 | 07 | `07-phase-guest-order-access-recovery-*` | §11 | Not started (new) |
@@ -98,6 +98,13 @@ Later still, guest lost the order-access cookie and wants to view/pay
 - [ ] The admin-only interim view (§10) gates on `Administrator` only, not `ManagingRole`
 - [ ] Session-isolation regression test (Phase 8) passes: a guest session cannot read or act on a
       concurrent decoy session's (guest or authenticated) cart/order data
+- [ ] A true anonymous, no-prior-login browser E2E test exists covering cart → guest `PlaceOrder` →
+      payment → account promotion, plus the cookie-loss → order-access-recovery path (Phase 8's
+      `GuestCheckoutLifecycleScenario`, not yet implemented). **Currently a real gap**: the only
+      existing `ECommerceApp.Web.E2E` tests named "Guest*" (`GuestOrderLifecycleTests`,
+      `GuestOrderLifecycleThroughListingTests`) log the customer in first and exercise a
+      *registered* customer's order lifecycle — despite the name, they do not touch the anonymous
+      ADR-0030 flow at all. No browser-level anonymous-checkout coverage exists today.
 - [ ] Rate limiting is confirmed in place on `PlaceOrder` POST, guest-cookie issuance, and
       code-request/redemption endpoints before `[AllowAnonymous]` ships
 

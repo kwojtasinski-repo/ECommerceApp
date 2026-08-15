@@ -455,12 +455,13 @@ public sealed class PinnedRealGraphTests
         var graph = BuildRealGraph();
         var jobs = graph.Nodes.Where(node => node.Label == "Job").ToArray();
 
-        Assert.Equal(9, jobs.Length);
+        Assert.Equal(10, jobs.Length);
         Assert.Equal("CurrencyDownloader", Assert.Single(jobs, node => node.Id.EndsWith("CurrencyRateSyncTask", StringComparison.Ordinal)).Properties["taskName"]);
         Assert.Equal("InboxCleanup", Assert.Single(jobs, node => node.Id.EndsWith("InboxCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
         Assert.Equal("OutboxCleanup", Assert.Single(jobs, node => node.Id.EndsWith("OutboxCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
         Assert.Equal("SnapshotOrderItemsJob", Assert.Single(jobs, node => node.Id.EndsWith("SnapshotOrderItemsJob", StringComparison.Ordinal)).Properties["taskName"]);
-        Assert.Equal(9, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Job"));
+        Assert.Equal("UnclaimedGuestProfileCleanup", Assert.Single(jobs, node => node.Id.EndsWith("UnclaimedGuestProfileCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
+        Assert.Equal(10, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Job"));
     }
 
     [Fact]
@@ -484,7 +485,7 @@ public sealed class PinnedRealGraphTests
 
         Assert.DoesNotContain(schedules, edge => edge.SourceId.EndsWith("OrderPlacementFailedHandler", StringComparison.Ordinal));
         Assert.Equal(4, graph.Nodes.Count(node => node.Label == "Job" && Equals(node.Properties["triggerMode"], "Deferred")));
-        Assert.Equal(5, graph.Nodes.Count(node => node.Label == "Job" && node.Properties["triggerMode"] is null));
+        Assert.Equal(6, graph.Nodes.Count(node => node.Label == "Job" && node.Properties["triggerMode"] is null));
     }
 
     [Fact]
@@ -493,10 +494,12 @@ public sealed class PinnedRealGraphTests
         var graph = BuildRealGraph();
         var operatesOn = graph.Edges.Where(edge => edge.Type == "OPERATES_ON").ToArray();
 
-        Assert.Equal(9, operatesOn.Length);
+        Assert.Equal(10, operatesOn.Length);
         Assert.Equal(3, operatesOn.Count(edge => edge.SourceId.EndsWith("StockAdjustmentJob", StringComparison.Ordinal)));
         Assert.Equal(2, operatesOn.Count(edge => edge.SourceId.EndsWith("PaymentWindowTimeoutJob", StringComparison.Ordinal)));
         Assert.Equal(0, operatesOn.Count(edge => edge.SourceId.EndsWith("CurrencyRateSyncTask", StringComparison.Ordinal)));
+        Assert.Equal(1, operatesOn.Count(edge => edge.SourceId.EndsWith("UnclaimedGuestProfileCleanupTask", StringComparison.Ordinal)));
+        Assert.Contains(operatesOn, edge => edge.SourceId.EndsWith("UnclaimedGuestProfileCleanupTask", StringComparison.Ordinal) && edge.TargetId.EndsWith("UserProfile", StringComparison.Ordinal));
         Assert.All(operatesOn, edge => Assert.Equal("Entity", edge.TargetLabel));
     }
 
@@ -552,6 +555,7 @@ public sealed class PinnedRealGraphTests
         Assert.Equal(
             [
                 "ECommerceApp.Application.Messaging.CompletedOrderCountQuery",
+                "ECommerceApp.Application.Messaging.CustomersWithOrdersQuery",
                 "ECommerceApp.Application.Messaging.OrderExistsQuery",
                 "ECommerceApp.Application.Messaging.StockAvailableQuery"
             ],
@@ -560,6 +564,7 @@ public sealed class PinnedRealGraphTests
             [
                 "ECommerceApp.Infrastructure.Inventory.Handlers.StockAvailableQueryHandler",
                 "ECommerceApp.Infrastructure.Sales.Orders.Handlers.CompletedOrderCountQueryHandler",
+                "ECommerceApp.Infrastructure.Sales.Orders.Handlers.CustomersWithOrdersQueryHandler",
                 "ECommerceApp.Infrastructure.Sales.Orders.Handlers.OrderExistsQueryHandler"
             ],
             graph.Nodes.Where(node => node.Label == "QueryHandler").Select(node => node.Id).OrderBy(id => id, StringComparer.Ordinal));
@@ -571,13 +576,14 @@ public sealed class PinnedRealGraphTests
     {
         var graph = BuildRealGraph();
 
-        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "HANDLED_BY" && edge.SourceLabel == "Query" && edge.TargetLabel == "QueryHandler"));
-        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "QueryHandler"));
-        Assert.Equal(2, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceId == "Orders" && edge.TargetLabel == "QueryHandler"));
+        Assert.Equal(4, graph.Edges.Count(edge => edge.Type == "HANDLED_BY" && edge.SourceLabel == "Query" && edge.TargetLabel == "QueryHandler"));
+        Assert.Equal(4, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "QueryHandler"));
+        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceId == "Orders" && edge.TargetLabel == "QueryHandler"));
         Assert.Single(graph.Edges, edge => edge.Type == "CONTAINS" && edge.SourceId == "Inventory" && edge.TargetLabel == "QueryHandler");
         Assert.Equal("bool", Assert.Single(graph.Nodes, node => node.Id.EndsWith("OrderExistsQuery", StringComparison.Ordinal)).Properties["resultType"]);
         Assert.Equal("int", Assert.Single(graph.Nodes, node => node.Id.EndsWith("CompletedOrderCountQuery", StringComparison.Ordinal)).Properties["resultType"]);
         Assert.Equal("bool", Assert.Single(graph.Nodes, node => node.Id.EndsWith("StockAvailableQuery", StringComparison.Ordinal)).Properties["resultType"]);
+        Assert.Equal("IReadOnlySet<int>", Assert.Single(graph.Nodes, node => node.Id.EndsWith("CustomersWithOrdersQuery", StringComparison.Ordinal)).Properties["resultType"]);
     }
 
     [Fact]
