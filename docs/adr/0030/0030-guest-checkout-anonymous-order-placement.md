@@ -1,7 +1,7 @@
 # ADR-0030: Guest Checkout — Anonymous Order Placement via Session-Scoped Shopper Identity
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-07-26 (original) — revised 2026-08-14
@@ -23,6 +23,72 @@ review before implementation started changed four things, reflected throughout t
 
 Session isolation (§12) is promoted from an implicit property of the design to an explicit,
 tested requirement.
+
+## Revision note (2026-08-16)
+
+Phase 8 (the session-isolation regression suite this ADR's §12 called for) found, while validating
+against the as-shipped code, that the `[AllowAnonymous]` + per-action manual
+`_orderAccessClient.HasAccessAsync(...)` check pattern from §11 had let a real gap through
+undetected: `PaymentsController`'s POST payment-confirmation action was missed entirely (only its
+GET got the anonymous override), so a guest could reach the payment form but never actually submit
+it. The same audit also surfaced a pre-existing, ADR-0030-unrelated IDOR — `PaymentService.ConfirmAsync`
+never checked payment ownership at all, so any authenticated user could already confirm an
+arbitrary `PaymentId`. Both are symptoms of the same structural cause: authorization logic
+duplicated ad hoc, per action, instead of centralized in one place.
+
+This revision replaces §11's raw `OrderAccessCookie` + scattered manual checks, and closes the
+authenticated-user IDOR in the same stroke, with:
+
+1. **A second, narrow-purpose cookie authentication scheme** (`GuestAccess`, alongside
+   `Identity.Application`) that the guest is silently signed into — not a real `ApplicationUser`
+   row, so the existing "no `ApplicationUser` is ever created for a guest" invariant (§3, Phase 1/2,
+   independently validated) is untouched. Pre-order, nothing changes — `IShopperIdentityResolver`'s
+   `PresaleUserId`/`GuestSession` cookie (§1, §1a) remains exactly as implemented; it is scoped to
+   "the guest's current in-progress operation" (cart, soft reservation, the `PlaceOrder` form
+   itself), and there is no `OrderId` to narrow to yet. The `GuestAccess` sign-in only happens once
+   an order exists to scope it to — at `PlaceOrder` POST success, or at successful recovery
+   verification (below) — and its claim always names **exactly one `OrderId`**, never the guest's
+   whole `UserProfile`/order history, even though the same `PresaleUserId` could in principle place
+   more than one order. This preserves §11's original single-order blast-radius limit; only the
+   delivery mechanism changes.
+2. **One shared authorization policy** (`OrderAccess` — exact name TBD at implementation time)
+   replacing every `[AllowAnonymous]` in `CheckoutController`/`PaymentsController`/`OrdersController`
+   with `[Authorize(Policy = "OrderAccess")]`. The policy's handler accepts either authentication
+   scheme and checks ownership the same way regardless of which one authenticated the caller: the
+   resource's owner id (`Order`/`Payment`'s backing `UserProfile.UserId`) must equal `GetUserId()`
+   (or the caller holds a `MaintenanceRole`). Because a `GuestAccess`-signed-in guest now always has
+   a `ClaimTypes.NameIdentifier` claim, `GetUserId()` needs no anonymous/authenticated branching
+   anywhere it's called — the same code path that will now correctly gate the guest path also closes
+   the pre-existing authenticated-user IDOR, since ownership is checked unconditionally instead of
+   only in the actions that happened to remember to add it by hand.
+3. **§11's recovery flow becomes one generic, unified order-lookup path** instead of two separate
+   flows (the token-bearing `Summary` URL vs. the `/Identity/Account/Login?guestOrder=` recovery
+   page). The order id in the URL is **no longer treated as a secret** — the real secret moves
+   entirely to the email-verification code:
+   - Guest requests `.../Orders/{orderId}` (or equivalent — exact route TBD).
+   - If the caller already holds a valid `GuestAccess` (or `Identity.Application`) claim naming that
+     order, it's shown immediately — no added friction for the common case of viewing the order
+     right after checkout.
+   - Otherwise, if the order belongs to a real registered account, redirect to
+     `/Identity/Account/Login` (unchanged existing behavior for real accounts).
+   - Otherwise (order belongs to an unclaimed guest `UserProfile`), the same `VerificationCode`
+     (`Purpose = GuestOrderAccess`, §9) mechanism as today gates access: guest supplies an email, a
+     code goes to the email on file (never the one typed — unchanged anti-enumeration posture from
+     §6/§11), successful redemption mints a fresh `GuestAccess` sign-in scoped to that one order.
+   - **This changes §11's threat model** (below) and makes the rate-limiting prerequisite already
+     named in §8 a **hard blocker**, not an aspirational note: the code-request step must be
+     rate-limited (per IP and/or per order id) before this ships, since an order id is now guessable/
+     enumerable by design rather than an unguessable pre-issued token.
+4. `OrderAccessToken`/`IOrderAccessClient` (Phase 7) are not deleted — they remain the underlying
+   issuance/persistence mechanism, now used to mint the `GuestAccess` claims principal (via
+   `SignInAsync`) at the two points above, instead of being re-validated against the database on
+   every subsequent request. Revocation, if ever needed, works the same way it does today (expire/
+   delete the backing row) plus a cookie-validation interval, rather than per-request DB lookups.
+
+This does **not** touch Phases 1–3's core mechanism (guest identity resolution, cart, order
+placement, `UserProfile`/promotion) or Phase 4's cleanup job — it is scoped to §11 (order access &
+recovery) and §12 (session isolation / the authorization mechanism), implemented as Phase 9. See
+`docs/roadmap/guest-checkout.md` for the phase-to-plan mapping.
 
 ## Context
 
@@ -377,6 +443,13 @@ rather than the primary channel — not thrown away, repurposed.
 
 ## §11. Order access & recovery
 
+> **Superseded by the 2026-08-16 revision note above** (Phase 9) — the delivery mechanism (raw
+> `OrderAccessCookie` + two separate flows) described below is replaced by the `GuestAccess` scheme
+> + one unified order-lookup path. The single-order scoping rule and the "code goes to the email on
+> file, never the one typed" rule are unchanged. This section is kept for history/context on what
+> Phase 7 originally shipped and why; do not implement against it directly — implement against the
+> revision note and Phase 9's plan file.
+
 Three lifecycle states, each with an already-existing or newly-defined clock — no invented TTLs
 beyond one:
 
@@ -429,6 +502,14 @@ endpoints remain subject to the same per-IP/session rate limiting prerequisite n
 
 ## §12. Session isolation — explicit requirement, not an implicit property
 
+> **Mechanism updated by the 2026-08-16 revision note above** (Phase 9): the "never a
+> client-supplied id used as the sole authority" rule below is now enforced by one shared
+> `OrderAccess` authorization policy calling a single `GetUserId()`-based ownership check, rather
+> than by each action separately calling `_orderAccessClient.HasAccessAsync(...)`. This is what
+> closes the pre-existing authenticated-user IDOR found during Phase 8 validation
+> (`PaymentService.ConfirmAsync` had no ownership check at all) — centralizing the check means it
+> can no longer be forgotten in one action while present in another.
+
 Every guest-eligible action resolves and filters exclusively by the caller's own identity
 (`IShopperIdentityResolver`'s `PresaleUserId` pre-order, the order-access token post-order) — never
 by a client-supplied id used as the sole authority, and never by email as an access grant outside
@@ -472,9 +553,14 @@ guest path.
 - **Minting a guest JWT via a dedicated `/guest-session` endpoint.** Rejected — stretches JWT
   semantics for something that is not an authentication credential; `[Authorize]` should keep
   reliably meaning "this is a real account."
-- **Custom `IAuthorizationHandler`/policy for "authenticated or valid guest cookie."** Rejected in
-  favor of `[AllowAnonymous]` + explicit resolution in `IShopperIdentityResolver` — consistent with
-  this codebase's preference for explicit, readable guards over framework-declarative mechanisms.
+- **Custom `IAuthorizationHandler`/policy for "authenticated or valid guest cookie."** Originally
+  rejected (2026-08-14) in favor of `[AllowAnonymous]` + explicit resolution in
+  `IShopperIdentityResolver`. **Reversed by the 2026-08-16 revision** — the explicit-per-action
+  approach's actual failure mode in production (one action's `[AllowAnonymous]` override forgotten,
+  a pre-existing ownership check never added at all, found during Phase 8's independent validation)
+  is exactly the class of bug a single centralized policy/handler prevents. The "explicit over
+  framework-declarative" preference was sound in the abstract but underestimated the cost of
+  duplicating the same check across a growing number of actions across three controllers.
 - **Synchronous "we found previous orders for this e-mail, link them?" prompt at registration.**
   Rejected — user-enumeration oracle (Problem 4). Replaced by §6's always-identical response +
   out-of-band code.
@@ -497,3 +583,28 @@ guest path.
   - [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md)
 - Roadmap:
   - [`docs/roadmap/guest-checkout.md`](../../roadmap/guest-checkout.md)
+
+## Implementation Status
+
+| Phase | Scope | Status |
+|---|---|---|
+| 1–3 | Guest shopper identity, guest customer provisioning, account promotion (§1, §1a, §2, §3, §5) | ✅ Done |
+| 4 | Guest-profile cleanup job (Consequences, Negative) | ✅ Done |
+| 5 | `VerificationCode` shared primitive (§9) | ✅ Done |
+| 6 | Guest-to-registered account linking (§6, §10) | ✅ Done |
+| 7 | Order access & recovery (§11) | ✅ Done |
+| 8 | Session isolation + full regression suite (§12) | ✅ Done |
+| 9 | `GuestAccess` auth scheme + unified `OrderAccess` policy, replacing §11's raw cookie + per-action checks (2026-08-16 revision) | ⬜ Not started (design/plan phase) |
+
+Phases 1–8 independently validated PASS (2026-08-14 through 2026-08-16), each in a session
+separate from the one that implemented it, per this repo's session-continuity convention. Phase 9
+was opened immediately after Phase 8's validation surfaced the gap the 2026-08-16 revision note
+describes — the initiative's `Accepted` status covers Phases 1–8 as shipped; Phase 9 supersedes
+part of §11/§12's mechanism before real production exposure.
+
+**Known gap carried into Accepted status** (not assigned to any phase's scope, flagged as a
+prerequisite from the original roadmap draft, never implemented): rate limiting on `PlaceOrder`
+POST, guest-cookie issuance, and code-request/redemption endpoints (§8, Consequences) does not
+exist anywhere in `ECommerceApp.Web` as of Phase 8. Treat as a pre-launch blocker before exposing
+this flow in a real, publicly-reachable environment — see `docs/roadmap/guest-checkout.md`'s
+acceptance criteria for detail.

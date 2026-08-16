@@ -1,8 +1,8 @@
 # Roadmap: Guest Checkout — Anonymous Order Placement
 
-> ADR: [ADR-0030](../adr/0030/0030-guest-checkout-anonymous-order-placement.md) (revised 2026-08-14)
-> Status: 🔶 Proposed — design only, not started
-> Plan pairs: `.github/plans/01`–`08-phase-*` (see mapping below)
+> ADR: [ADR-0030](../adr/0030/0030-guest-checkout-anonymous-order-placement.md) (revised 2026-08-14, 2026-08-16)
+> Status: ✅ Accepted (Phases 1–8) — Phase 9 in design/plan, supersedes part of §11/§12's mechanism
+> Plan pairs: `.github/plans/01`–`08-phase-*` (all deleted per each phase's PASS cleanup step); `09-phase-*` in progress
 
 ---
 
@@ -13,7 +13,9 @@ mechanisms without changing their contracts. It can start as soon as the ADR is 
 
 **Prerequisite to verify first**: what rate-limiting infrastructure already exists for public
 endpoints (ADR-0030 §8). `[AllowAnonymous]` removes the incidental throttling effect of requiring
-login.
+login. **As of Phase 8, still not implemented anywhere in `ECommerceApp.Web`** — Phase 9 makes this
+a hard blocker (not just a note) for its own new order-lookup-by-id path, since that path treats the
+order id as non-secret and relies on rate limiting to prevent code-request enumeration.
 
 **Scope note (revised):** everything below lives in `ECommerceApp.Web` (the MVC storefront).
 `ECommerceApp.API` is not touched by this roadmap — see ADR-0030 §2.
@@ -31,11 +33,14 @@ login.
 | 05 | `05-phase-verification-code-primitive-*` | §9 | Done — independently validated PASS 2026-08-16 |
 | 06 | `06-phase-guest-account-linking-*` | §6, §10 | Done — independently validated PASS 2026-08-16 |
 | 07 | `07-phase-guest-order-access-recovery-*` | §11 | Done — independently validated PASS 2026-08-16 |
-| 08 | `08-phase-guest-checkout-regression-*` | §12 | Not started (new) |
+| 08 | `08-phase-guest-checkout-regression-*` | §12 | Done — independently validated PASS 2026-08-16 (found and fixed a Phase 7 production defect: anonymous guests could reach the payment form but not actually submit it) |
+| 09 | `09-phase-guest-access-authorization-*` | §11, §12 (2026-08-16 revision) | Not started — plan pending approval |
 
 Ordering/preconditions between phases are stated in each phase file; broadly: 01 → 02 → 03, with
 04 startable any time after 02; 05 has no dependency on 01–04; 06 depends on 05 (and 02, for there
-to be unclaimed profiles); 07 depends on 05 and 02/03; 08 depends on all of the above being PASS.
+to be unclaimed profiles); 07 depends on 05 and 02/03; 08 depends on all of the above being PASS;
+09 depends on 08 (PASS) and replaces the mechanism 07/08 shipped for §11/§12, per the ADR's
+2026-08-16 revision note.
 
 ---
 
@@ -77,8 +82,8 @@ Later still, guest lost the order-access cookie and wants to view/pay
 
 - [x] `PlaceOrder` (POST, `ECommerceApp.Web`) succeeds with no prior login, given a valid guest
       session cookie and complete checkout form data (Phase 1/2, independently validated PASS 2026-08-14)
-- [ ] `ECommerceApp.API/Controllers/Presale/*` is byte-for-byte unchanged across all 8 phases
-      (true for Phases 1-3, confirmed via `git diff`; remains open until Phases 4-8 complete)
+- [x] `ECommerceApp.API/Controllers/Presale/*` is byte-for-byte unchanged across all 8 phases
+      (Phase 8, independently confirmed via `git diff --name-only <pre-Phase-1-commit> -- ECommerceApp.API/Controllers/Presale`, zero diff)
 - [x] No `ApplicationUser` is created for browsing, cart, or soft-reservation activity — only a
       `UserProfile` row, and only once, at order placement (Phase 1/2, independently validated PASS)
 - [x] Resubmitting `PlaceOrder` for the same guest session does not create duplicate `UserProfile`
@@ -89,24 +94,35 @@ Later still, guest lost the order-access cookie and wants to view/pay
       of Phases 1-3; re-verify as Phases 4-8 land)
 - [x] "Create an account" after guest checkout results in the same `UserProfileId` and the same
       `Order.CustomerId` as before promotion (Phase 3, independently validated PASS, HTTP-level test)
-- [ ] Registration response is identical whether or not a matching unclaimed guest profile exists
-- [ ] Redeeming a `GuestAccountLink` code reassigns **all** matching profiles; redeeming a
-      `GuestOrderAccess` code unlocks **exactly one** order — the asymmetry is intentional, verify
-      both directions, not just one
-- [ ] No endpoint accepts a bare order number/id and offers to email a code for it — the only entry
-      point to order recovery is a pre-issued, unguessable token already in a URL
-- [ ] The admin-only interim view (§10) gates on `Administrator` only, not `ManagingRole`
-- [ ] Session-isolation regression test (Phase 8) passes: a guest session cannot read or act on a
-      concurrent decoy session's (guest or authenticated) cart/order data
-- [ ] A true anonymous, no-prior-login browser E2E test exists covering cart → guest `PlaceOrder` →
-      payment → account promotion, plus the cookie-loss → order-access-recovery path (Phase 8's
-      `GuestCheckoutLifecycleScenario`, not yet implemented). **Currently a real gap**: the only
-      existing `ECommerceApp.Web.E2E` tests named "Guest*" (`GuestOrderLifecycleTests`,
-      `GuestOrderLifecycleThroughListingTests`) log the customer in first and exercise a
-      *registered* customer's order lifecycle — despite the name, they do not touch the anonymous
-      ADR-0030 flow at all. No browser-level anonymous-checkout coverage exists today.
-- [ ] Rate limiting is confirmed in place on `PlaceOrder` POST, guest-cookie issuance, and
-      code-request/redemption endpoints before `[AllowAnonymous]` ships
+- [x] Registration response is identical whether or not a matching unclaimed guest profile exists
+      (Phase 6, re-confirmed Phase 8: `Register.cshtml.cs` always follows the same success path;
+      the guest-profile match happens later, out-of-band, in the deferred `GuestAccountLinkCheckJob`)
+- [x] Redeeming a `GuestAccountLink` code reassigns **all** matching profiles; redeeming a
+      `GuestOrderAccess` code unlocks **exactly one** order — the asymmetry is intentional, verified
+      both directions (Phase 6/7, independently validated PASS; Phase 7's
+      `RecoveryCode_ForOrderA_DoesNotGrantAccessToOrderB` covers the order-scoping direction)
+- [x] No endpoint accepts a bare order number/id and offers to email a code for it — the only entry
+      point to order recovery is a pre-issued, unguessable token already in a URL (Phase 7,
+      `RedeemRecovery(string code)` is the only entry point; re-confirmed Phase 8)
+- [x] The admin-only interim view (§10) gates on `Administrator` only, not `ManagingRole` (Phase 8,
+      independently confirmed directly against `GuestVerificationController.cs`)
+- [x] Session-isolation regression test (Phase 8) passes: a guest session cannot read or act on a
+      concurrent decoy session's (guest or authenticated) cart/order data — `SessionIsolationTests`,
+      both guest-under-test and authenticated-under-test variants, independently validated PASS
+- [x] A true anonymous, no-prior-login browser E2E test exists covering cart → guest `PlaceOrder` →
+      payment → account promotion, plus the cookie-loss → order-access-recovery path — Phase 8's
+      `GuestCheckoutLifecycleTests`/`GuestOrderLifecycleScenario` additions, independently validated
+      PASS. `GuestOrderLifecycleTests`/`GuestOrderLifecycleThroughListingTests` remain the separate,
+      already-logged-in registered-customer coverage they always were — no longer the only "Guest*"
+      tests in the suite.
+- [ ] **Rate limiting is NOT in place** on `PlaceOrder` POST, guest-cookie issuance, or
+      code-request/redemption endpoints. Grepped `ECommerceApp.Web` for rate-limiting middleware
+      (`RateLimit`/`EnableRateLimiting`/`AddRateLimiter`) during Phase 8 validation — zero matches.
+      This was flagged as a "Prerequisite to verify first" at the top of this roadmap from the start
+      and was never assigned to any of the 8 phases' own scope, so it did not block Phase 8's PASS —
+      but it remains a real, unresolved gap in this initiative as shipped. `[AllowAnonymous]` has
+      been live since Phase 1; anyone deciding to expose this in a real, publicly-reachable
+      environment should treat this as a pre-launch blocker, not a someday item.
 
 ---
 
