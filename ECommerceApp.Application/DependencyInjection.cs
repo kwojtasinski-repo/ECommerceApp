@@ -16,6 +16,7 @@ using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Supporting.Communication;
 using ECommerceApp.Application.Supporting.TimeManagement.Services;
+using ECommerceApp.Application.Supporting.Verification.Services;
 using ECommerceApp.Application.Backoffice;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +40,7 @@ namespace ECommerceApp.Application
             services.AddCatalogServices();
             services.AddCurrencyServices();
             services.AddTimeManagementServices();
+            services.AddVerificationServices();
             services.AddMessagingServices();
             services.AddAvailabilityServices();
             services.AddPresaleServices();

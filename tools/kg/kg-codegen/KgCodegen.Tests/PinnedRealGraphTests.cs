@@ -68,11 +68,11 @@ public sealed class PinnedRealGraphTests
     }
 
     [Fact]
-    public void Module_count_is_exactly_fourteen()
+    public void Module_count_is_exactly_fifteen()
     {
         var graph = BuildRealGraph();
 
-        Assert.Equal(14, graph.Nodes.Count(node => node.Label == "Module"));
+        Assert.Equal(15, graph.Nodes.Count(node => node.Label == "Module"));
     }
 
     [Fact]
@@ -94,6 +94,7 @@ public sealed class PinnedRealGraphTests
             ["Communication"] = "Supporting/Communication",
             ["Currencies"] = "Supporting/Currencies",
             ["TimeManagement"] = "Supporting/TimeManagement",
+            ["Verification"] = "Supporting/Verification",
             ["Messaging"] = "Messaging"
         };
 
@@ -107,7 +108,7 @@ public sealed class PinnedRealGraphTests
         Assert.Single(graph.Nodes, node => node.Label == "System" && node.Id == "ECommerceApp");
         Assert.Single(graph.Nodes, node => node.Label == "Host" && node.Id == "ApiHost" && Equals(node.Properties["path"], "ECommerceApp.API"));
         Assert.Single(graph.Nodes, node => node.Label == "Host" && node.Id == "WebHost" && Equals(node.Properties["path"], "ECommerceApp.Web"));
-        Assert.Equal(16, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceLabel == "System"));
+        Assert.Equal(17, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceLabel == "System"));
         Assert.DoesNotContain(graph.Nodes.Where(node => node.Label == "Job"), node => node.Properties.ContainsKey("cronExpression"));
         Assert.DoesNotContain(graph.Nodes.Where(node => node.Label == "Job"), node => node.Properties.ContainsKey("timeZoneId"));
     }

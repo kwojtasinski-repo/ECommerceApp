@@ -82,12 +82,12 @@
       `GuestProfileCleanupOptions.Schedule` (`GuestProfileCleanup:Schedule` in appsettings.json,
       default `"0 4 * * *"`)
 
-### `VerificationCode` primitive (§9)
-- [ ] `VerificationCode`/`VerificationCodeService` contain no branching on `Purpose` and no
+### `VerificationCode` primitive (§9) — Phase 5, verified PASS (independent re-validation, 2026-08-16)
+- [x] `VerificationCode`/`VerificationCodeService` contain no branching on `Purpose` and no
       interpretation of `SubjectKey`'s shape — that logic lives only in each consumer's own ACL
-- [ ] `Code` values are genuinely cryptographically random, not a short numeric OTP, not an
+- [x] `Code` values are genuinely cryptographically random, not a short numeric OTP, not an
       encoded/reversible id
-- [ ] No `IAM`/login consumer exists yet — the primitive is generic enough to support one later,
+- [x] No `IAM`/login consumer exists yet — the primitive is generic enough to support one later,
       but none is wired in this feature
 
 ### Account linking (§6) — in scope for v1, not deferred

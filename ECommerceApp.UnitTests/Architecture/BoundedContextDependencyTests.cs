@@ -93,6 +93,9 @@ namespace ECommerceApp.UnitTests.Architecture
         private static readonly IObjectProvider<IType> DomainTimeManagement =
             InNsTree("ECommerceApp.Domain.Supporting.TimeManagement", "Domain.Supporting.TimeManagement");
 
+        private static readonly IObjectProvider<IType> DomainVerification =
+            InNsTree("ECommerceApp.Domain.Supporting.Verification", "Domain.Supporting.Verification");
+
         private static readonly IObjectProvider<IType> DomainIdentity =
             InNsTree("ECommerceApp.Domain.Identity.IAM", "Domain.Identity.IAM");
 
@@ -127,6 +130,9 @@ namespace ECommerceApp.UnitTests.Architecture
 
         private static readonly IObjectProvider<IType> AppTimeManagement =
             InNsTree("ECommerceApp.Application.Supporting.TimeManagement", "Application.Supporting.TimeManagement");
+
+        private static readonly IObjectProvider<IType> AppVerification =
+            InNsTree("ECommerceApp.Application.Supporting.Verification", "Application.Supporting.Verification");
 
         private static readonly IObjectProvider<IType> AppIdentity =
             InNsTree("ECommerceApp.Application.Identity.IAM", "Application.Identity.IAM");
@@ -267,6 +273,17 @@ namespace ECommerceApp.UnitTests.Architecture
                 .Because("TimeManagement domain must be self-contained (+ Shared kernel)")
                 .Check(Architecture);
         }
+
+            [Fact]
+            public void Domain_Verification_ShouldNotDependOnOtherBCs()
+            {
+                Types().That().Are(DomainVerification)
+                .Should().NotDependOnAny(
+                    Types().That().AreNot(DomainVerification)
+                    .And().AreNot(SharedDomain))
+                .Because("Verification domain must be self-contained (+ Shared kernel)")
+                .Check(Architecture);
+            }
 
         [Fact]
         public void Domain_Identity_ShouldNotDependOnOtherBCs()
@@ -469,6 +486,20 @@ namespace ECommerceApp.UnitTests.Architecture
                 .Because("TimeManagement application must not depend on other BCs")
                 .Check(Architecture);
         }
+
+            [Fact]
+            public void App_Verification_ShouldOnlyDependOnOwnDomain()
+            {
+                Types().That().Are(AppVerification)
+                .Should().NotDependOnAny(
+                    Types().That().AreNot(AppVerification)
+                    .And().AreNot(DomainVerification)
+                    .And().AreNot(SharedDomain)
+                    .And().AreNot(SharedApplication)
+                    .And().AreNot(Messaging))
+                .Because("Verification application must not depend on other BCs")
+                .Check(Architecture);
+            }
 
         [Fact]
         public void App_Communication_ShouldOnlyDependOnMessageContracts()

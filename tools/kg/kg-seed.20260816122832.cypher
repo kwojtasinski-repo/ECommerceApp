@@ -219,6 +219,8 @@ MERGE (n:Action {id: 'ECommerceApp.Application.Supporting.TimeManagement.Service
 MERGE (n:Action {id: 'ECommerceApp.Application.Supporting.TimeManagement.Services.JobManagementService.GetDeferredQueueAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Supporting.TimeManagement.Services.JobManagementService.GetHistoryAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Supporting.TimeManagement.Services.JobManagementService.RegisterAsync'});
+MERGE (n:Action {id: 'ECommerceApp.Application.Supporting.Verification.Services.VerificationCodeService.GenerateAsync'});
+MERGE (n:Action {id: 'ECommerceApp.Application.Supporting.Verification.Services.VerificationCodeService.TryConsumeAsync'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.AccountProfile.AccountProfileController.Create', httpMethod: 'POST', route: 'api/customers'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.AccountProfile.AccountProfileController.GetById', httpMethod: 'GET', route: 'api/customers/{id:int}'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.AccountProfile.AccountProfileController.Update', httpMethod: 'PUT', route: 'api/customers/{id:int}'});
@@ -301,6 +303,7 @@ MERGE (n:Entity {id: 'ECommerceApp.Domain.Supporting.Currencies.CurrencyRate', t
 MERGE (n:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.DeferredJobInstance', table: 'DeferredJobQueue'});
 MERGE (n:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.JobExecution', table: 'JobExecutions'});
 MERGE (n:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.ScheduledJob', table: 'ScheduledJobs'});
+MERGE (n:Entity {id: 'ECommerceApp.Domain.Supporting.Verification.VerificationCode', table: 'VerificationCodes'});
 MERGE (n:Host {id: 'ApiHost', path: 'ECommerceApp.API'});
 MERGE (n:Host {id: 'WebHost', path: 'ECommerceApp.Web'});
 MERGE (n:Job {id: 'ECommerceApp.Application.AccountProfile.Services.UnclaimedGuestProfileCleanupTask', taskName: 'UnclaimedGuestProfileCleanup'});
@@ -406,6 +409,7 @@ MERGE (n:Module {id: 'Messaging', path: 'Messaging'});
 MERGE (n:Module {id: 'Orders', path: 'Sales/Orders'});
 MERGE (n:Module {id: 'Payments', path: 'Sales/Payments'});
 MERGE (n:Module {id: 'TimeManagement', path: 'Supporting/TimeManagement'});
+MERGE (n:Module {id: 'Verification', path: 'Supporting/Verification'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.AddAddress', httpMethod: 'GET'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.AddAddress#2', httpMethod: 'POST'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.All', httpMethod: 'GET'});
@@ -620,6 +624,7 @@ MERGE (n:Repository {id: 'ECommerceApp.Domain.Supporting.Currencies.ICurrencyRep
 MERGE (n:Repository {id: 'ECommerceApp.Domain.Supporting.TimeManagement.IDeferredJobInstanceRepository'});
 MERGE (n:Repository {id: 'ECommerceApp.Domain.Supporting.TimeManagement.IJobExecutionRepository'});
 MERGE (n:Repository {id: 'ECommerceApp.Domain.Supporting.TimeManagement.IScheduledJobRepository'});
+MERGE (n:Repository {id: 'ECommerceApp.Domain.Supporting.Verification.IVerificationCodeRepository'});
 MERGE (n:Role {id: 'Administrator'});
 MERGE (n:Role {id: 'Manager'});
 MERGE (n:Role {id: 'Service'});
@@ -875,6 +880,7 @@ MATCH (s:System {id: 'ECommerceApp'}), (t:Module {id: 'Messaging'}) MERGE (s)-[:
 MATCH (s:System {id: 'ECommerceApp'}), (t:Module {id: 'Orders'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:System {id: 'ECommerceApp'}), (t:Module {id: 'Payments'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:System {id: 'ECommerceApp'}), (t:Module {id: 'TimeManagement'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:System {id: 'ECommerceApp'}), (t:Module {id: 'Verification'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:System {id: 'ECommerceApp'}), (t:Host {id: 'WebHost'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Fulfillment'}), (t:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.RefundService.ApproveRefundAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Fulfillment'}), (t:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.RefundService.GetByOrderIdAsync'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1031,6 +1037,10 @@ MATCH (s:Module {id: 'TimeManagement'}), (t:Repository {id: 'ECommerceApp.Domain
 MATCH (s:Module {id: 'TimeManagement'}), (t:Repository {id: 'ECommerceApp.Domain.Supporting.TimeManagement.IScheduledJobRepository'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'TimeManagement'}), (t:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.JobExecution'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'TimeManagement'}), (t:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.ScheduledJob'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Verification'}), (t:Action {id: 'ECommerceApp.Application.Supporting.Verification.Services.VerificationCodeService.GenerateAsync'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Verification'}), (t:Action {id: 'ECommerceApp.Application.Supporting.Verification.Services.VerificationCodeService.TryConsumeAsync'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Verification'}), (t:Repository {id: 'ECommerceApp.Domain.Supporting.Verification.IVerificationCodeRepository'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Verification'}), (t:Entity {id: 'ECommerceApp.Domain.Supporting.Verification.VerificationCode'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'ajaxRequest'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'buttonTemplate'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'cartNotification'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1938,6 +1948,7 @@ MATCH (s:Entity {id: 'ECommerceApp.Domain.Supporting.Currencies.CurrencyRate'}),
 MATCH (s:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.DeferredJobInstance'}), (t:Repository {id: 'ECommerceApp.Domain.Supporting.TimeManagement.IDeferredJobInstanceRepository'}) MERGE (s)-[:PERSISTED_BY]->(t);
 MATCH (s:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.JobExecution'}), (t:Repository {id: 'ECommerceApp.Domain.Supporting.TimeManagement.IJobExecutionRepository'}) MERGE (s)-[:PERSISTED_BY]->(t);
 MATCH (s:Entity {id: 'ECommerceApp.Domain.Supporting.TimeManagement.ScheduledJob'}), (t:Repository {id: 'ECommerceApp.Domain.Supporting.TimeManagement.IScheduledJobRepository'}) MERGE (s)-[:PERSISTED_BY]->(t);
+MATCH (s:Entity {id: 'ECommerceApp.Domain.Supporting.Verification.VerificationCode'}), (t:Repository {id: 'ECommerceApp.Domain.Supporting.Verification.IVerificationCodeRepository'}) MERGE (s)-[:PERSISTED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.PublishProduct'}), (t:Message {id: 'ECommerceApp.Application.Catalog.Products.Messages.ProductPublished'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.UnpublishProduct'}), (t:Message {id: 'ECommerceApp.Application.Catalog.Products.Messages.ProductUnpublished'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.UpdateProduct'}), (t:Message {id: 'ECommerceApp.Application.Catalog.Products.Messages.ProductUpdated'}) MERGE (s)-[:PUBLISHES]->(t);

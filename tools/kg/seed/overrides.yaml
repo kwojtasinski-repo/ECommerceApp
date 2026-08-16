@@ -27,6 +27,8 @@ modules:
     path: Supporting/Currencies
   - id: TimeManagement
     path: Supporting/TimeManagement
+  - id: Verification
+    path: Supporting/Verification
   - id: Messaging
     path: Messaging
 jobs: []

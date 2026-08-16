@@ -32,7 +32,7 @@ public sealed class SubprocessSmokeTests
         await process.WaitForExitAsync().WaitAsync(TimeSpan.FromMinutes(2));
 
         Assert.Equal(0, process.ExitCode);
-        Assert.Contains("Module: 14", stdout);
+        Assert.Contains("Module: 15", stdout);
         Assert.DoesNotContain("error:", stderr, StringComparison.OrdinalIgnoreCase);
     }
 

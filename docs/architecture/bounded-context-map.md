@@ -47,7 +47,8 @@ CORE BUSINESS
 ├── Supporting
 │   ├── Currencies      → Domain.Supporting.Currencies
 │   ├── TimeManagement  → Domain.Supporting.TimeManagement [greenfield]
-│   └── Communication   → Domain.Supporting.Communication  [greenfield]
+│   ├── Communication   → Domain.Supporting.Communication  [greenfield]
+│   └── Verification    → Domain.Supporting.Verification   [greenfield]
 │
 └── Backoffice          → Application.Backoffice (no domain model)
 ```

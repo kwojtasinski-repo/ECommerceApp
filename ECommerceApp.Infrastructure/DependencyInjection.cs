@@ -14,6 +14,7 @@ using ECommerceApp.Infrastructure.Sales.Payments;
 using ECommerceApp.Infrastructure.Sales.Orders;
 using ECommerceApp.Infrastructure.Supporting.Communication;
 using ECommerceApp.Infrastructure.Supporting.TimeManagement;
+using ECommerceApp.Infrastructure.Supporting.Verification;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,6 +42,7 @@ namespace ECommerceApp.Infrastructure
             services.AddCouponsInfrastructure(configuration);
             services.AddFulfillmentInfrastructure(configuration);
             services.AddCommunicationInfrastructure(configuration);
+            services.AddVerificationInfrastructure(configuration);
             return services;
         }
     }
