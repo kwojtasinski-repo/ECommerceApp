@@ -92,6 +92,21 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             return await repo.GetByIdAsync(new UserProfileId(profileId));
         }
 
+        public async Task<int> SeedUnclaimedProfileAsync(string email, string guestUserId)
+        {
+            using var scope = Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IUserProfileRepository>();
+            return (await repo.AddAsync(UserProfile.Create(
+                guestUserId,
+                "Jan",
+                "Kowalski",
+                false,
+                null,
+                null,
+                email,
+                "500600700"))).Value;
+        }
+
         public async Task<int?> GetOrderCustomerIdAsync(int orderId)
         {
             using var scope = Services.CreateScope();

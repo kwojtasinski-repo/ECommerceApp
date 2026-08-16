@@ -90,21 +90,22 @@
 - [x] No `IAM`/login consumer exists yet — the primitive is generic enough to support one later,
       but none is wired in this feature
 
-### Account linking (§6) — in scope for v1, not deferred
-- [ ] Registration (`RegisterModel.OnPostAsync`) returns an identical HTTP response regardless of
+### Account linking (§6) — Phase 6, verified PASS (independent re-validation, 2026-08-16)
+- [x] Registration (`RegisterModel.OnPostAsync`) returns an identical HTTP response regardless of
       whether a matching unclaimed `UserProfile` is found by email
-- [ ] Any email-address match against unclaimed `UserProfile`s happens in a background handler,
+- [x] Any email-address match against unclaimed `UserProfile`s happens in a background handler,
       never inline in the registration request/response cycle
-- [ ] Redeeming a `GuestAccountLink` `VerificationCode` reassigns **all** matching unclaimed
+- [x] Redeeming a `GuestAccountLink` `VerificationCode` reassigns **all** matching unclaimed
       `UserProfile` rows for an email, not just the first (no unique constraint on `Email`)
-- [ ] No real email is sent — the pending code/link surfaces only in the admin-only Backoffice
+- [x] No real email is sent — the pending code/link surfaces only in the admin-only Backoffice
       interim view (§10) until real email delivery exists
 
-### Admin interim view (§10)
-- [ ] Gated on `[Authorize(Roles = UserPermissions.Roles.Administrator)]` — narrower than the
+### Admin interim view (§10) — Phase 6, verified PASS (independent re-validation, 2026-08-16)
+- [x] Gated on `[Authorize(Roles = UserPermissions.Roles.Administrator)]` — narrower than the
       `ManagingRole` every other Backoffice controller uses
-- [ ] Shows pending codes/links for both `GuestAccountLink` and `GuestOrderAccess` purposes in one
-      shared view, not two separate controllers
+- [x] Shows pending codes/links for both `GuestAccountLink` and `GuestOrderAccess` purposes in one
+      shared view, not two separate controllers (filterable by `Purpose`; only `GuestAccountLink`
+      rows exist until Phase 7 adds its own)
 
 ### Order access & recovery (§11)
 - [ ] The order-access token is minted silently at `PlaceOrder` POST success — no separate guest

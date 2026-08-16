@@ -35,6 +35,9 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
         public async Task<UserProfile> GetByUserIdAsync(string userId, bool track = false)
             => await Query(track).FirstOrDefaultAsync(p => p.UserId == userId);
 
+        public async Task<List<UserProfile>> GetByEmailAsync(string email, bool track = false)
+            => await Query(track).Where(p => p.Email.Value == email).ToListAsync();
+
         public async Task UpdateAsync(UserProfile profile)
         {
             // Tracked entities: DetectChanges at SaveChangesAsync handles scalar and owned-entity changes.

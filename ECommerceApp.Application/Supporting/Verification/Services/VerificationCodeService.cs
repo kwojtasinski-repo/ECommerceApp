@@ -34,7 +34,7 @@ namespace ECommerceApp.Application.Supporting.Verification.Services
             return code;
         }
 
-        public async Task<bool> TryConsumeAsync(
+        public async Task<string?> TryConsumeAsync(
             string code,
             VerificationPurpose purpose,
             CancellationToken ct = default)
@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.Supporting.Verification.Services
             var verificationCode = await _repository.GetByCodeAsync(code, purpose, ct);
             if (verificationCode == null)
             {
-                return false;
+                return null;
             }
 
             try
@@ -51,11 +51,11 @@ namespace ECommerceApp.Application.Supporting.Verification.Services
             }
             catch (DomainException)
             {
-                return false;
+                return null;
             }
 
             await _repository.UpdateAsync(verificationCode, ct);
-            return true;
+            return verificationCode.SubjectKey;
         }
     }
 }

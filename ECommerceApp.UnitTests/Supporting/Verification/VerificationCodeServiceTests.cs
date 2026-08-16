@@ -46,7 +46,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
         }
 
         [Fact]
-        public async Task TryConsumeAsync_ValidCode_ConsumesAndReturnsTrue()
+        public async Task TryConsumeAsync_ValidCode_ConsumesAndReturnsSubjectKey()
         {
             var verificationCode = VerificationCode.Create(
                 VerificationPurpose.GuestAccountLink,
@@ -65,7 +65,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
                 VerificationPurpose.GuestAccountLink,
                 TestContext.Current.CancellationToken);
 
-            result.Should().BeTrue();
+            result.Should().Be("subject");
             verificationCode.ConsumedAt.Should().NotBeNull();
             _repository.Verify(repository => repository.UpdateAsync(
                 verificationCode,
@@ -73,7 +73,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
         }
 
         [Fact]
-        public async Task TryConsumeAsync_WrongPurpose_ReturnsFalseWithoutConsuming()
+        public async Task TryConsumeAsync_WrongPurpose_ReturnsNullWithoutConsuming()
         {
             var verificationCode = VerificationCode.Create(
                 VerificationPurpose.GuestAccountLink,
@@ -92,7 +92,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
                 VerificationPurpose.GuestOrderAccess,
                 TestContext.Current.CancellationToken);
 
-            result.Should().BeFalse();
+            result.Should().BeNull();
             verificationCode.ConsumedAt.Should().BeNull();
             _repository.Verify(repository => repository.GetByCodeAsync(
                 "code",
@@ -104,7 +104,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
         }
 
         [Fact]
-        public async Task TryConsumeAsync_ExpiredCode_ReturnsFalseWithoutConsuming()
+        public async Task TryConsumeAsync_ExpiredCode_ReturnsNullWithoutConsuming()
         {
             var verificationCode = VerificationCode.Create(
                 VerificationPurpose.GuestAccountLink,
@@ -123,7 +123,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
                 VerificationPurpose.GuestAccountLink,
                 TestContext.Current.CancellationToken);
 
-            result.Should().BeFalse();
+            result.Should().BeNull();
             verificationCode.ConsumedAt.Should().BeNull();
             _repository.Verify(repository => repository.UpdateAsync(
                 It.IsAny<VerificationCode>(),
@@ -131,7 +131,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
         }
 
         [Fact]
-        public async Task TryConsumeAsync_AlreadyConsumedCode_ReturnsFalseWithoutConsuming()
+        public async Task TryConsumeAsync_AlreadyConsumedCode_ReturnsNullWithoutConsuming()
         {
             var verificationCode = VerificationCode.Create(
                 VerificationPurpose.GuestAccountLink,
@@ -152,7 +152,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
                 VerificationPurpose.GuestAccountLink,
                 TestContext.Current.CancellationToken);
 
-            result.Should().BeFalse();
+            result.Should().BeNull();
             verificationCode.ConsumedAt.Should().Be(consumedAt);
             _repository.Verify(repository => repository.UpdateAsync(
                 It.IsAny<VerificationCode>(),

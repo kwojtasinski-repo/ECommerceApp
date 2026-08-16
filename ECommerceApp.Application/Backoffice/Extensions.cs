@@ -16,6 +16,7 @@ namespace ECommerceApp.Application.Backoffice
             services.AddScoped<IBackofficeCurrencyService, BackofficeCurrencyService>();
             services.AddScoped<IBackofficeJobService, BackofficeJobService>();
             services.AddScoped<IBackofficeRefundService, BackofficeRefundService>();
+            services.AddScoped<IBackofficeVerificationService, BackofficeVerificationService>();
             return services;
         }
     }

@@ -1,4 +1,6 @@
 using ECommerceApp.Domain.AccountProfile;
+using ECommerceApp.Application.AccountProfile.Contracts;
+using ECommerceApp.Infrastructure.AccountProfile.Adapters;
 using ECommerceApp.Infrastructure.AccountProfile.Repositories;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +24,8 @@ namespace ECommerceApp.Infrastructure.AccountProfile
             services.AddHostedService<GuestProfileCleanupScheduledJobReconciler>();
 
             return services
-                .AddScoped<IUserProfileRepository, UserProfileRepository>();
+                .AddScoped<IUserProfileRepository, UserProfileRepository>()
+                .AddScoped<IVerificationCodeClient, VerificationCodeClientAdapter>();
         }
     }
 }

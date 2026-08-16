@@ -29,7 +29,7 @@ login.
 | 03 | `03-phase-guest-account-promotion-*` | §5 | Done — independently validated PASS 2026-08-14 |
 | 04 | `04-phase-guest-profile-cleanup-*` | Consequences (Negative) | Done — independently validated PASS 2026-08-15 |
 | 05 | `05-phase-verification-code-primitive-*` | §9 | Done — independently validated PASS 2026-08-16 |
-| 06 | `06-phase-guest-account-linking-*` | §6, §10 | Not started (new) |
+| 06 | `06-phase-guest-account-linking-*` | §6, §10 | Done — independently validated PASS 2026-08-16 |
 | 07 | `07-phase-guest-order-access-recovery-*` | §11 | Not started (new) |
 | 08 | `08-phase-guest-checkout-regression-*` | §12 | Not started (new) |
 

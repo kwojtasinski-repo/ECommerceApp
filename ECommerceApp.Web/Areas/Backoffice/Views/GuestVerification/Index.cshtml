@@ -1,0 +1,48 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeVerificationListVm
+@using ECommerceApp.Domain.Supporting.Verification
+
+@{
+    ViewData["Title"] = "Kody weryfikacyjne";
+}
+
+<h1>Kody weryfikacyjne</h1>
+
+<form asp-area="Backoffice" asp-controller="GuestVerification" asp-action="Index" method="get" class="mb-3">
+    <select name="purpose" class="form-select" style="max-width:320px; display:inline-block;">
+        <option value="">Wszystkie cele</option>
+        @foreach (var purpose in Enum.GetValues<VerificationPurpose>())
+        {
+            <option value="@purpose" selected="@(Model.PurposeFilter == purpose)">@purpose</option>
+        }
+    </select>
+    <button type="submit" class="btn btn-outline-secondary">Filtruj</button>
+</form>
+
+@if (!Model.Codes.Any())
+{
+    <p><em>Brak oczekujących kodów.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Cel</th>
+                <th>Adres</th>
+                <th>Wygasa</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Codes)
+            {
+                <tr>
+                    <td>@item.Purpose</td>
+                    <td>@item.SubjectKey</td>
+                    <td>@item.ExpiresAt.ToLocalTime()</td>
+                    <td><a href="@item.RedemptionUrl">@item.RedemptionUrl</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

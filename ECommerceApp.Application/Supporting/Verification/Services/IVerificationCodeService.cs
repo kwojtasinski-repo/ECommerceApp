@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.Supporting.Verification.Services
             TimeSpan validFor,
             CancellationToken ct = default);
 
-        Task<bool> TryConsumeAsync(
+        Task<string?> TryConsumeAsync(
             string code,
             VerificationPurpose purpose,
             CancellationToken ct = default);

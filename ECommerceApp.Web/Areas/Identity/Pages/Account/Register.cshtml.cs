@@ -1,11 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using ECommerceApp.Domain.Identity.IAM;
+using ECommerceApp.Application.AccountProfile.Handlers;
+using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -24,17 +26,20 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly IDeferredJobScheduler _deferredJobScheduler;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IDeferredJobScheduler deferredJobScheduler)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _deferredJobScheduler = deferredJobScheduler;
         }
 
         [BindProperty]
@@ -80,6 +85,11 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
+                    await _deferredJobScheduler.ScheduleAsync(
+                        GuestAccountLinkCheckJob.JobTaskName,
+                        Input.Email,
+                        DateTime.UtcNow,
+                        HttpContext.RequestAborted);
 
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));

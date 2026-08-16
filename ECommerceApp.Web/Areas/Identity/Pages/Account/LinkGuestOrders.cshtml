@@ -1,0 +1,17 @@
+@page
+@model ECommerceApp.Web.Areas.Identity.Pages.Account.LinkGuestOrdersModel
+@{
+    ViewData["Title"] = "Łączenie zamówień gościa";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (Model.IsSuccess)
+{
+    <p>Połączono @Model.ProfilesLinked profili z Twoim kontem.</p>
+    <a class="btn btn-primary" asp-area="AccountProfile" asp-controller="Profile" asp-action="Index">Przejdź do historii zamówień</a>
+}
+else
+{
+    <p>Ten link jest nieaktualny.</p>
+}

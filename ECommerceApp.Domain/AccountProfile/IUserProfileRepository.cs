@@ -10,6 +10,7 @@ namespace ECommerceApp.Domain.AccountProfile
         Task<UserProfile> GetByIdAsync(UserProfileId id, bool track = false);
         Task<UserProfile> GetByIdAndUserIdAsync(UserProfileId id, string userId, bool track = false);
         Task<UserProfile> GetByUserIdAsync(string userId, bool track = false);
+        Task<List<UserProfile>> GetByEmailAsync(string email, bool track = false);
         Task UpdateAsync(UserProfile profile);
         Task<bool> DeleteAsync(UserProfileId id);
         Task<bool> ExistsByIdAsync(UserProfileId id);
