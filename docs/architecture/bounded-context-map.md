@@ -161,6 +161,18 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 - `Payment` never controls `Order` lifecycle — events only
 - `Availability` / inventory is an explicit domain participant, never a side effect
 
+### Phase 7 order-access ACLs (ADR-0030 §11)
+
+The guest order-access capability is owned by Presale/Checkout. Consumers use narrow
+consumer-owned ACLs rather than referencing the token repository or order-access service
+directly across bounded-context boundaries:
+
+| Dependency direction | Contract | Purpose |
+| --------------------- | -------- | ------- |
+| `Presale/Checkout → Supporting/Verification` | `IVerificationCodeClient` | Issue and redeem order-scoped recovery codes |
+| `Sales/Payments → Presale/Checkout` | `IOrderAccessClient` | Authorize anonymous payment-page access |
+| `Sales/Orders → Presale/Checkout` | `IOrderAccessClient` | Authorize anonymous order-details access |
+
 ---
 
 ## BC classification

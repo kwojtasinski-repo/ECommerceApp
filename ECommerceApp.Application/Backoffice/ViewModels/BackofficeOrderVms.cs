@@ -30,5 +30,6 @@ namespace ECommerceApp.Application.Backoffice.ViewModels
         public int CustomerId { get; init; }
         public bool IsPaid { get; init; }
         public bool IsDelivered { get; init; }
+        public string OrderAccessToken { get; init; }
     }
 }

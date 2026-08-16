@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Backoffice.Services;
 using ECommerceApp.Application.Backoffice.ViewModels;
+using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Sales.Orders.ViewModels;
 using ECommerceApp.Domain.Sales.Orders;
@@ -16,13 +17,16 @@ namespace ECommerceApp.UnitTests.Backoffice
     public class BackofficeOrderServiceTests
     {
         private readonly Mock<IOrderService> _orderService;
+        private readonly Mock<IOrderAccessService> _orderAccessService;
 
         public BackofficeOrderServiceTests()
         {
             _orderService = new Mock<IOrderService>();
+            _orderAccessService = new Mock<IOrderAccessService>();
         }
 
-        private IBackofficeOrderService CreateSut() => new BackofficeOrderService(_orderService.Object);
+        private IBackofficeOrderService CreateSut()
+            => new BackofficeOrderService(_orderService.Object, _orderAccessService.Object);
 
         // ── GetOrdersAsync ────────────────────────────────────────────────────
 

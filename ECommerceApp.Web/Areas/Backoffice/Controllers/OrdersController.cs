@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Backoffice.Services;
+using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +39,14 @@ namespace ECommerceApp.Web.Areas.Backoffice.Controllers
             var model = await _service.GetOrderDetailAsync(id);
             if (model is null)
                 return NotFound();
+            ViewBag.OrderAccessUrl = string.IsNullOrWhiteSpace(model.OrderAccessToken)
+                ? null
+                : Url.Action(
+                    "Summary",
+                    "Checkout",
+                    new { area = "Presale", id = model.Id, token = model.OrderAccessToken },
+                    Request.Scheme,
+                    Request.Host.Value);
             return View(model);
         }
     }

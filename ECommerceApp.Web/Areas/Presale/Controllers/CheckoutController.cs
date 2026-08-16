@@ -26,14 +26,25 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         private readonly IAccountProfileClient _accountProfileClient;
         private readonly IShopperIdentityResolver _shopperIdentityResolver;
         private readonly IGuestPromotionService _guestPromotionService;
+        private readonly IOrderAccessService _orderAccessService;
+        private readonly IVerificationCodeClient _verificationCodeClient;
 
-        public CheckoutController(ICartService cartService, ICheckoutService checkoutService, IAccountProfileClient accountProfileClient, IShopperIdentityResolver shopperIdentityResolver, IGuestPromotionService guestPromotionService)
+        public CheckoutController(
+            ICartService cartService,
+            ICheckoutService checkoutService,
+            IAccountProfileClient accountProfileClient,
+            IShopperIdentityResolver shopperIdentityResolver,
+            IGuestPromotionService guestPromotionService,
+            IOrderAccessService orderAccessService,
+            IVerificationCodeClient verificationCodeClient)
         {
             _cartService = cartService;
             _checkoutService = checkoutService;
             _accountProfileClient = accountProfileClient;
             _shopperIdentityResolver = shopperIdentityResolver;
             _guestPromotionService = guestPromotionService;
+            _orderAccessService = orderAccessService;
+            _verificationCodeClient = verificationCodeClient;
         }
 
         [HttpGet]
@@ -127,7 +138,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
                 var result = await _checkoutService.PlaceOrderAsync(userId, customerId, vm.CurrencyId, customer);
             return result switch
             {
-                CheckoutResult.Success s => RedirectToAction(nameof(Summary), new { id = s.OrderId, profileId = customerId, guest = User.Identity?.IsAuthenticated != true }),
+                CheckoutResult.Success s => await CompleteOrderAccessAsync(s.OrderId, customerId),
                 CheckoutResult.NoSoftReservations => RedirectToAction(nameof(Cart)),
                 CheckoutResult.ReservationsExpired => RedirectToAction(nameof(Cart)),
                 _ => View(vm)
@@ -152,10 +163,60 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Summary(int id, int? profileId, bool guest = false)
+        public async Task<IActionResult> Summary(int id, int? profileId, bool guest = false, string token = null)
         {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                token ??= Request.Cookies[OrderAccessCookie.CookieName];
+                if (!await _orderAccessService.HasAccessAsync(id, token, HttpContext.RequestAborted))
+                    return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+                Response.Cookies.Append(OrderAccessCookie.CookieName, token, OrderAccessCookie.CookieOptions);
+            }
+
             ViewBag.GuestProfileId = guest ? profileId : null;
             return View(model: id);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> RedeemRecovery(string code)
+        {
+            var result = await _verificationCodeClient.RedeemOrderAccessRecoveryAsync(
+                code,
+                HttpContext.RequestAborted);
+            if (!result.Success)
+            {
+                TempData["OrderRecoveryMessage"] = "Ten link odzyskiwania dostępu nie jest już ważny.";
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            var token = OrderAccessCookie.NewToken();
+            await _orderAccessService.CreateAsync(
+                result.OrderId,
+                result.UserProfileId,
+                token,
+                HttpContext.RequestAborted);
+            Response.Cookies.Append(OrderAccessCookie.CookieName, token, OrderAccessCookie.CookieOptions);
+            return RedirectToAction(nameof(Summary), new { id = result.OrderId, token });
+        }
+
+        private async Task<IActionResult> CompleteOrderAccessAsync(int orderId, int userProfileId)
+        {
+            var token = OrderAccessCookie.NewToken();
+            await _orderAccessService.CreateAsync(
+                orderId,
+                userProfileId,
+                token,
+                HttpContext.RequestAborted);
+            Response.Cookies.Append(OrderAccessCookie.CookieName, token, OrderAccessCookie.CookieOptions);
+            return RedirectToAction(nameof(Summary), new
+            {
+                id = orderId,
+                profileId = userProfileId,
+                guest = User.Identity?.IsAuthenticated != true,
+                token
+            });
         }
 
         [HttpPost]

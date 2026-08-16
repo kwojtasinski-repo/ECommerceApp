@@ -26,12 +26,19 @@ namespace ECommerceApp.Web.Areas.Backoffice.Controllers
             var model = await _service.GetPendingAsync(purpose, HttpContext.RequestAborted);
             foreach (var item in model.Codes)
             {
-                item.RedemptionUrl = Url.Page(
-                    "/Account/LinkGuestOrders",
-                    pageHandler: null,
-                    values: new { area = "Identity", code = item.Code },
-                    protocol: Request.Scheme,
-                    host: Request.Host.Value);
+                item.RedemptionUrl = item.Purpose == VerificationPurpose.GuestOrderAccess
+                    ? Url.Action(
+                        "RedeemRecovery",
+                        "Checkout",
+                        new { area = "Presale", code = item.Code },
+                        Request.Scheme,
+                        Request.Host.Value)
+                    : Url.Page(
+                        "/Account/LinkGuestOrders",
+                        pageHandler: null,
+                        values: new { area = "Identity", code = item.Code },
+                        protocol: Request.Scheme,
+                        host: Request.Host.Value);
             }
 
             return View(model);

@@ -1,6 +1,9 @@
 using ECommerceApp.Application.Sales.Payments.DTOs;
+using ECommerceApp.Application.Sales.Payments.Contracts;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Application.Sales.Payments.ViewModels;
+using ECommerceApp.Domain.Sales.Payments;
+using ECommerceApp.Web.Areas.Presale;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +18,12 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
     public class PaymentsController : BaseController
     {
         private readonly IPaymentService _paymentService;
+        private readonly IOrderAccessClient _orderAccessClient;
 
-        public PaymentsController(IPaymentService paymentService)
+        public PaymentsController(IPaymentService paymentService, IOrderAccessClient orderAccessClient)
         {
             _paymentService = paymentService;
+            _orderAccessClient = orderAccessClient;
         }
 
         // Paged admin list — IPaymentService.GetAllAsync is not yet implemented.
@@ -38,9 +43,26 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> Create(int id)
         {
-            var payment = await _paymentService.GetPendingByOrderIdAsync(id, GetUserId());
+            PaymentDetailsVm payment;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                payment = await _paymentService.GetPendingByOrderIdAsync(id, GetUserId());
+            }
+            else
+            {
+                var token = Request.Cookies[OrderAccessCookie.CookieName];
+                if (string.IsNullOrWhiteSpace(token)
+                    || !await _orderAccessClient.HasAccessAsync(id, token, HttpContext.RequestAborted))
+                    return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+                payment = await _paymentService.GetByOrderIdAsync(id);
+                if (payment is not null && !string.Equals(payment.Status, PaymentStatus.Pending.ToString(), StringComparison.Ordinal))
+                    payment = null;
+            }
+
             if (payment is null)
                 return NotFound();
             return View(payment);

@@ -51,5 +51,11 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
                 ? OrderPlacementResult.Succeeded(result.OrderId!.Value)
                 : OrderPlacementResult.Failed(result.FailureReason!);
         }
+
+        public async Task<string> GetOrderCustomerEmailAsync(int orderId, CancellationToken ct = default)
+        {
+            var order = await _orderService.GetOrderDetailsAsync(orderId, ct);
+            return order?.Customer?.Email;
+        }
     }
 }

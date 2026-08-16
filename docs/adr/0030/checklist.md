@@ -107,17 +107,17 @@
       shared view, not two separate controllers (filterable by `Purpose`; only `GuestAccountLink`
       rows exist until Phase 7 adds its own)
 
-### Order access & recovery (§11)
-- [ ] The order-access token is minted silently at `PlaceOrder` POST success — no separate guest
+### Order access & recovery (§11) — Phase 7, verified PASS (independent re-validation, 2026-08-16)
+- [x] The order-access token is minted silently at `PlaceOrder` POST success — no separate guest
       action required
-- [ ] The token is a genuine random value (≥128-bit), not a hashid/encoded sequential id
-- [ ] Pay-capability is enforced server-side via `Payment.Status`/`Payment.ExpiresAt` (existing
+- [x] The token is a genuine random value (≥128-bit), not a hashid/encoded sequential id
+- [x] Pay-capability is enforced server-side via `Payment.Status`/`Payment.ExpiresAt` (existing
       3-day window, `PaymentWindowExpiredJob`) — not via the order-access cookie's own lifetime
-- [ ] The login page's "kontynuuj jako gość" section renders **only** when a valid
+- [x] The login page's "kontynuuj jako gość" section renders **only** when a valid
       `?guestOrder={token}` is present — never on a bare login-page visit
-- [ ] No endpoint accepts a bare order number/id and offers to email/generate a code for it — the
+- [x] No endpoint accepts a bare order number/id and offers to email/generate a code for it — the
       only entry point is the pre-issued token already in a URL
-- [ ] Redeeming a `GuestOrderAccess` code unlocks **exactly one** order — never all orders for the
+- [x] Redeeming a `GuestOrderAccess` code unlocks **exactly one** order — never all orders for the
       email (this is intentionally the opposite rule from account linking, above — verify both
       directions independently, not just one)
 

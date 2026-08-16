@@ -13,6 +13,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
             CheckoutCustomer customer,
             IReadOnlyList<CheckoutLine> lines,
             CancellationToken ct = default);
+        Task<string> GetOrderCustomerEmailAsync(int orderId, CancellationToken ct = default);
     }
 
     public sealed record OrderPlacementResult(bool IsSuccess, int? OrderId, string FailureReason)

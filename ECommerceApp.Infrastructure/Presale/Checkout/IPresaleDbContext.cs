@@ -10,6 +10,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout
         DbSet<CartLine> CartLines { get; }
         DbSet<SoftReservation> SoftReservations { get; }
         DbSet<StockSnapshot> StockSnapshots { get; }
+        DbSet<OrderAccessToken> OrderAccessTokens { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

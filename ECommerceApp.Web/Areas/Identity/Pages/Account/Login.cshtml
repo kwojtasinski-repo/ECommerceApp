@@ -76,6 +76,28 @@
     </div>
 </div>
 
+@if (!string.IsNullOrWhiteSpace(Model.GuestOrderToken))
+{
+    <section class="mt-4">
+        <h4>Kontynuuj jako gość</h4>
+        <hr />
+        <p>Podaj adres email użyty przy zamówieniu, aby przygotować instrukcję odzyskania dostępu.</p>
+        <form id="guest-order-recovery" asp-page-handler="RequestGuestRecovery" method="post">
+            <input type="hidden" asp-for="GuestOrderToken" />
+            <div class="form-group">
+                <label asp-for="GuestRecovery.Email">Email</label>
+                <input asp-for="GuestRecovery.Email" class="form-control" />
+                <span asp-validation-for="GuestRecovery.Email" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-secondary">Przygotuj odzyskanie dostępu</button>
+        </form>
+        @if (TempData["OrderRecoveryMessage"] is string recoveryMessage)
+        {
+            <div class="alert alert-info mt-3">@recoveryMessage</div>
+        }
+    </section>
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

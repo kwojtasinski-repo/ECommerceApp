@@ -29,6 +29,8 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout
                 .AddScoped<IOrderClient, OrderClientAdapter>()
                 .AddScoped<ICartLineRepository, CartLineRepository>()
                 .AddScoped<ISoftReservationRepository, SoftReservationRepository>()
+                .AddScoped<IOrderAccessTokenRepository, OrderAccessTokenRepository>()
+                .AddScoped<IVerificationCodeClient, VerificationCodeClientAdapter>()
                 .AddScoped<IStockSnapshotRepository, StockSnapshotRepository>();
         }
     }

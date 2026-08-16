@@ -1,6 +1,8 @@
 using ECommerceApp.Application.Sales.Payments;
+using ECommerceApp.Application.Sales.Payments.Contracts;
 using ECommerceApp.Domain.Sales.Payments;
 using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Sales.Payments.Adapters;
 using ECommerceApp.Infrastructure.Sales.Payments.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,6 +22,7 @@ namespace ECommerceApp.Infrastructure.Sales.Payments
             services.AddScoped<IDbContextMigrator, DbContextMigrator<PaymentsDbContext>>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IPaymentsUnitOfWork, PaymentsUnitOfWork>();
+            services.AddScoped<IOrderAccessClient, OrderAccessClientAdapter>();
 
             return services;
         }

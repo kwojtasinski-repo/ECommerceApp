@@ -33,6 +33,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddScoped<IOrderCustomerResolver, OrderCustomerResolver>();
             services.AddScoped<IOrderProductResolver, OrderProductResolver>();
             services.AddScoped<IOrderUserResolver, OrderUserResolverAdapter>();
+            services.AddScoped<IOrderAccessClient, OrderAccessClientAdapter>();
             services.AddScoped<IQueryHandler<OrderExistsQuery, bool>, OrderExistsQueryHandler>();
             services.AddScoped<IQueryHandler<CompletedOrderCountQuery, int>, CompletedOrderCountQueryHandler>();
             services.AddScoped<IQueryHandler<CustomersWithOrdersQuery, IReadOnlySet<int>>, CustomersWithOrdersQueryHandler>();

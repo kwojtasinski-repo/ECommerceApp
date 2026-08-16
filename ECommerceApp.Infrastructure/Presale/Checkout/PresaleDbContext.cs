@@ -9,6 +9,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout
         public DbSet<CartLine> CartLines => Set<CartLine>();
         public DbSet<SoftReservation> SoftReservations => Set<SoftReservation>();
         public DbSet<StockSnapshot> StockSnapshots => Set<StockSnapshot>();
+        public DbSet<OrderAccessToken> OrderAccessTokens => Set<OrderAccessToken>();
 
         public PresaleDbContext(DbContextOptions<PresaleDbContext> options) : base(options)
         {

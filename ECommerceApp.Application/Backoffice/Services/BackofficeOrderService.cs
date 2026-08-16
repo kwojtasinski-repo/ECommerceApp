@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Backoffice.ViewModels;
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Sales.Orders.ViewModels;
+using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Sales.Orders;
 using System.Linq;
 using System.Threading;
@@ -11,10 +12,12 @@ namespace ECommerceApp.Application.Backoffice.Services
     internal sealed class BackofficeOrderService : IBackofficeOrderService
     {
         private readonly IOrderService _orderService;
+        private readonly IOrderAccessService _orderAccessService;
 
-        public BackofficeOrderService(IOrderService orderService)
+        public BackofficeOrderService(IOrderService orderService, IOrderAccessService orderAccessService)
         {
             _orderService = orderService;
+            _orderAccessService = orderAccessService;
         }
 
         public async Task<BackofficeOrderListVm> GetOrdersAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
@@ -46,7 +49,8 @@ namespace ECommerceApp.Application.Backoffice.Services
                 Status = order.Status.ToString(),
                 CustomerId = order.CustomerId,
                 IsPaid = IsPaidStatus(order.Status),
-                IsDelivered = IsDeliveredStatus(order.Status)
+                IsDelivered = IsDeliveredStatus(order.Status),
+                OrderAccessToken = await _orderAccessService.GetTokenForOrderAsync(orderId, ct)
             };
         }
 

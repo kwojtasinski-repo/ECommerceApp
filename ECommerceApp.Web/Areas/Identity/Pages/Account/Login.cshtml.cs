@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using ECommerceApp.Application.Presale.Checkout.Contracts;
+using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Identity.IAM;
 
 namespace ECommerceApp.Web.Areas.Identity.Pages.Account
@@ -17,12 +19,21 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        private readonly IOrderAccessService _orderAccessService;
+        private readonly IVerificationCodeClient _verificationCodeClient;
+        private readonly IOrderClient _orderClient;
 
         public LoginModel(SignInManager<ApplicationUser> signInManager, 
-            ILogger<LoginModel> logger)
+            ILogger<LoginModel> logger,
+            IOrderAccessService orderAccessService,
+            IVerificationCodeClient verificationCodeClient,
+            IOrderClient orderClient)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _orderAccessService = orderAccessService;
+            _verificationCodeClient = verificationCodeClient;
+            _orderClient = orderClient;
         }
 
         [BindProperty]
@@ -31,6 +42,16 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
         public string ReturnUrl { get; set; }
+
+        public string GuestOrderToken { get; private set; }
+
+        // Deliberately NOT [BindProperty]: Razor Pages binds and validates every [BindProperty] on
+        // every POST to this page regardless of which handler ran. GuestRecovery.Email is UI-only
+        // (never read here — the recovery code always goes to the order's stored email, not the
+        // visitor's typed value, per the anti-enumeration design) and its [Required] would
+        // otherwise fail ModelState.IsValid for the unrelated plain-login POST whenever the
+        // recovery form's field isn't present in the request.
+        public GuestRecoveryInput GuestRecovery { get; set; }
 
         [TempData]
         public string ErrorMessage { get; set; }
@@ -49,6 +70,13 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account
             public bool RememberMe { get; set; }
         }
 
+        public class GuestRecoveryInput
+        {
+            [Required]
+            [EmailAddress]
+            public string Email { get; set; }
+        }
+
         public async Task OnGetAsync(string returnUrl = null)
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
@@ -64,6 +92,44 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
             ReturnUrl = returnUrl;
+            GuestOrderToken = await ResolveGuestOrderTokenAsync(Request.Query["guestOrder"]);
+        }
+
+        public async Task<IActionResult> OnPostRequestGuestRecoveryAsync(string guestOrderToken)
+        {
+            GuestOrderToken = guestOrderToken;
+            await InitializePageAsync();
+            var scope = await _orderAccessService.GetScopeAsync(
+                GuestOrderToken,
+                HttpContext.RequestAborted);
+            if (scope is not null)
+            {
+                var email = await _orderClient.GetOrderCustomerEmailAsync(
+                    scope.OrderId,
+                    HttpContext.RequestAborted);
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    await _verificationCodeClient.RequestOrderAccessRecoveryAsync(
+                        scope.OrderId,
+                        HttpContext.RequestAborted);
+                }
+            }
+
+            TempData["OrderRecoveryMessage"] = "Jeśli zamówienie jest powiązane z tym adresem, instrukcja odzyskania dostępu została przygotowana.";
+            return RedirectToPage(new { guestOrder = GuestOrderToken });
+        }
+
+        private async Task InitializePageAsync()
+        {
+            ReturnUrl ??= Url.Content("~/");
+            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            GuestOrderToken = await ResolveGuestOrderTokenAsync(GuestOrderToken);
+        }
+
+        private async Task<string> ResolveGuestOrderTokenAsync(string token)
+        {
+            var scope = await _orderAccessService.GetScopeAsync(token, HttpContext.RequestAborted);
+            return scope is null ? null : token;
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
