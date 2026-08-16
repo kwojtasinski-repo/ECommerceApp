@@ -9,9 +9,12 @@ using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Domain.Sales.Orders;
+using ECommerceApp.Domain.Sales.Payments;
 using ECommerceApp.Shared.TestInfrastructure;
 using ECommerceApp.Web;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,6 +126,23 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             return userManager.Users.Any(u => u.Email == email);
         }
 
+        public async Task<string> CreateRegisteredUserAsync(string email, string password)
+        {
+            using var scope = Services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(user, password);
+            result.Succeeded.ShouldBeTrue(string.Join("; ", result.Errors));
+            return user.Id;
+        }
+
         /// <summary>
         /// Idempotently ensures a <see cref="UserProfile"/> row exists for the given (already-registered)
         /// Identity user id — used by the authenticated-flow regression test and the AlreadyRegistered
@@ -134,6 +154,21 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             var service = scope.ServiceProvider.GetRequiredService<IUserProfileService>();
             return await service.GetOrCreateForGuestAsync(
                 userId, "Admin", "Tester", false, null, null, email, "500600700");
+        }
+
+        /// <summary>
+        /// This factory doesn't wire up automatic Payment creation on order placement (see the class
+        /// remarks), so tests that need to POST a real payment confirmation must seed one directly.
+        /// </summary>
+        public async Task<int> CreatePendingPaymentAsync(int orderId, string userId, decimal totalAmount = 50m, int currencyId = 1)
+        {
+            using var scope = Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IPaymentRepository>();
+            var payment = Payment.Create(
+                new PaymentOrderId(orderId), totalAmount, currencyId, DateTime.UtcNow.AddMinutes(30), userId);
+            await repo.AddAsync(payment);
+            var saved = await repo.GetByOrderIdAsync(orderId);
+            return saved.Id.Value;
         }
     }
 

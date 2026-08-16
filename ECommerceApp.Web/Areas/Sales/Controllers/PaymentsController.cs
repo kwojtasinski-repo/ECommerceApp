@@ -69,16 +69,34 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ConfirmPaymentDto dto)
         {
-            var result = await _paymentService.ConfirmAsync(dto);
-            if (result == PaymentOperationResult.Success)
-                return RedirectToAction(nameof(MyPayments));
+            var isAnonymous = User.Identity?.IsAuthenticated != true;
+            if (isAnonymous)
+            {
+                var preCheckPayment = await _paymentService.GetByIdAsync(dto.PaymentId);
+                if (preCheckPayment is null)
+                    return NotFound();
 
+                var token = Request.Cookies[OrderAccessCookie.CookieName];
+                if (string.IsNullOrWhiteSpace(token)
+                    || !await _orderAccessClient.HasAccessAsync(preCheckPayment.OrderId, token, HttpContext.RequestAborted))
+                    return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            var result = await _paymentService.ConfirmAsync(dto);
             var payment = await _paymentService.GetByIdAsync(dto.PaymentId);
             if (payment is null)
                 return NotFound();
+
+            if (result == PaymentOperationResult.Success)
+            {
+                return isAnonymous
+                    ? RedirectToAction("Details", "Orders", new { area = "Sales", id = payment.OrderId })
+                    : RedirectToAction(nameof(MyPayments));
+            }
 
             ModelState.AddModelError(string.Empty, result switch
             {

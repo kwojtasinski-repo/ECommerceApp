@@ -180,6 +180,61 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
                 "clientA's order-access cookie is scoped to order A and must not unlock order B's payment page");
         }
 
+        /// <summary>
+        /// Regression: the GET to <c>PaymentsController.Create</c> was correctly opened up to anonymous
+        /// order-access-cookie holders, but the POST overload that actually calls
+        /// <c>IPaymentService.ConfirmAsync</c> had no <c>[AllowAnonymous]</c> override and inherited the
+        /// controller's class-level <c>[Authorize]</c> — so a guest could see the payment form but any
+        /// attempt to submit it silently bounced to <c>/Identity/Account/Login</c> and the payment was
+        /// never confirmed. Found during Phase 8 validation; fixed directly in
+        /// <c>ECommerceApp.Web/Areas/Sales/Controllers/PaymentsController.cs</c>'s POST <c>Create</c>.
+        /// </summary>
+        [Fact]
+        public async Task PaymentsCreate_Post_AnonymousWithOrderAccessCookie_ActuallyConfirmsOwnPayment_RejectsOtherOrder()
+        {
+            var productId = await _factory.CreateAvailableProductAsync();
+
+            var clientA = CreateClient();
+            var guestTokenA = await MintGuestCookieAsync(clientA);
+            var formTokenA = await FetchAntiForgeryTokenAsync(clientA, AnonymousTokenSourceUrl);
+            var (orderIdA, _) = await PlaceGuestOrderAsync(clientA, formTokenA, productId, UniqueEmail("payments-post-own"));
+            var paymentIdA = await _factory.CreatePendingPaymentAsync(orderIdA, guestTokenA);
+
+            var confirmOwn = new Dictionary<string, string>
+            {
+                ["PaymentId"] = paymentIdA.ToString(),
+                ["TransactionRef"] = System.Guid.NewGuid().ToString(),
+                ["__RequestVerificationToken"] = formTokenA
+            };
+            var ownResponse = await clientA.PostAsync(
+                "/Sales/Payments/Create", new FormUrlEncodedContent(confirmOwn), CancellationToken);
+            ownResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+            ownResponse.RequestMessage!.RequestUri!.AbsolutePath.ShouldNotContain(
+                "/Identity/Account/Login", Case.Insensitive,
+                "an anonymous caller with a valid order-access cookie must be able to actually confirm their own payment, not be bounced to login");
+            ownResponse.RequestMessage!.RequestUri!.AbsolutePath.ShouldContain(
+                "/Sales/Orders/Details", Case.Insensitive,
+                "a successful anonymous payment confirmation should land on the (already anonymous-accessible) order details page");
+
+            var clientB = CreateClient();
+            var guestTokenB = await MintGuestCookieAsync(clientB);
+            var formTokenB = await FetchAntiForgeryTokenAsync(clientB, AnonymousTokenSourceUrl);
+            var (orderIdB, _) = await PlaceGuestOrderAsync(clientB, formTokenB, productId, UniqueEmail("payments-post-other"));
+            var paymentIdB = await _factory.CreatePendingPaymentAsync(orderIdB, guestTokenB);
+
+            var confirmOther = new Dictionary<string, string>
+            {
+                ["PaymentId"] = paymentIdB.ToString(),
+                ["TransactionRef"] = System.Guid.NewGuid().ToString(),
+                ["__RequestVerificationToken"] = formTokenA
+            };
+            var otherPostResponse = await clientA.PostAsync(
+                "/Sales/Payments/Create", new FormUrlEncodedContent(confirmOther), CancellationToken);
+            otherPostResponse.RequestMessage!.RequestUri!.AbsolutePath.ShouldContain(
+                "/Identity/Account/Login", Case.Insensitive,
+                "clientA's order-access cookie is scoped to order A and must not confirm order B's payment");
+        }
+
         [Fact]
         public async Task SalesOrdersDetails_AnonymousWithOrderAccessCookie_AllowsOwnOrder_RejectsOtherOrder()
         {

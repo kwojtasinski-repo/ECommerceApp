@@ -15,9 +15,19 @@ namespace ECommerceApp.Web.E2E.PageObjects
         public async Task<IPlaceOrderPage> FillCustomerAsync()
         {
             await _page.WaitForFunctionAsync("() => Number(document.getElementById('CustomerId').value) > 0");
+            return await FillCustomerFieldsAsync("jan.e2e@example.com");
+        }
+
+        public async Task<IPlaceOrderPage> FillGuestCustomerAsync(string email)
+        {
+            return await FillCustomerFieldsAsync(email);
+        }
+
+        private async Task<IPlaceOrderPage> FillCustomerFieldsAsync(string email)
+        {
             await _page.Locator("#FirstName").FillAsync("Jan");
             await _page.Locator("#LastName").FillAsync("Kowalski");
-            await _page.Locator("#Email").FillAsync("jan.e2e@example.com");
+            await _page.Locator("#Email").FillAsync(email);
             await _page.Locator("#PhoneNumber").FillAsync("+48123456789");
             await _page.Locator("#Street").FillAsync("Testowa");
             await _page.Locator("#BuildingNumber").FillAsync("1");

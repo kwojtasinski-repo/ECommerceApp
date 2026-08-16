@@ -165,9 +165,24 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Summary(int id, int? profileId, bool guest = false, string token = null)
         {
-            if (User.Identity?.IsAuthenticated != true)
+            token ??= Request.Cookies[OrderAccessCookie.CookieName];
+            var scope = await _orderAccessService.GetScopeAsync(token, HttpContext.RequestAborted);
+            if (scope is null || scope.OrderId != id)
             {
-                token ??= Request.Cookies[OrderAccessCookie.CookieName];
+                if (User.Identity?.IsAuthenticated == true)
+                    return Forbid();
+
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var profile = await _accountProfileClient.GetProfileAsync(GetUserId(), HttpContext.RequestAborted);
+                if (profile is null || profile.CustomerId != scope.UserProfileId)
+                    return Forbid();
+            }
+            else
+            {
                 if (!await _orderAccessService.HasAccessAsync(id, token, HttpContext.RequestAborted))
                     return RedirectToPage("/Account/Login", new { area = "Identity" });
 
@@ -238,7 +253,6 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
         public async Task<IActionResult> CartCount()
         {
             if (!User.Identity.IsAuthenticated)

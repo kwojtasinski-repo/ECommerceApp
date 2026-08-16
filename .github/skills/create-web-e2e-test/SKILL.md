@@ -154,6 +154,16 @@ It composes storefront, checkout, payment, shipment creation, and shipment-state
 already-authenticated pages from its host, and returns the immutable `OrderLifecycleResult`.
 It does not create browser contexts or perform login.
 
+The same class also holds the true anonymous, no-prior-login coverage for ADR-0030 (guest
+checkout): `ExecuteAnonymousCheckoutAndPromotionAsync` (cart → guest `PlaceOrder` → payment →
+account promotion, driven by
+[`GuestCheckoutLifecycleTests.AnonymousGuestCheckout_PaysAndPromotesAccount`](../../../../ECommerceApp.Web.E2E/GuestCheckoutLifecycleTests.cs))
+and `ExecuteAnonymousCookieRecoveryAsync` (cookie loss → order-access recovery through the login
+page and the admin Backoffice view, driven by the same test class's
+`AnonymousGuestCheckout_LostCookie_RecoversOrderAccessThroughBackoffice`). Both use a guest
+`BrowserContext` alongside a separately authenticated admin `BrowserContext` — the two-persona-
+plus-admin pattern for a workflow that changes persona, per the rule below.
+
 Same-tab server redirects that keep using the same `IPage` may be followed by a POM constructing
 the next POM. This applies to ordinary checkout and shipment redirects. It does not transfer
 ownership of popups, new tabs, new windows, or persona changes to a POM. A workflow that changes
