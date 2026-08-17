@@ -69,5 +69,18 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
                 It.IsAny<CancellationToken>()), Times.Once);
             _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task HandleAsync_AlreadyProcessed_ShouldSkipAndNotCommit()
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                1, It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            var message = CreateMessage(42, new ShipmentLineItem(1, 2));
+
+            await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
+
+            _stockService.Verify(s => s.FulfillAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 }

@@ -19,6 +19,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         private readonly Mock<IInventoryUnitOfWork> _unitOfWork = new();
         private readonly Mock<IOutboxWriter> _outboxWriter = new();
         private readonly Mock<IOutboxTransaction> _txMock = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         public ShipmentFailedHandlerTests()
         {
@@ -26,10 +27,12 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
             _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_txMock.Object);
             _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                It.IsAny<long>(), It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         }
 
         private ShipmentFailedHandler CreateHandler()
-            => new(_stockService.Object, _unitOfWork.Object, _outboxWriter.Object);
+            => new(_stockService.Object, _unitOfWork.Object, _outboxWriter.Object, _processedMessageGuard.Object);
 
         private static ShipmentFailed CreateMessage(int orderId, params ShipmentLineItem[] items)
             => new(ShipmentId: 100, OrderId: orderId, Items: items, OccurredAt: DateTime.UtcNow);
@@ -40,10 +43,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
             _stockService.Setup(s => s.ReleaseAsync(42, 1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
-            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
-            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -52,7 +56,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
             _stockService.Setup(s => s.ReleaseAsync(42, 1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(false);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
-            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
             _outboxWriter.Verify(w => w.EnqueueAsync(
                 It.Is<StockReconciliationRequired>(m => m.OrderId == 42
@@ -62,6 +66,29 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
                 _txMock.Object,
                 It.IsAny<CancellationToken>()), Times.Once);
             _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_AlreadyProcessed_ShouldSkipAndNotCommit()
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                1, It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            var message = CreateMessage(42, new ShipmentLineItem(1, 2));
+
+            await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
+
+            _stockService.Verify(s => s.ReleaseAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public void HandleAsync_WithoutOutboxMessageId_ShouldThrowNotSupported()
+        {
+            var message = CreateMessage(42, new ShipmentLineItem(1, 2));
+
+            var act = () => CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
+
+            act.Should().ThrowAsync<NotSupportedException>();
         }
     }
 }

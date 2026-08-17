@@ -1,50 +1,38 @@
-using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Inventory.Availability.Handlers
 {
-    internal sealed class ShipmentFailedHandler : IMessageHandler<ShipmentFailed>
+    internal sealed class ShipmentFailedHandler : ShipmentStockOutcomeHandlerBase, IIdAwareMessageHandler<ShipmentFailed>
     {
-        private readonly IStockService _stockService;
-        private readonly IInventoryUnitOfWork _unitOfWork;
-        private readonly IOutboxWriter _outboxWriter;
-
-        public ShipmentFailedHandler(IStockService stockService, IInventoryUnitOfWork unitOfWork, IOutboxWriter outboxWriter)
+        public ShipmentFailedHandler(
+            IStockService stockService,
+            IInventoryUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter,
+            IProcessedMessageGuard processedMessageGuard)
+            : base(stockService, unitOfWork, outboxWriter, processedMessageGuard)
         {
-            _stockService = stockService;
-            _unitOfWork = unitOfWork;
-            _outboxWriter = outboxWriter;
         }
 
-        public async Task HandleAsync(ShipmentFailed message, CancellationToken ct = default)
+        public Task HandleAsync(ShipmentFailed message, CancellationToken ct = default)
         {
-            var failures = new List<StockOperationFailure>();
+            throw new NotSupportedException(
+                "This handler requires outboxMessageId; call the IIdAwareMessageHandler overload.");
+        }
 
-            foreach (var item in message.Items)
-            {
-                if (!await _stockService.ReleaseAsync(message.OrderId, item.ProductId, item.Quantity, ct))
-                    failures.Add(new StockOperationFailure(item.ProductId, item.Quantity, StockOperationType.Release));
-            }
+        public Task HandleAsync(ShipmentFailed message, long outboxMessageId, CancellationToken ct = default)
+        {
+            var operations = message.Items
+                .Select(item => new StockOperation(item.ProductId, item.Quantity, StockOperationType.Release))
+                .ToList();
 
-            if (failures.Count > 0)
-            {
-                var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
-                await using (transaction)
-                {
-                    await _outboxWriter.EnqueueAsync(
-                        new StockReconciliationRequired(message.OrderId, failures, DateTime.UtcNow),
-                        transaction,
-                        CancellationToken.None);
-                    await transaction.CommitAsync(CancellationToken.None);
-                }
-            }
+            return ProcessAsync(message.OrderId, operations, outboxMessageId, ct);
         }
     }
 }

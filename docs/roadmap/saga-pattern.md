@@ -6,8 +6,11 @@
 > chain described in Gap 3 below was flattened: `OrderPaymentExpiredHandler` no longer publishes
 > `OrderCancelled`. That event is still live, though — it's published directly by
 > `OrderService.CancelOrderAsync` on the manual-cancel path, with 4 active handlers.
-> Option B (Process Manager) deferred pending Outbox pattern (not started) + F4 handler chain
-> refactoring (Shipment handler dedup not started).
+> Option B is superseded by the generic saga engine proposal (see
+> [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md)); both of its
+> prerequisites are now done — Outbox pattern (all 5 phases, validated PASS 2026-08-02) and F4 handler
+> chain refactoring (Shipment handler dedup, done 2026-08-17). Remaining work is the generic engine
+> itself (that doc's Phase 1).
 > Linked from [`README.md` F3](./README.md#future-architectural-considerations).
 
 ---
@@ -65,10 +68,11 @@ longer exists. `OrderCancelled` is still published, but directly from
 `OrderService.CancelOrderAsync` (manual-cancel path), not from another handler — so it's a
 single-level fan-out, not a chain.
 
-**Still open**: `ShipmentDelivered`/`ShipmentFailed`/`ShipmentPartiallyDelivered` handlers in
-Inventory are leaf publishers (not chains, since they don't trigger further handler-to-handler
-publishes) but remain fully duplicated across three near-identical handler classes — dedup is
-workstream 3 in [`order-placement-compensation-followup.md`](./order-placement-compensation-followup.md).
+**Resolved (2026-08-17)**: `ShipmentDelivered`/`ShipmentFailed`/`ShipmentPartiallyDelivered` handlers
+in Inventory were leaf publishers (not chains, since they don't trigger further handler-to-handler
+publishes) but were fully duplicated across three near-identical handler classes. Deduplicated via
+workstream 3 in [`order-placement-compensation-followup.md`](./order-placement-compensation-followup.md)
+— F4 is now fully closed.
 
 ---
 
@@ -152,10 +156,10 @@ Done:
   └─► Option A — OrderPlacementFailed compensation handlers (Payments, Inventory, Presale)
         All three shipped; cart restore (Presale) was the last one, 2026-07-26.
 
-Before Option B:
-  └─► F4 — refactor implicit handler chains into explicit orchestration per BC
-  └─► Outbox pattern — guarantee at-least-once delivery for critical messages
-  └─► ADR-0026 — decision: choreography-only vs. mixed orchestration
+Before Option B (all done):
+  └─► F4 — refactor implicit handler chains into explicit orchestration per BC (done 2026-08-17)
+  └─► Outbox pattern — guarantee at-least-once delivery for critical messages (done 2026-08-02)
+  └─► ADR-0026 — decision: choreography-only vs. mixed orchestration (Accepted)
 
 Option B (if needed):
   └─► OrderLifecycleSaga entity + DB table
