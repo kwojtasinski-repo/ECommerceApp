@@ -110,6 +110,45 @@ namespace ECommerceApp.Web.E2E
         }
 
         /// <summary>
+        /// The real-browser counterpart to the HTTP-level (TestServer/AngleSharp-style)
+        /// <c>SessionIsolationTests.GuestAccessSession_CannotReachIdentityManage</c> and the unit-level
+        /// <c>AppAuthorizationPoliciesTests</c>. Those two prove the authorization *configuration* is
+        /// correct in isolation; this proves the real Kestrel-hosted pipeline — real Secure/SameSite
+        /// GuestAccess cookie, real ASP.NET Core Identity redirect chain, real browser following it —
+        /// actually keeps a guest out of account management end to end. If any of Startup.cs's
+        /// AddAuthorization wiring, the GuestAccess cookie's real attributes, or the Identity/Manage
+        /// Razor Pages convention ever drift out of sync with each other, only a real browser hitting the
+        /// real host would catch it — that's the gap this test closes, deliberately paying the slower
+        /// browser-test cost for it because this is a real-account-vs-guest data boundary, not a
+        /// convenience feature.
+        /// </summary>
+        [Fact]
+        public async Task AnonymousGuestCheckout_CannotReachIdentityManage()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            var services = factory.StartKestrelHost();
+            await E2ESeed.AdminAsync(services);
+            var productIds = await E2ESeed.BasketProductsAsync(services);
+
+            await using var guestContext = await _browserFixture.Browser.NewContextAsync();
+            var guestPage = await guestContext.NewPageAsync();
+
+            var orderId = await new GuestOrderLifecycleScenario().ExecuteAnonymousCheckoutAsync(
+                guestPage, factory.ServerAddress, productIds[0]);
+            // guestPage is now GuestAccess-signed-in (not anonymous) — the actual thing under test.
+
+            await guestPage.GotoAsync($"{factory.ServerAddress}/Identity/Account/Manage");
+
+            guestPage.Url.ShouldContain("/Identity/Account/Login",
+                customMessage: "a GuestAccess-authenticated guest must be redirected to Login by the real pipeline, not let into account management");
+            (await new LoginPage(guestPage).IsDisplayed()).ShouldBeTrue(
+                "the login form must actually be what's rendered, not merely a URL that happens to contain 'Login'");
+
+            orderId.ShouldBeGreaterThan(0);
+        }
+
+        /// <summary>
         /// ADR-0030 Phase 9 replaced Phase 7/8's admin-Backoffice-assisted recovery magic link with a
         /// self-service email+code flow on the unified order-lookup page — see
         /// <see cref="GuestOrderLifecycleScenario.ExecuteAnonymousSelfServiceRecoveryAsync"/> for the
