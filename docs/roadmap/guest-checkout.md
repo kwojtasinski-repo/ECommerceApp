@@ -1,8 +1,8 @@
 # Roadmap: Guest Checkout — Anonymous Order Placement
 
 > ADR: [ADR-0030](../adr/0030/0030-guest-checkout-anonymous-order-placement.md) (revised 2026-08-14, 2026-08-16)
-> Status: ✅ Accepted (Phases 1–8) — Phase 9 in design/plan, supersedes part of §11/§12's mechanism
-> Plan pairs: `.github/plans/01`–`08-phase-*` (all deleted per each phase's PASS cleanup step); `09-phase-*` in progress
+> Status: ✅ Accepted (Phases 1–9) — Phase 9 supersedes part of §11/§12's mechanism, independently validated PASS 2026-08-17
+> Plan pairs: `.github/plans/01`–`09-phase-*` (all deleted per each phase's PASS cleanup step)
 
 ---
 
@@ -13,9 +13,11 @@ mechanisms without changing their contracts. It can start as soon as the ADR is 
 
 **Prerequisite to verify first**: what rate-limiting infrastructure already exists for public
 endpoints (ADR-0030 §8). `[AllowAnonymous]` removes the incidental throttling effect of requiring
-login. **As of Phase 8, still not implemented anywhere in `ECommerceApp.Web`** — Phase 9 makes this
-a hard blocker (not just a note) for its own new order-lookup-by-id path, since that path treats the
-order id as non-secret and relies on rate limiting to prevent code-request enumeration.
+login. **As of Phase 8, was not implemented anywhere in `ECommerceApp.Web`** — Phase 9 made this a
+hard blocker (not just a note) for its own new order-lookup-by-id path, since that path treats the
+order id as non-secret and relies on rate limiting to prevent code-request enumeration. **Closed by
+Phase 9**: `Microsoft.AspNetCore.RateLimiting` on `RequestOrderAccess` (10/10min per IP + 5/15min
+per `OrderId`), verified at the HTTP level to actually return `429`/`Retry-After`.
 
 **Scope note (revised):** everything below lives in `ECommerceApp.Web` (the MVC storefront).
 `ECommerceApp.API` is not touched by this roadmap — see ADR-0030 §2.
@@ -34,7 +36,7 @@ order id as non-secret and relies on rate limiting to prevent code-request enume
 | 06 | `06-phase-guest-account-linking-*` | §6, §10 | Done — independently validated PASS 2026-08-16 |
 | 07 | `07-phase-guest-order-access-recovery-*` | §11 | Done — independently validated PASS 2026-08-16 |
 | 08 | `08-phase-guest-checkout-regression-*` | §12 | Done — independently validated PASS 2026-08-16 (found and fixed a Phase 7 production defect: anonymous guests could reach the payment form but not actually submit it) |
-| 09 | `09-phase-guest-access-authorization-*` | §11, §12 (2026-08-16 revision) | Not started — plan pending approval |
+| 09 | `09-phase-guest-access-authorization-*` | §11, §12 (2026-08-16 revision) | Done — independently validated PASS 2026-08-17 (found and fixed: `Forbid()`-vs-lookup-redirect not differentiated by scheme; `IsAuthenticated`-as-real-user-proxy broke a guest's second order; missing 429/Retry-After test; missing E2E coverage for the confirm-by-email screen; a dead admin-Backoffice recovery link) |
 
 Ordering/preconditions between phases are stated in each phase file; broadly: 01 → 02 → 03, with
 04 startable any time after 02; 05 has no dependency on 01–04; 06 depends on 05 (and 02, for there
@@ -101,9 +103,15 @@ Later still, guest lost the order-access cookie and wants to view/pay
       `GuestOrderAccess` code unlocks **exactly one** order — the asymmetry is intentional, verified
       both directions (Phase 6/7, independently validated PASS; Phase 7's
       `RecoveryCode_ForOrderA_DoesNotGrantAccessToOrderB` covers the order-scoping direction)
-- [x] No endpoint accepts a bare order number/id and offers to email a code for it — the only entry
-      point to order recovery is a pre-issued, unguessable token already in a URL (Phase 7,
-      `RedeemRecovery(string code)` is the only entry point; re-confirmed Phase 8)
+- [x] **True as shipped through Phase 8** — no endpoint accepted a bare order number/id and offered
+      to email a code for it; the only entry point was a pre-issued, unguessable token already in a
+      URL (Phase 7, `RedeemRecovery(string code)`; re-confirmed Phase 8). **Phase 9 deliberately
+      changes this criterion** — see ADR-0030's 2026-08-16 revision note: the order id becomes a
+      plain, non-secret path segment, and the email-verification code becomes the sole secret,
+      specifically to unify guest and real-user authorization into one mechanism. This is an
+      intentional, explicitly-approved threat-model change, not a regression — but it makes rate
+      limiting on the code-request step a hard blocker (see below), where before it was only a
+      general prerequisite note.
 - [x] The admin-only interim view (§10) gates on `Administrator` only, not `ManagingRole` (Phase 8,
       independently confirmed directly against `GuestVerificationController.cs`)
 - [x] Session-isolation regression test (Phase 8) passes: a guest session cannot read or act on a
@@ -115,14 +123,21 @@ Later still, guest lost the order-access cookie and wants to view/pay
       PASS. `GuestOrderLifecycleTests`/`GuestOrderLifecycleThroughListingTests` remain the separate,
       already-logged-in registered-customer coverage they always were — no longer the only "Guest*"
       tests in the suite.
-- [ ] **Rate limiting is NOT in place** on `PlaceOrder` POST, guest-cookie issuance, or
-      code-request/redemption endpoints. Grepped `ECommerceApp.Web` for rate-limiting middleware
-      (`RateLimit`/`EnableRateLimiting`/`AddRateLimiter`) during Phase 8 validation — zero matches.
-      This was flagged as a "Prerequisite to verify first" at the top of this roadmap from the start
-      and was never assigned to any of the 8 phases' own scope, so it did not block Phase 8's PASS —
-      but it remains a real, unresolved gap in this initiative as shipped. `[AllowAnonymous]` has
-      been live since Phase 1; anyone deciding to expose this in a real, publicly-reachable
-      environment should treat this as a pre-launch blocker, not a someday item.
+- [x] **Rate limiting is now in place** on `RequestOrderAccess` — 10 requests/10min per client IP +
+      5 requests/15min per `OrderId`, both active simultaneously (`ECommerceApp.Web/Startup.cs`, via
+      `Microsoft.AspNetCore.RateLimiting`). Was flagged as a "Prerequisite to verify first" at the
+      top of this roadmap from the start and remained unimplemented through Phase 8 (grepped zero
+      matches for `RateLimit`/`EnableRateLimiting`/`AddRateLimiter` during that validation). Phase 9
+      made it a hard blocker for its own `RequestOrderAccess` endpoint and closed it — independently
+      re-verified 2026-08-17: the per-IP limit was initially wired as a `GlobalLimiter` matched by a
+      literal URL path suffix (`/RequestAccess`) that this app's actual
+      `{area}/{controller}/{action}/{id}` route never produces for this action (it resolves to
+      `.../RequestOrderAccess/{id}`), so the per-IP check was silently dead; fixed to match on route
+      values instead, and a new HTTP-level test (`RequestOrderAccess_ExceedingPerOrderLimit_Returns429WithRetryAfter`)
+      confirms the per-`OrderId` limit actually returns `429` + `Retry-After` once exceeded.
+      `PlaceOrder` POST and guest-cookie issuance remain unthrottled — out of Phase 9's scope (it
+      only covers the order-lookup/code-request path its own revision note introduces), not a new
+      gap this phase introduced.
 
 ---
 
@@ -148,10 +163,11 @@ narrower — one token, one order — see ADR §6 vs §11 for why these are not 
 **Scenario:** guest closes the browser after placing an order, returns days later (possibly a
 different device) to check status or pay.
 **Impact:** without §11, there would be no way back in at all.
-**Decision:** order-access token (minted silently at order placement, doubles as cookie + URL
-token) plus a `VerificationCode`-gated recovery flow through the existing login page. Scoped to
-exactly one order per code — see ADR §11's threat model for why this does not become a mass-scan
-surface.
+**Decision:** order-access token minted silently at order placement, backing a `GuestAccess`
+sign-in (Phase 9) plus a `VerificationCode`-gated self-service recovery flow at the unified
+order-lookup page (`GET /Presale/Checkout/Order/{id}` → email → code, no admin action needed).
+Scoped to exactly one order per code — see ADR §11's threat model for why this does not become a
+mass-scan surface, and why `RequestOrderAccess` is rate-limited.
 
 ### No real email exists yet
 **Scenario:** §6 and §11 both nominally "send an email" containing a link/code.

@@ -9,10 +9,15 @@ using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Web.Controllers;
 using ECommerceApp.Web.Areas.Presale.Services;
+using ECommerceApp.Web.Areas.Presale.Authorization;
+using ECommerceApp.Web.Areas.Presale.ViewModels;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Areas.Presale.Controllers
@@ -28,6 +33,8 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         private readonly IGuestPromotionService _guestPromotionService;
         private readonly IOrderAccessService _orderAccessService;
         private readonly IVerificationCodeClient _verificationCodeClient;
+        private readonly IOrderClient _orderClient;
+        private readonly IOrderAccessAuthorizer _orderAccessAuthorizer;
 
         public CheckoutController(
             ICartService cartService,
@@ -36,7 +43,9 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
             IShopperIdentityResolver shopperIdentityResolver,
             IGuestPromotionService guestPromotionService,
             IOrderAccessService orderAccessService,
-            IVerificationCodeClient verificationCodeClient)
+            IVerificationCodeClient verificationCodeClient,
+            IOrderClient orderClient,
+            IOrderAccessAuthorizer orderAccessAuthorizer)
         {
             _cartService = cartService;
             _checkoutService = checkoutService;
@@ -45,6 +54,8 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
             _guestPromotionService = guestPromotionService;
             _orderAccessService = orderAccessService;
             _verificationCodeClient = verificationCodeClient;
+            _orderClient = orderClient;
+            _orderAccessAuthorizer = orderAccessAuthorizer;
         }
 
         [HttpGet]
@@ -120,7 +131,11 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
                 vm.ZipCode, vm.City, vm.Country);
                 var userId = _shopperIdentityResolver.Resolve(HttpContext);
                 int customerId;
-                if (User.Identity?.IsAuthenticated == true)
+                // A GuestAccess sign-in (Phase 9) also sets IsAuthenticated = true, so that alone can no
+                // longer distinguish a real registered account (which selects an existing CustomerId)
+                // from a guest (who supplies customer details inline, even on a repeat order placed
+                // after their first GuestAccess sign-in).
+                if (User.Identity?.AuthenticationType == IdentityConstants.ApplicationScheme)
                 {
                     if (!vm.CustomerId.HasValue)
                     {
@@ -163,31 +178,13 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> Summary(int id, int? profileId, bool guest = false, string token = null)
+        public async Task<IActionResult> Summary(int id, int? profileId, bool guest = false)
         {
-            token ??= Request.Cookies[OrderAccessCookie.CookieName];
-            var scope = await _orderAccessService.GetScopeAsync(token, HttpContext.RequestAborted);
-            if (scope is null || scope.OrderId != id)
-            {
-                if (User.Identity?.IsAuthenticated == true)
-                    return Forbid();
-
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
-
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                var profile = await _accountProfileClient.GetProfileAsync(GetUserId(), HttpContext.RequestAborted);
-                if (profile is null || profile.CustomerId != scope.UserProfileId)
-                    return Forbid();
-            }
-            else
-            {
-                if (!await _orderAccessService.HasAccessAsync(id, token, HttpContext.RequestAborted))
-                    return RedirectToPage("/Account/Login", new { area = "Identity" });
-
-                Response.Cookies.Append(OrderAccessCookie.CookieName, token, OrderAccessCookie.CookieOptions);
-            }
+            var order = await _orderClient.GetOrderAccessInfoAsync(id, HttpContext.RequestAborted);
+            if (order is null)
+                return NotFound();
+            if (!await IsOrderAuthorizedAsync(order))
+                return OrderAccessDenial.Result(this, User, id);
 
             ViewBag.GuestProfileId = guest ? profileId : null;
             return View(model: id);
@@ -195,43 +192,126 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> RedeemRecovery(string code)
+        public async Task<IActionResult> Order(int id, string message = null)
+        {
+            var order = await _orderClient.GetOrderAccessInfoAsync(id, HttpContext.RequestAborted);
+            if (order is null)
+                return NotFound();
+            if (await IsOrderAuthorizedAsync(order))
+                return RedirectToAction(nameof(Summary), new { id });
+            if (!order.UserId.StartsWith("gst_", StringComparison.OrdinalIgnoreCase))
+                return RedirectToPage("/Account/Login", new { area = "Identity", returnUrl = Url.Action(nameof(Order), new { id }) });
+
+            return View(new OrderAccessLookupVm { OrderId = id, Message = message });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("OrderAccessByOrderId")]
+        public async Task<IActionResult> RequestOrderAccess(int id, string email)
+        {
+            var order = await _orderClient.GetOrderAccessInfoAsync(id, HttpContext.RequestAborted);
+            if (order is not null && order.UserId.StartsWith("gst_", StringComparison.OrdinalIgnoreCase))
+            {
+                await _verificationCodeClient.RequestOrderAccessRecoveryAsync(
+                    id,
+                    HttpContext.RequestAborted);
+            }
+
+            return RedirectToAction(nameof(Order), new
+            {
+                id,
+                message = "Jeśli zamówienie jest powiązane z tym adresem, kod dostępu został przygotowany."
+            });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmOrderAccess(int id, string code)
         {
             var result = await _verificationCodeClient.RedeemOrderAccessRecoveryAsync(
                 code,
                 HttpContext.RequestAborted);
-            if (!result.Success)
-            {
-                TempData["OrderRecoveryMessage"] = "Ten link odzyskiwania dostępu nie jest już ważny.";
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
+            if (!result.Success || result.OrderId != id)
+                return RedirectToAction(nameof(Order), new { id, message = "Kod dostępu jest nieprawidłowy lub wygasł." });
 
-            var token = OrderAccessCookie.NewToken();
-            await _orderAccessService.CreateAsync(
-                result.OrderId,
-                result.UserProfileId,
-                token,
-                HttpContext.RequestAborted);
-            Response.Cookies.Append(OrderAccessCookie.CookieName, token, OrderAccessCookie.CookieOptions);
-            return RedirectToAction(nameof(Summary), new { id = result.OrderId, token });
+            await CreateGuestAccessAsync(result.OrderId, result.UserProfileId);
+            return RedirectToAction(nameof(Summary), new { id = result.OrderId });
         }
 
         private async Task<IActionResult> CompleteOrderAccessAsync(int orderId, int userProfileId)
         {
-            var token = OrderAccessCookie.NewToken();
+            var token = OrderAccessTokenGenerator.NewToken();
             await _orderAccessService.CreateAsync(
                 orderId,
                 userProfileId,
                 token,
                 HttpContext.RequestAborted);
-            Response.Cookies.Append(OrderAccessCookie.CookieName, token, OrderAccessCookie.CookieOptions);
+            // A caller who isn't signed in as a real registered user is a guest — whether this is their
+            // first order (fully anonymous) or a repeat order placed while already GuestAccess-signed-in
+            // for a *previous* order. Either way, (re-)mint the sign-in scoped to *this* order: the
+            // GuestAccess ticket is single-order by design, so a second order must replace the old scope,
+            // not leave the guest holding a stale ticket that only ever unlocks their first order.
+            var isGuest = User.Identity?.AuthenticationType != IdentityConstants.ApplicationScheme;
+            if (isGuest)
+            {
+                await SignInGuestAccessAsync(orderId, _shopperIdentityResolver.Resolve(HttpContext).Value, token);
+            }
             return RedirectToAction(nameof(Summary), new
             {
                 id = orderId,
                 profileId = userProfileId,
-                guest = User.Identity?.IsAuthenticated != true,
-                token
+                guest = isGuest
             });
+        }
+
+        private async Task CreateGuestAccessAsync(int orderId, int userProfileId)
+        {
+            var token = OrderAccessTokenGenerator.NewToken();
+            await _orderAccessService.CreateAsync(
+                orderId,
+                userProfileId,
+                token,
+                HttpContext.RequestAborted);
+            await SignInGuestAccessAsync(orderId, await ResolveGuestUserIdAsync(orderId), token);
+        }
+
+        private async Task SignInGuestAccessAsync(int orderId, string userId, string backingToken)
+        {
+            var principal = new ClaimsPrincipal(new ClaimsIdentity(
+                new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, userId),
+                    new Claim(GuestAccessDefaults.OrderIdClaim, orderId.ToString()),
+                    new Claim(GuestAccessDefaults.BackingTokenClaim, backingToken),
+                    new Claim(GuestAccessDefaults.ValidatedAtClaim,
+                        DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture))
+                },
+                GuestAccessDefaults.AuthenticationScheme));
+            await HttpContext.SignInAsync(
+                GuestAccessDefaults.AuthenticationScheme,
+                principal,
+                new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
+                });
+        }
+
+        private async Task<string> ResolveGuestUserIdAsync(int orderId)
+        {
+            var order = await _orderClient.GetOrderAccessInfoAsync(orderId, HttpContext.RequestAborted);
+            return order?.UserId ?? string.Empty;
+        }
+
+        private Task<bool> IsOrderAuthorizedAsync(OrderAccessInfo order)
+        {
+            return _orderAccessAuthorizer.AuthorizeAsync(
+                User,
+                new OrderAccessResource(order.OrderId, order.UserId),
+                HttpContext.RequestAborted);
         }
 
         [HttpPost]

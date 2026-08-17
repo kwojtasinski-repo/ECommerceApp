@@ -57,5 +57,13 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             var order = await _orderService.GetOrderDetailsAsync(orderId, ct);
             return order?.Customer?.Email;
         }
+
+        public async Task<OrderAccessInfo> GetOrderAccessInfoAsync(int orderId, CancellationToken ct = default)
+        {
+            var order = await _orderService.GetOrderDetailsAsync(orderId, ct);
+            return order is null
+                ? null
+                : new OrderAccessInfo(order.Id, order.UserId, order.Customer?.Email);
+        }
     }
 }

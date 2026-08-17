@@ -226,8 +226,13 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             }
             else
             {
+                // Summary stays [AllowAnonymous] (so a nonexistent order id still 404s for a fully
+                // anonymous caller instead of forcing a login redirect — see
+                // SummaryForMissingOrder_ReturnsNotFound) and routes a denied guest/anonymous caller
+                // through the unified order-lookup path rather than straight to Login, since a guest has
+                // no password to log in with.
                 response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
-                response.Headers.Location!.ToString().ShouldContain("Login");
+                response.Headers.Location!.ToString().ShouldContain("/Presale/Checkout/Order/");
             }
         }
     }

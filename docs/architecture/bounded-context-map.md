@@ -161,7 +161,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 - `Payment` never controls `Order` lifecycle — events only
 - `Availability` / inventory is an explicit domain participant, never a side effect
 
-### Phase 7 order-access ACLs (ADR-0030 §11)
+### Phase 7 order-access ACLs (ADR-0030 §11), mechanism updated by Phase 9
 
 The guest order-access capability is owned by Presale/Checkout. Consumers use narrow
 consumer-owned ACLs rather than referencing the token repository or order-access service
@@ -170,8 +170,21 @@ directly across bounded-context boundaries:
 | Dependency direction | Contract | Purpose |
 | --------------------- | -------- | ------- |
 | `Presale/Checkout → Supporting/Verification` | `IVerificationCodeClient` | Issue and redeem order-scoped recovery codes |
-| `Sales/Payments → Presale/Checkout` | `IOrderAccessClient` | Authorize anonymous payment-page access |
-| `Sales/Orders → Presale/Checkout` | `IOrderAccessClient` | Authorize anonymous order-details access |
+| `Sales/Payments → Presale/Checkout` | `IOrderAccessAuthorizer` | Resource-based `OrderAccess` policy check (`GuestAccess`- or `Identity.Application`-authenticated) for the payment page |
+| `Sales/Orders → Presale/Checkout` | `IOrderAccessAuthorizer` | Resource-based `OrderAccess` policy check for order details |
+
+**Phase 9 (2026-08-17, independently validated PASS)**: the edge *ownership* (Presale/Checkout →
+Sales/Payments, Sales/Orders) is unchanged, but what flows through it changed from token-cookie
+issuance/lookup (`IOrderAccessClient`, Phase 7) to a resource-based authorization check
+(`IOrderAccessAuthorizer`, wrapping `IAuthorizationService.AuthorizeAsync(user, resource,
+"OrderAccess")`) — both controllers now inject `IOrderAccessAuthorizer` directly instead of
+`IOrderAccessClient`. **Residual gap found during validation, not fixed** (the Phase 9 plan
+explicitly listed `IOrderAccessClient`/`OrderAccessToken` persistence under "Files NOT to touch"):
+`IOrderAccessClient` and its two adapters (`ECommerceApp.Infrastructure/Sales/{Payments,Orders}/Adapters/OrderAccessClientAdapter.cs`)
+are still defined and DI-registered but are no longer injected anywhere — confirmed via
+solution-wide grep for constructor injection sites, zero hits. Now dead code; left in place rather
+than removed unilaterally, since the plan protected this file set explicitly and its removal is a
+separate, deliberate decision.
 
 ---
 

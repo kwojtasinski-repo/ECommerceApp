@@ -51,39 +51,60 @@ authenticated-user IDOR in the same stroke, with:
    whole `UserProfile`/order history, even though the same `PresaleUserId` could in principle place
    more than one order. This preserves §11's original single-order blast-radius limit; only the
    delivery mechanism changes.
-2. **One shared authorization policy** (`OrderAccess` — exact name TBD at implementation time)
-   replacing every `[AllowAnonymous]` in `CheckoutController`/`PaymentsController`/`OrdersController`
-   with `[Authorize(Policy = "OrderAccess")]`. The policy's handler accepts either authentication
-   scheme and checks ownership the same way regardless of which one authenticated the caller: the
-   resource's owner id (`Order`/`Payment`'s backing `UserProfile.UserId`) must equal `GetUserId()`
-   (or the caller holds a `MaintenanceRole`). Because a `GuestAccess`-signed-in guest now always has
-   a `ClaimTypes.NameIdentifier` claim, `GetUserId()` needs no anonymous/authenticated branching
-   anywhere it's called — the same code path that will now correctly gate the guest path also closes
-   the pre-existing authenticated-user IDOR, since ownership is checked unconditionally instead of
-   only in the actions that happened to remember to add it by hand.
+2. **One shared, resource-based authorization check** (`OrderAccess` policy name, backing an
+   `IAuthorizationHandler`) replacing every `[AllowAnonymous]` in
+   `CheckoutController`/`PaymentsController`/`OrdersController`. **The attribute-level guard is bare
+   `[Authorize]`, not `[Authorize(Policy = "OrderAccess")]`** — this is a deliberate, non-negotiable
+   distinction, not a simplification: a declarative policy attribute is evaluated before the action
+   body runs, so it cannot know which `Order`/`Payment` the request is even about. `[Authorize]`
+   alone (with both `Identity.Application` and `GuestAccess` listed as accepted schemes) only
+   establishes "some recognized principal is present"; each action then fetches its resource and
+   calls `IAuthorizationService.AuthorizeAsync(User, resource, "OrderAccess")` explicitly —
+   ASP.NET Core's standard resource-based authorization pattern. The handler behind that policy name
+   checks ownership the same way regardless of which scheme authenticated the caller: the resource's
+   owner id (`Order`/`Payment`'s backing `UserProfile.UserId`) must equal `GetUserId()` (or the
+   caller holds a `MaintenanceRole`); if the caller authenticated via `GuestAccess`, the resource's
+   `OrderId` must also match the sign-in's `OrderAccessOrderId` claim. Because a `GuestAccess`-signed-
+   in guest now always has a `ClaimTypes.NameIdentifier` claim, `GetUserId()` needs no anonymous/
+   authenticated branching anywhere it's called — the same handler that correctly gates the guest
+   path also closes the pre-existing authenticated-user IDOR, since ownership is checked
+   unconditionally instead of only in the actions that happened to remember to add it by hand.
 3. **§11's recovery flow becomes one generic, unified order-lookup path** instead of two separate
    flows (the token-bearing `Summary` URL vs. the `/Identity/Account/Login?guestOrder=` recovery
-   page). The order id in the URL is **no longer treated as a secret** — the real secret moves
-   entirely to the email-verification code:
-   - Guest requests `.../Orders/{orderId}` (or equivalent — exact route TBD).
+   page), living in `CheckoutController` (Presale/Checkout — where this identity concept already
+   lives, not Sales/Orders or Sales/Payments): `GET /Presale/Checkout/Order/{id}`. The order id in
+   the URL is **no longer treated as a secret** — the real secret moves entirely to the
+   email-verification code:
    - If the caller already holds a valid `GuestAccess` (or `Identity.Application`) claim naming that
-     order, it's shown immediately — no added friction for the common case of viewing the order
-     right after checkout.
+     order (checked via the same `AuthorizeAsync` call as point 2), it's shown immediately — no
+     added friction for the common case of viewing the order right after checkout.
    - Otherwise, if the order belongs to a real registered account, redirect to
      `/Identity/Account/Login` (unchanged existing behavior for real accounts).
-   - Otherwise (order belongs to an unclaimed guest `UserProfile`), the same `VerificationCode`
-     (`Purpose = GuestOrderAccess`, §9) mechanism as today gates access: guest supplies an email, a
-     code goes to the email on file (never the one typed — unchanged anti-enumeration posture from
-     §6/§11), successful redemption mints a fresh `GuestAccess` sign-in scoped to that one order.
-   - **This changes §11's threat model** (below) and makes the rate-limiting prerequisite already
-     named in §8 a **hard blocker**, not an aspirational note: the code-request step must be
-     rate-limited (per IP and/or per order id) before this ships, since an order id is now guessable/
-     enumerable by design rather than an unguessable pre-issued token.
+   - Otherwise (order belongs to an unclaimed guest `UserProfile`): `POST
+     /Presale/Checkout/Order/{id}/RequestAccess` (body: email) generates a `VerificationCode`
+     (`Purpose = GuestOrderAccess`, §9) sent to the email on file (never the one typed — unchanged
+     anti-enumeration posture from §6/§11); `POST /Presale/Checkout/Order/{id}/ConfirmAccess` (body:
+     code) redeems it and mints a fresh `GuestAccess` sign-in scoped to that one order.
+   - **This changes §11's threat model** and makes the rate-limiting prerequisite already named in
+     §8 a **hard blocker**, not an aspirational note, on the `RequestAccess` step specifically, since
+     an order id is now guessable/enumerable by design rather than an unguessable pre-issued token.
+     Concrete policy (fixed-window, `Microsoft.AspNetCore.RateLimiting`): **10 requests per 10
+     minutes per client IP**, and **5 requests per 15 minutes per `OrderId`** (both partitions
+     active simultaneously — either limit reached returns `429` with a `Retry-After` header). The
+     per-`OrderId` partition exists specifically so one order can't be hammered from many IPs/proxies.
 4. `OrderAccessToken`/`IOrderAccessClient` (Phase 7) are not deleted — they remain the underlying
    issuance/persistence mechanism, now used to mint the `GuestAccess` claims principal (via
    `SignInAsync`) at the two points above, instead of being re-validated against the database on
-   every subsequent request. Revocation, if ever needed, works the same way it does today (expire/
-   delete the backing row) plus a cookie-validation interval, rather than per-request DB lookups.
+   every subsequent request. `OrderAccessToken` has no expiry today (§11 deliberately ties liveness
+   to `Payment.Status`/`ExpiresAt`, not a cookie TTL) and no revocation path beyond deleting the row
+   — this revision does not add one. The `GuestAccess` cookie's own expiration mirrors this: no
+   fixed absolute expiry: **sliding, 30-day idle timeout** (`options.ExpireTimeSpan =
+   TimeSpan.FromDays(30)`, `options.SlidingExpiration = true`), consistent with "not a second timer"
+   from §11's original design. Freshness against a deleted `OrderAccessToken` row (e.g. an admin
+   revokes access) is enforced via `CookieAuthenticationEvents.OnValidatePrincipal` on the
+   `GuestAccess` scheme, re-checking the row exists, **at most once per 5 minutes per principal**
+   (ASP.NET Core's own `ValidationInterval` pattern) — not on every request, to avoid reintroducing
+   a per-request DB hit.
 
 This does **not** touch Phases 1–3's core mechanism (guest identity resolution, cart, order
 placement, `UserProfile`/promotion) or Phase 4's cleanup job — it is scoped to §11 (order access &
@@ -594,17 +615,33 @@ guest path.
 | 6 | Guest-to-registered account linking (§6, §10) | ✅ Done |
 | 7 | Order access & recovery (§11) | ✅ Done |
 | 8 | Session isolation + full regression suite (§12) | ✅ Done |
-| 9 | `GuestAccess` auth scheme + unified `OrderAccess` policy, replacing §11's raw cookie + per-action checks (2026-08-16 revision) | ⬜ Not started (design/plan phase) |
+| 9 | `GuestAccess` auth scheme + unified `OrderAccess` policy, replacing §11's raw cookie + per-action checks (2026-08-16 revision) | ✅ Done |
 
-Phases 1–8 independently validated PASS (2026-08-14 through 2026-08-16), each in a session
+Phases 1–9 independently validated PASS (2026-08-14 through 2026-08-17), each in a session
 separate from the one that implemented it, per this repo's session-continuity convention. Phase 9
 was opened immediately after Phase 8's validation surfaced the gap the 2026-08-16 revision note
-describes — the initiative's `Accepted` status covers Phases 1–8 as shipped; Phase 9 supersedes
-part of §11/§12's mechanism before real production exposure.
+describes, and closes it: §11's raw `OrderAccessCookie` mechanism is fully removed (only the
+underlying `OrderAccessToken` persistence + backing-token generator remain, now consumed via the
+`GuestAccess` scheme), replaced by the `GuestAccess` auth scheme + `OrderAccess` policy this
+revision note describes.
 
-**Known gap carried into Accepted status** (not assigned to any phase's scope, flagged as a
-prerequisite from the original roadmap draft, never implemented): rate limiting on `PlaceOrder`
-POST, guest-cookie issuance, and code-request/redemption endpoints (§8, Consequences) does not
-exist anywhere in `ECommerceApp.Web` as of Phase 8. Treat as a pre-launch blocker before exposing
-this flow in a real, publicly-reachable environment — see `docs/roadmap/guest-checkout.md`'s
-acceptance criteria for detail.
+**As-implemented note (2026-08-17, independent validation)**: implementation matched the plan with
+two corrections applied directly during validation, both now fixed and covered by tests:
+- `PaymentsController.Create`/`OrdersController.Details`/`CheckoutController.Summary` originally
+  called `Forbid()` unconditionally on an `OrderAccess` policy failure; per this section's design,
+  only an authenticated-and-wrong-owner `Identity.Application` user should be `Forbid()`den — anyone
+  else (anonymous, or a `GuestAccess` guest scoped to a different order) is now routed to the
+  unified order-lookup path instead of a dead-end Access Denied page.
+- Two authentication-scheme-sensitive checks (`CheckoutController.PlaceOrder`'s
+  `User.Identity.IsAuthenticated` real-vs-guest branch, and `CompleteOrderAccessAsync`'s guard
+  around minting the `GuestAccess` sign-in) assumed `IsAuthenticated` implied a real registered
+  account — true before this phase, false after, since a `GuestAccess` sign-in also sets it. A guest
+  placing a *second* order while already `GuestAccess`-signed-in for a first order hit both: they
+  were wrongly forced through the "select an existing CustomerId" branch, and even past that, their
+  sign-in never got re-scoped to the new order. Both now key off
+  `AuthenticationType == IdentityConstants.ApplicationScheme` specifically.
+
+Rate limiting (10 requests/10min per IP + 5 requests/15min per `OrderId`, both active
+simultaneously, on `RequestOrderAccess` only) is implemented in `ECommerceApp.Web/Startup.cs` via
+`Microsoft.AspNetCore.RateLimiting` and verified at the HTTP level to actually return `429` +
+`Retry-After` once exceeded — the rate-limiting gap flagged against Phases 1–8 is closed.

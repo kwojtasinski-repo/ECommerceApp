@@ -76,7 +76,16 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             var email = UniqueEmail("resubmit");
 
             var (orderId1, profileId1) = await PlaceGuestOrderAsync(client, afToken, productA, email);
-            var (orderId2, profileId2) = await PlaceGuestOrderAsync(client, afToken, productB, email);
+
+            // The first PlaceOrder POST above mints a GuestAccess sign-in, so the client's identity
+            // changes from anonymous to authenticated mid-test. The antiforgery token fetched above
+            // embeds the (then-anonymous) identity and is no longer valid for a request made after that
+            // sign-in — fetch a fresh one from the Summary page (with the same guest/profileId query
+            // string PlaceOrder's own redirect carries, so the CreateAccount form — and therefore the
+            // token — actually renders).
+            var afTokenAfterSignIn = await FetchAntiForgeryTokenAsync(
+                client, $"/Presale/Checkout/Summary/{orderId1}?profileId={profileId1}&guest=True");
+            var (orderId2, profileId2) = await PlaceGuestOrderAsync(client, afTokenAfterSignIn, productB, email);
 
             orderId2.ShouldNotBe(orderId1);
             profileId2.ShouldBe(profileId1, "GetOrCreateForGuestAsync must be idempotent per guest PresaleUserId — a second order for the same guest cookie must not create a second UserProfile");

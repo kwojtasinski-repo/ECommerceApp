@@ -27,7 +27,9 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
                 "CheckoutStatus",
                 "CancelCheckout",
                 "Summary",
-                "RedeemRecovery",
+                "Order",
+                "RequestOrderAccess",
+                "ConfirmOrderAccess",
                 "CreateAccount",
                 "AddToCart"
             };
@@ -91,37 +93,77 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
         }
 
         /// <summary>
-        /// Phase 7 (ADR-0030 §11) added narrow, token-gated anonymous access to
-        /// <c>PaymentsController.Create</c> and <c>OrdersController.Details</c> — not the whole
-        /// controller. This guards that the anonymous surface on those two controllers hasn't drifted
-        /// wider than what §11 authorized.
+        /// Phase 9 (ADR-0030 §11 revision) replaced the earlier <c>[AllowAnonymous]</c>-plus-manual-cookie
+        /// mechanism on <c>PaymentsController.Create</c>/<c>OrdersController.Details</c> with bare
+        /// <c>[Authorize]</c> — the class-level default policy accepts either <c>Identity.Application</c>
+        /// or the new <c>GuestAccess</c> scheme, and ownership (including the single-order blast-radius
+        /// limit for guests) is enforced once, resource-based, via <c>IOrderAccessAuthorizer</c> inside the
+        /// action. So neither controller should carry <c>[AllowAnonymous]</c> at all any more — that guard
+        /// is still worth keeping, since its reappearance would mean a caller bypassed authentication
+        /// entirely, not just the ownership check.
         /// </summary>
         [Fact]
-        public void SalesPaymentsController_AnonymousActions_ExactlyCreate()
+        public void SalesPaymentsController_HasNoAnonymousActions()
         {
             var anonymousActions = typeof(SalesPaymentsController)
                 .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
                 .Where(IsAction)
                 .Where(method => method.IsDefined(typeof(AllowAnonymousAttribute), inherit: true))
                 .Select(method => method.Name)
-                .ToHashSet(StringComparer.Ordinal);
+                .ToList();
 
-            anonymousActions.ShouldBe(new HashSet<string>(StringComparer.Ordinal) { "Create" },
-                "ADR-0030 §11 only authorizes anonymous, order-access-token-gated access to Payments.Create");
+            anonymousActions.ShouldBeEmpty(
+                "ADR-0030 §11 revision: guest access to Payments.Create goes through the GuestAccess " +
+                "authentication scheme + OrderAccess policy, not [AllowAnonymous]");
         }
 
         [Fact]
-        public void SalesOrdersController_AnonymousActions_ExactlyDetails()
+        public void SalesOrdersController_HasNoAnonymousActions()
         {
             var anonymousActions = typeof(SalesOrdersController)
                 .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
                 .Where(IsAction)
                 .Where(method => method.IsDefined(typeof(AllowAnonymousAttribute), inherit: true))
                 .Select(method => method.Name)
-                .ToHashSet(StringComparer.Ordinal);
+                .ToList();
 
-            anonymousActions.ShouldBe(new HashSet<string>(StringComparer.Ordinal) { "Details" },
-                "ADR-0030 §11 only authorizes anonymous, order-access-token-gated access to Orders.Details");
+            anonymousActions.ShouldBeEmpty(
+                "ADR-0030 §11 revision: guest access to Orders.Details goes through the GuestAccess " +
+                "authentication scheme + OrderAccess policy, not [AllowAnonymous]");
+        }
+
+        /// <summary>
+        /// The narrower, positive half of the invariant above: <c>Create</c>/<c>Details</c> must not gain
+        /// a restrictive <c>[Authorize(Roles = ...)]</c>/<c>[Authorize(Policy = ...)]</c> override either —
+        /// that would silently exclude the <c>GuestAccess</c> scheme (which only satisfies the class-level
+        /// default policy) and re-lock guests out, defeating the phase without tripping the "no
+        /// AllowAnonymous" guard above.
+        /// </summary>
+        [Fact]
+        public void SalesPaymentsController_Create_UsesClassLevelDefaultAuthorization()
+        {
+            var createMethods = typeof(SalesPaymentsController)
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                .Where(IsAction)
+                .Where(method => method.Name == "Create");
+
+            foreach (var method in createMethods)
+            {
+                method.IsDefined(typeof(AuthorizeAttribute), inherit: false).ShouldBeFalse(
+                    "Payments.Create must rely on the controller's class-level [Authorize] default policy " +
+                    "(accepts GuestAccess or Identity.Application), not a narrower per-action override");
+            }
+        }
+
+        [Fact]
+        public void SalesOrdersController_Details_UsesClassLevelDefaultAuthorization()
+        {
+            var detailsMethod = typeof(SalesOrdersController)
+                .GetMethod("Details", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+
+            detailsMethod.IsDefined(typeof(AuthorizeAttribute), inherit: false).ShouldBeFalse(
+                "Orders.Details must rely on the controller's class-level [Authorize] default policy " +
+                "(accepts GuestAccess or Identity.Application), not a narrower per-action override");
         }
 
         private static bool IsAction(MethodInfo method) =>

@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Sales.Orders.DTOs;
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Sales.Orders.Services;
-using ECommerceApp.Web.Areas.Presale;
+using ECommerceApp.Web.Areas.Presale.Authorization;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,12 +15,12 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
     public class OrdersController : BaseController
     {
         private readonly IOrderService _orderService;
-        private readonly IOrderAccessClient _orderAccessClient;
+        private readonly IOrderAccessAuthorizer _orderAccessAuthorizer;
 
-        public OrdersController(IOrderService orderService, IOrderAccessClient orderAccessClient)
+        public OrdersController(IOrderService orderService, IOrderAccessAuthorizer orderAccessAuthorizer)
         {
             _orderService = orderService;
-            _orderAccessClient = orderAccessClient;
+            _orderAccessAuthorizer = orderAccessAuthorizer;
         }
 
         [Authorize(Roles = MaintenanceRole)]
@@ -50,24 +50,17 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
         public async Task<IActionResult> Details(int id)
         {
             var order = await _orderService.GetOrderDetailsAsync(id);
             if (order is null)
                 return NotFound();
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                if (!MaintenanceRoles.Any(r => User.IsInRole(r)) && order.UserId != GetUserId())
-                    return Forbid();
-            }
-            else
-            {
-                var token = Request.Cookies[OrderAccessCookie.CookieName];
-                if (string.IsNullOrWhiteSpace(token)
-                    || !await _orderAccessClient.HasAccessAsync(id, token, HttpContext.RequestAborted))
-                    return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
+            var authorized = await _orderAccessAuthorizer.AuthorizeAsync(
+                User,
+                new OrderAccessResource(order.Id, order.UserId),
+                HttpContext.RequestAborted);
+            if (!authorized)
+                return OrderAccessDenial.Result(this, User, order.Id);
             return View(order);
         }
 

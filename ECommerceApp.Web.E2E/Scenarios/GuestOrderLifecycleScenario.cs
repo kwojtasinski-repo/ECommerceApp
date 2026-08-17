@@ -31,7 +31,18 @@ namespace ECommerceApp.Web.E2E.Scenarios
             return orderId;
         }
 
-        public async Task<int> ExecuteAnonymousCookieRecoveryAsync(
+        /// <summary>
+        /// ADR-0030 Phase 9 superseded Phase 7/8's admin-Backoffice-assisted recovery (a magic link at
+        /// <c>/Identity/Account/Login?guestOrder=</c>, redeemed via <c>RedeemRecovery</c>) with a fully
+        /// self-service flow: the guest re-proves ownership by email + a one-time code, entered by hand
+        /// on the unified order-lookup page (<c>CheckoutController.Order</c>/<c>RequestOrderAccess</c>/
+        /// <c>ConfirmOrderAccess</c>) — no admin action is needed any more. The admin Backoffice
+        /// verification page is still used here only as the stand-in "mailbox": this repo simulates SMTP,
+        /// so the code is read from the same admin-visible pending-codes list a real email would have
+        /// carried, per this repo's established SMTP-is-simulated-test-via-DB convention — not because an
+        /// admin does anything with it.
+        /// </summary>
+        public async Task<int> ExecuteAnonymousSelfServiceRecoveryAsync(
             IPage guestPage,
             IPage adminPage,
             string baseAddress,
@@ -40,23 +51,22 @@ namespace ECommerceApp.Web.E2E.Scenarios
             var email = $"recovery-{Guid.NewGuid():N}@example.com";
             var summary = await PlaceAnonymousOrderAsync(guestPage, baseAddress, productId, email);
             var orderId = await summary.GetOrderIdAsync();
-            var accessToken = GetQueryParameter(new Uri(guestPage.Url), "token");
-            accessToken.ShouldNotBeNullOrWhiteSpace();
 
             await guestPage.Context.ClearCookiesAsync();
-            await guestPage.GotoAsync($"{baseAddress}/Identity/Account/Login?guestOrder={Uri.EscapeDataString(accessToken)}");
-            await guestPage.Locator("#guest-order-recovery input[type='email']").FillAsync(email);
-            await guestPage.GetByRole(AriaRole.Button, new() { Name = "Przygotuj odzyskanie dostępu" }).ClickAsync();
-            await guestPage.WaitForURLAsync("**/Identity/Account/Login?guestOrder=*");
+            var lookup = await OrderAccessLookupPage.NavigateAsync(guestPage, baseAddress, orderId);
+            await lookup.RequestAccessAsync(email);
 
             await adminPage.GotoAsync($"{baseAddress}/Backoffice/GuestVerification");
-            var redemptionLink = await adminPage.Locator("a[href*='RedeemRecovery']").First.GetAttributeAsync("href");
-            redemptionLink.ShouldNotBeNullOrWhiteSpace();
+            var codeCell = adminPage.Locator("tbody tr")
+                .Filter(new LocatorFilterOptions { HasText = orderId.ToString() })
+                .Locator("code")
+                .First;
+            var code = (await codeCell.InnerTextAsync()).Trim();
+            code.ShouldNotBeNullOrWhiteSpace();
 
-            await guestPage.GotoAsync(redemptionLink);
-            await guestPage.WaitForURLAsync("**/Presale/Checkout/Summary/*");
-            (await guestPage.GetByRole(AriaRole.Heading, new() { Name = "Zamówienie złożone!" }).CountAsync())
-                .ShouldBe(1);
+            var confirmedSummary = await lookup.ConfirmAccessAsync(code);
+            await confirmedSummary.ShouldConfirmOrderAsync();
+            (await confirmedSummary.GetOrderIdAsync()).ShouldBe(orderId);
 
             return orderId;
         }
@@ -163,18 +173,6 @@ namespace ECommerceApp.Web.E2E.Scenarios
             var summary = await orderForm.SubmitAsync();
             await summary.ShouldConfirmOrderAsync();
             return summary;
-        }
-
-        private static string GetQueryParameter(Uri uri, string key)
-        {
-            foreach (var pair in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
-            {
-                var parts = pair.Split('=', 2);
-                if (string.Equals(Uri.UnescapeDataString(parts[0]), key, StringComparison.Ordinal))
-                    return parts.Length == 2 ? Uri.UnescapeDataString(parts[1]) : string.Empty;
-            }
-
-            return null;
         }
     }
 }

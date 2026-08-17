@@ -95,12 +95,21 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             var email = UniqueEmail("promo-owner");
             var (orderId, profileId) = await PlaceGuestOrderAsync(client, token, productId, email);
 
+            // PlaceGuestOrderAsync's PlaceOrder POST mints a GuestAccess sign-in, so the client's
+            // identity changes from anonymous to authenticated mid-test. The antiforgery token fetched
+            // above embeds the (then-anonymous) identity and is no longer valid for a request made after
+            // that sign-in — fetch a fresh one from the Summary page (the same page CreateAccount's own
+            // form lives on in the real UI). The CreateAccount form only renders when
+            // ViewBag.GuestProfileId is set, which Summary only does from a `guest=True&profileId=`
+            // query string — the same one PlaceOrder's own redirect always carries.
+            var tokenAfterSignIn = await FetchAntiForgeryTokenAsync(
+                client, $"/Presale/Checkout/Summary/{orderId}?profileId={profileId}&guest=True");
             var form = new Dictionary<string, string>
             {
                 ["orderId"] = orderId.ToString(),
                 ["profileId"] = profileId.ToString(),
                 ["password"] = "GuestPass@2026",
-                ["__RequestVerificationToken"] = token
+                ["__RequestVerificationToken"] = tokenAfterSignIn
             };
             var response = await client.PostAsync("/Presale/Checkout/CreateAccount", new FormUrlEncodedContent(form), CancellationToken);
 

@@ -1,0 +1,39 @@
+@model ECommerceApp.Web.Areas.Presale.ViewModels.OrderAccessLookupVm
+
+@{
+    ViewData["Title"] = "Dostęp do zamówienia";
+}
+
+<div class="container py-4">
+    <h1 class="h3">Dostęp do zamówienia #@Model.OrderId</h1>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-info" role="status">@Model.Message</div>
+    }
+
+    <section class="mt-4" aria-labelledby="request-access-heading">
+        <h2 id="request-access-heading" class="h5">Potwierdź adres email</h2>
+        <p>Podaj adres użyty podczas składania zamówienia. Kod zostanie przygotowany na adres zapisany przy zamówieniu.</p>
+        <form asp-action="RequestOrderAccess" asp-route-id="@Model.OrderId" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input id="email" name="email" type="email" class="form-control" autocomplete="email" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Przygotuj kod</button>
+        </form>
+    </section>
+
+    <section class="mt-4" aria-labelledby="confirm-access-heading">
+        <h2 id="confirm-access-heading" class="h5">Wpisz kod dostępu</h2>
+        <form asp-action="ConfirmOrderAccess" asp-route-id="@Model.OrderId" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label for="code" class="form-label">Kod</label>
+                <input id="code" name="code" class="form-control" autocomplete="one-time-code" required />
+            </div>
+            <button type="submit" class="btn btn-secondary">Potwierdź dostęp</button>
+        </form>
+    </section>
+</div>

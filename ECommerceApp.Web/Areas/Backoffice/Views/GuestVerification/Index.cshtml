@@ -29,6 +29,7 @@ else
             <tr>
                 <th>Cel</th>
                 <th>Adres</th>
+                <th>Kod</th>
                 <th>Wygasa</th>
                 <th>Link</th>
             </tr>
@@ -39,6 +40,7 @@ else
                 <tr>
                     <td>@item.Purpose</td>
                     <td>@item.SubjectKey</td>
+                    <td><code>@item.Code</code></td>
                     <td>@item.ExpiresAt.ToLocalTime()</td>
                     <td><a href="@item.RedemptionUrl">@item.RedemptionUrl</a></td>
                 </tr>

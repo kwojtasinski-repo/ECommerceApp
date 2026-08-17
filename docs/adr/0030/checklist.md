@@ -113,24 +113,48 @@
 - [x] The token is a genuine random value (≥128-bit), not a hashid/encoded sequential id
 - [x] Pay-capability is enforced server-side via `Payment.Status`/`Payment.ExpiresAt` (existing
       3-day window, `PaymentWindowExpiredJob`) — not via the order-access cookie's own lifetime
-- [x] The login page's "kontynuuj jako gość" section renders **only** when a valid
-      `?guestOrder={token}` is present — never on a bare login-page visit
-- [x] No endpoint accepts a bare order number/id and offers to email/generate a code for it — the
-      only entry point is the pre-issued token already in a URL
+- [x] ~~The login page's "kontynuuj jako gość" section renders only when a valid
+      `?guestOrder={token}` is present~~ — **superseded by Phase 9**: that section and endpoint no
+      longer exist, replaced by the unified order-lookup path (`GET /Presale/Checkout/Order/{id}`)
+- [x] ~~No endpoint accepts a bare order number/id and offers to email/generate a code for it~~ —
+      **superseded by Phase 9, deliberately**: `RequestOrderAccess` now does exactly this, by
+      design (see ADR-0030's 2026-08-16 revision note), gated by rate limiting instead
 - [x] Redeeming a `GuestOrderAccess` code unlocks **exactly one** order — never all orders for the
       email (this is intentionally the opposite rule from account linking, above — verify both
       directions independently, not just one)
 
-### Session isolation (§12)
-- [ ] Every guest-eligible query is filtered by the caller's own resolved identity
-      (`PresaleUserId` pre-order, order-access token post-order) — never by a client-supplied id
-      alone, never by email as an access grant outside the two proven paths above
-- [ ] The set of anonymously-reachable Web endpoints is a closed, explicit list with a regression
+### Session isolation (§12) — Phase 8, verified PASS (independent re-validation, 2026-08-16); re-verified after Phase 9's mechanism swap (2026-08-17)
+- [x] Every guest-eligible query is filtered by the caller's own resolved identity
+      (`PresaleUserId` pre-order, `OrderAccess` policy + `GuestAccess`/`Identity.Application`
+      scheme post-order, Phase 9) — never by a client-supplied id alone, never by email as an
+      access grant outside the two proven paths above
+- [x] The set of anonymously-reachable Web endpoints is a closed, explicit list with a regression
       test asserting nothing else gained `[AllowAnonymous]` as a side effect
-- [ ] A session-isolation regression test exists exercising concurrent decoy sessions (one guest,
+      (`GuestCheckoutAllowlistTests`, updated for Phase 9's action set)
+- [x] A session-isolation regression test exists exercising concurrent decoy sessions (one guest,
       one authenticated) and confirming the session under test cannot cross into either
+      (`SessionIsolationTests`)
+
+### Order access authorization mechanism (ADR-0030 2026-08-16 revision) — Phase 9, verified PASS (independent re-validation, 2026-08-17)
+- [x] `GuestAccess` cookie authentication scheme + `OrderAccess` authorization policy replace §11's
+      raw `OrderAccessCookie` + scattered per-action manual checks; ownership is checked in exactly
+      one place (`OrderAccessAuthorizationHandler`) — confirmed via solution-wide grep for leftover
+      ad hoc `!= GetUserId()`/`MaintenanceRoles.Any(...)` checks, zero remaining
+- [x] A `GuestAccess`-authenticated guest is scoped to exactly the one order their sign-in names —
+      cross-order access is rejected (unit-tested directly on the handler; HTTP-level regression
+      tests on `PaymentsController.Create`/`OrdersController.Details`/`CheckoutController.Summary`)
+- [x] Real registered users keep seeing all their own orders/payments — no new restriction
+      introduced for the `Identity.Application` scheme
+- [x] The Phase 8-found IDOR (anonymous guest could GET but not POST-confirm a payment) does not
+      reopen after the mechanism swap
+- [x] A guest placing a *second* order (already `GuestAccess`-signed-in from a first order) is
+      correctly re-scoped to the new order, not left holding a sign-in that only ever unlocks the
+      first — found broken during validation (both `PlaceOrder`'s real-vs-guest branch and
+      `CompleteOrderAccessAsync`'s sign-in guard used `IsAuthenticated`, which a `GuestAccess`
+      sign-in now also sets), fixed to key off `AuthenticationType == IdentityConstants.ApplicationScheme`
 
 ### Operational prerequisites
-- [ ] `PlaceOrder` POST, guest-cookie issuance, and code-request/redemption endpoints are covered
-      by rate limiting before this feature ships (verify existing infrastructure — do not assume
-      it exists)
+- [x] `RequestOrderAccess` (the order-lookup path's code-request step) is covered by rate limiting
+      — 10 requests/10min per IP + 5 requests/15min per `OrderId`, both active simultaneously,
+      verified at the HTTP level to actually return `429`/`Retry-After` once exceeded. `PlaceOrder`
+      POST and guest-cookie issuance remain unthrottled — out of Phase 9's scope, not a new gap.

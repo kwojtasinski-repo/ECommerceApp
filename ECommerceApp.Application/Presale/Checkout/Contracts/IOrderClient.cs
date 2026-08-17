@@ -14,6 +14,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
             IReadOnlyList<CheckoutLine> lines,
             CancellationToken ct = default);
         Task<string> GetOrderCustomerEmailAsync(int orderId, CancellationToken ct = default);
+        Task<OrderAccessInfo> GetOrderAccessInfoAsync(int orderId, CancellationToken ct = default);
     }
 
     public sealed record OrderPlacementResult(bool IsSuccess, int? OrderId, string FailureReason)
@@ -21,6 +22,8 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
         public static OrderPlacementResult Succeeded(int orderId) => new(true, orderId, null);
         public static OrderPlacementResult Failed(string reason) => new(false, null, reason);
     }
+
+    public sealed record OrderAccessInfo(int OrderId, string UserId, string CustomerEmail);
 
     public sealed record CheckoutLine(int ProductId, int Quantity, decimal UnitPrice);
 

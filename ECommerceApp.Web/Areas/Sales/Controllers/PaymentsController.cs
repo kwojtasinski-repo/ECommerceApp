@@ -3,12 +3,11 @@ using ECommerceApp.Application.Sales.Payments.Contracts;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Application.Sales.Payments.ViewModels;
 using ECommerceApp.Domain.Sales.Payments;
-using ECommerceApp.Web.Areas.Presale;
+using ECommerceApp.Web.Areas.Presale.Authorization;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Areas.Sales.Controllers
@@ -18,12 +17,12 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
     public class PaymentsController : BaseController
     {
         private readonly IPaymentService _paymentService;
-        private readonly IOrderAccessClient _orderAccessClient;
+        private readonly IOrderAccessAuthorizer _orderAccessAuthorizer;
 
-        public PaymentsController(IPaymentService paymentService, IOrderAccessClient orderAccessClient)
+        public PaymentsController(IPaymentService paymentService, IOrderAccessAuthorizer orderAccessAuthorizer)
         {
             _paymentService = paymentService;
-            _orderAccessClient = orderAccessClient;
+            _orderAccessAuthorizer = orderAccessAuthorizer;
         }
 
         // Paged admin list — IPaymentService.GetAllAsync is not yet implemented.
@@ -43,48 +42,34 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
         public async Task<IActionResult> Create(int id)
         {
-            PaymentDetailsVm payment;
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                payment = await _paymentService.GetPendingByOrderIdAsync(id, GetUserId());
-            }
-            else
-            {
-                var token = Request.Cookies[OrderAccessCookie.CookieName];
-                if (string.IsNullOrWhiteSpace(token)
-                    || !await _orderAccessClient.HasAccessAsync(id, token, HttpContext.RequestAborted))
-                    return RedirectToPage("/Account/Login", new { area = "Identity" });
-
-                payment = await _paymentService.GetByOrderIdAsync(id);
-                if (payment is not null && !string.Equals(payment.Status, PaymentStatus.Pending.ToString(), StringComparison.Ordinal))
-                    payment = null;
-            }
+            var payment = await _paymentService.GetByOrderIdAsync(id);
 
             if (payment is null)
+                return NotFound();
+            if (!await _orderAccessAuthorizer.AuthorizeAsync(
+                    User,
+                    new OrderAccessResource(payment.OrderId, payment.UserId),
+                    HttpContext.RequestAborted))
+                return OrderAccessDenial.Result(this, User, payment.OrderId);
+            if (!string.Equals(payment.Status, PaymentStatus.Pending.ToString(), StringComparison.Ordinal))
                 return NotFound();
             return View(payment);
         }
 
         [HttpPost]
-        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ConfirmPaymentDto dto)
         {
-            var isAnonymous = User.Identity?.IsAuthenticated != true;
-            if (isAnonymous)
-            {
-                var preCheckPayment = await _paymentService.GetByIdAsync(dto.PaymentId);
-                if (preCheckPayment is null)
-                    return NotFound();
-
-                var token = Request.Cookies[OrderAccessCookie.CookieName];
-                if (string.IsNullOrWhiteSpace(token)
-                    || !await _orderAccessClient.HasAccessAsync(preCheckPayment.OrderId, token, HttpContext.RequestAborted))
-                    return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
+            var preCheckPayment = await _paymentService.GetByIdAsync(dto.PaymentId);
+            if (preCheckPayment is null)
+                return NotFound();
+            if (!await _orderAccessAuthorizer.AuthorizeAsync(
+                    User,
+                    new OrderAccessResource(preCheckPayment.OrderId, preCheckPayment.UserId),
+                    HttpContext.RequestAborted))
+                return OrderAccessDenial.Result(this, User, preCheckPayment.OrderId);
 
             var result = await _paymentService.ConfirmAsync(dto);
             var payment = await _paymentService.GetByIdAsync(dto.PaymentId);
@@ -93,9 +78,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
             if (result == PaymentOperationResult.Success)
             {
-                return isAnonymous
-                    ? RedirectToAction("Details", "Orders", new { area = "Sales", id = payment.OrderId })
-                    : RedirectToAction(nameof(MyPayments));
+                return RedirectToAction("Details", "Orders", new { area = "Sales", id = payment.OrderId });
             }
 
             ModelState.AddModelError(string.Empty, result switch
@@ -115,8 +98,11 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             var payment = await _paymentService.GetByIdAsync(id);
             if (payment is null)
                 return NotFound();
-            if (!MaintenanceRoles.Any(r => User.IsInRole(r)) && payment.UserId != GetUserId())
-                return Forbid();
+            if (!await _orderAccessAuthorizer.AuthorizeAsync(
+                    User,
+                    new OrderAccessResource(payment.OrderId, payment.UserId),
+                    HttpContext.RequestAborted))
+                return OrderAccessDenial.Result(this, User, payment.OrderId);
             return View(payment);
         }
 

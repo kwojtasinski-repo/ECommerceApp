@@ -43,8 +43,16 @@ namespace ECommerceApp.Web.E2E
             orderId.ShouldBeGreaterThan(0);
         }
 
+        /// <summary>
+        /// ADR-0030 Phase 9 replaced Phase 7/8's admin-Backoffice-assisted recovery magic link with a
+        /// self-service email+code flow on the unified order-lookup page — see
+        /// <see cref="GuestOrderLifecycleScenario.ExecuteAnonymousSelfServiceRecoveryAsync"/> for the
+        /// full rationale. This test supersedes the old
+        /// AnonymousGuestCheckout_LostCookie_RecoversOrderAccessThroughBackoffice scenario (which
+        /// exercised UI that no longer exists), not a silently dropped one.
+        /// </summary>
         [Fact]
-        public async Task AnonymousGuestCheckout_LostCookie_RecoversOrderAccessThroughBackoffice()
+        public async Task AnonymousGuestCheckout_LostCookie_RecoversOrderAccessThroughSelfService()
         {
             using var factory = new PlaywrightWebApplicationFactory();
             factory.Sink.SetOutput(_output);
@@ -60,7 +68,7 @@ namespace ECommerceApp.Web.E2E
             var adminLogin = await LoginPage.NavigateAsync(adminPage, factory.ServerAddress);
             await adminLogin.LoginAsync(E2ESeed.AdminEmail, E2ESeed.Password);
 
-            var orderId = await new GuestOrderLifecycleScenario().ExecuteAnonymousCookieRecoveryAsync(
+            var orderId = await new GuestOrderLifecycleScenario().ExecuteAnonymousSelfServiceRecoveryAsync(
                 guestPage,
                 adminPage,
                 factory.ServerAddress,
