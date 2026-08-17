@@ -84,6 +84,31 @@ namespace ECommerceApp.Web.E2E.Scenarios
         }
 
         /// <summary>
+        /// Places a single-product order for an already-authenticated registered customer and returns
+        /// only its id — the registered-account counterpart to
+        /// <see cref="ExecuteAnonymousCheckoutAsync"/>, for tests that need a real (non-guest) order to
+        /// cross-check a guest against, without the full two-item/fulfillment ceremony of
+        /// <see cref="ExecuteAsync"/>. Does not create a browser context or log in — same rule as
+        /// <see cref="ExecuteAsync"/>.
+        /// </summary>
+        public async Task<int> ExecuteRegisteredCustomerCheckoutAsync(
+            IPage customerPage,
+            string baseAddress,
+            int productId)
+        {
+            var storefront = await StorefrontPage.NavigateAsync(customerPage, baseAddress);
+            var product = await storefront.OpenProductAsync(productId);
+            await product.AddToCartAsync(productId, 1);
+
+            var cart = await CartPage.NavigateAsync(customerPage, baseAddress);
+            var orderForm = await cart.ProceedToOrderAsync();
+            await orderForm.FillCustomerAsync();
+            var summary = await orderForm.SubmitAsync();
+            await summary.ShouldConfirmOrderAsync();
+            return await summary.GetOrderIdAsync();
+        }
+
+        /// <summary>
         /// The anonymous counterpart to <see cref="ExecuteAsync"/>: an unauthenticated guest checks
         /// out (no login, no account creation) and the order still runs the full admin fulfillment
         /// path through to delivery. This is the "cart to delivery" coverage for ADR-0030 guest

@@ -110,6 +110,150 @@ namespace ECommerceApp.Web.E2E
         }
 
         /// <summary>
+        /// The other cross-persona direction from <see cref="AnonymousGuestCheckout_CannotOpenAnotherGuestsOrderSummary"/>:
+        /// a guest with their own active GuestAccess ticket trying a *registered customer's* order, not
+        /// just another guest's. Same underlying <c>OrderAccessAuthorizationHandler</c> ownership check
+        /// either way, but the denial path is different and worth pinning down explicitly: for another
+        /// guest's order, <c>CheckoutController.Order</c> shows the self-service email+code lookup form
+        /// (the order's <c>UserId</c> starts with <c>gst_</c>); for a registered customer's order it
+        /// recognizes the owning account is real and sends the caller to the actual Login page instead —
+        /// there is no guest self-service path onto a real account. Found by running this test first with
+        /// the guest-vs-guest assertion and observing the real redirect chain land on Login instead.
+        /// </summary>
+        [Fact]
+        public async Task AnonymousGuestCheckout_CannotOpenRegisteredCustomersOrderSummary()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            var services = factory.StartKestrelHost();
+            await E2ESeed.CustomerAsync(services);
+            await E2ESeed.AdminAsync(services);
+            var productIds = await E2ESeed.BasketProductsAsync(services);
+
+            await using var guestContext = await _browserFixture.Browser.NewContextAsync();
+            await using var customerContext = await _browserFixture.Browser.NewContextAsync();
+            var guestPage = await guestContext.NewPageAsync();
+            var customerPage = await customerContext.NewPageAsync();
+
+            var customerLogin = await LoginPage.NavigateAsync(customerPage, factory.ServerAddress);
+            await customerLogin.LoginAsync(E2ESeed.CustomerEmail, E2ESeed.Password);
+
+            var scenario = new GuestOrderLifecycleScenario();
+            var guestOrderId = await scenario.ExecuteAnonymousCheckoutAsync(guestPage, factory.ServerAddress, productIds[0]);
+            var customerOrderId = await scenario.ExecuteRegisteredCustomerCheckoutAsync(customerPage, factory.ServerAddress, productIds[0]);
+
+            await guestPage.GotoAsync($"{factory.ServerAddress}/Presale/Checkout/Summary/{customerOrderId}");
+
+            guestPage.Url.ShouldContain("/Identity/Account/Login",
+                customMessage: "a guest's GuestAccess ticket must not unlock a registered customer's order — and since that order has no guest self-service path, the denial must cascade all the way to the real Login page");
+            (await guestPage.GetByRole(AriaRole.Heading, new() { Name = "Zamówienie złożone!" }).CountAsync())
+                .ShouldBe(0, "the customer's confirmation content must never render for the guest");
+
+            guestOrderId.ShouldNotBe(customerOrderId);
+        }
+
+        /// <summary>
+        /// The vice versa of <see cref="AnonymousGuestCheckout_CannotOpenRegisteredCustomersOrderSummary"/>:
+        /// a real logged-in customer trying a guest's order. Denial for an <c>Identity.Application</c>
+        /// caller is a genuine <c>Forbid()</c> (landing on AccessDenied), not the lookup-page redirect a
+        /// guest/anonymous caller gets — see <c>OrderAccessDenial.Result</c> — so this exercises the
+        /// other branch of that same decision point, not a duplicate assertion of the first test.
+        /// </summary>
+        [Fact]
+        public async Task RegisteredCustomer_CannotOpenAnonymousGuestsOrderSummary()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            var services = factory.StartKestrelHost();
+            await E2ESeed.CustomerAsync(services);
+            await E2ESeed.AdminAsync(services);
+            var productIds = await E2ESeed.BasketProductsAsync(services);
+
+            await using var guestContext = await _browserFixture.Browser.NewContextAsync();
+            await using var customerContext = await _browserFixture.Browser.NewContextAsync();
+            var guestPage = await guestContext.NewPageAsync();
+            var customerPage = await customerContext.NewPageAsync();
+
+            var customerLogin = await LoginPage.NavigateAsync(customerPage, factory.ServerAddress);
+            await customerLogin.LoginAsync(E2ESeed.CustomerEmail, E2ESeed.Password);
+
+            var guestOrderId = await new GuestOrderLifecycleScenario().ExecuteAnonymousCheckoutAsync(
+                guestPage, factory.ServerAddress, productIds[0]);
+
+            await customerPage.GotoAsync($"{factory.ServerAddress}/Presale/Checkout/Summary/{guestOrderId}");
+
+            customerPage.Url.ShouldContain("AccessDenied",
+                customMessage: "a real registered customer must be forbidden from a guest's order, not shown its confirmation");
+            (await customerPage.GetByRole(AriaRole.Heading, new() { Name = "Zamówienie złożone!" }).CountAsync())
+                .ShouldBe(0, "the guest's confirmation content must never render for the customer");
+        }
+
+        /// <summary>
+        /// Generalizes <see cref="AnonymousGuestCheckout_CannotReachIdentityManage"/> beyond Identity/Manage:
+        /// AccountProfile/Profile is a second, independent area kept off the CustomerOrGuest policy (see
+        /// <c>AppAuthorizationPoliciesTests.ProfileController_UsesBareAuthorize_NotCustomerOrGuest</c> for
+        /// the unit-level proof it's wired that way) — this proves a real GuestAccess-ticketed guest
+        /// actually gets turned away from it in the live pipeline too, not just Identity/Manage.
+        /// </summary>
+        [Fact]
+        public async Task AnonymousGuestCheckout_CannotReachAccountProfile()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            var services = factory.StartKestrelHost();
+            await E2ESeed.AdminAsync(services);
+            var productIds = await E2ESeed.BasketProductsAsync(services);
+
+            await using var guestContext = await _browserFixture.Browser.NewContextAsync();
+            var guestPage = await guestContext.NewPageAsync();
+
+            await new GuestOrderLifecycleScenario().ExecuteAnonymousCheckoutAsync(
+                guestPage, factory.ServerAddress, productIds[0]);
+            // guestPage is now GuestAccess-signed-in — an account-management action, not just a page view.
+
+            await guestPage.GotoAsync($"{factory.ServerAddress}/AccountProfile/Profile");
+
+            guestPage.Url.ShouldContain("/Identity/Account/Login",
+                customMessage: "a GuestAccess-authenticated guest must not reach AccountProfile, an area reserved for real accounts");
+            (await new LoginPage(guestPage).IsDisplayed()).ShouldBeTrue();
+        }
+
+        /// <summary>
+        /// The strictest tier of the persona ladder: a guest is scoped inside <c>CustomerOrGuest</c>
+        /// controllers to their own order via <c>OrderAccessAuthorizationHandler</c>, but those same
+        /// controllers carry per-action <c>[Authorize(Roles = MaintenanceRole)]</c> overrides for the
+        /// staff-only actions (the all-orders admin list, at <c>Sales/Orders/Index</c>) — a guest must
+        /// not reach those even though the controller as a whole accepts GuestAccess. A GuestAccess
+        /// principal never carries a role claim (<c>SignInGuestAccessAsync</c> only sets NameIdentifier
+        /// and the order-scope claims), so this proves that generalizes correctly in the real pipeline:
+        /// guest &lt; real customer &lt; staff, not guest == real customer inside these controllers.
+        /// </summary>
+        [Fact]
+        public async Task AnonymousGuestCheckout_CannotReachMaintenanceOnlyOrdersList()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            var services = factory.StartKestrelHost();
+            await E2ESeed.AdminAsync(services);
+            var productIds = await E2ESeed.BasketProductsAsync(services);
+
+            await using var guestContext = await _browserFixture.Browser.NewContextAsync();
+            var guestPage = await guestContext.NewPageAsync();
+
+            await new GuestOrderLifecycleScenario().ExecuteAnonymousCheckoutAsync(
+                guestPage, factory.ServerAddress, productIds[0]);
+            // guestPage is now GuestAccess-signed-in — satisfies the controller's class-level policy,
+            // but not the action-level MaintenanceRole requirement below.
+
+            await guestPage.GotoAsync($"{factory.ServerAddress}/Sales/Orders/Index");
+
+            (await guestPage.GetByRole(AriaRole.Heading, new() { Name = "Zamówienia", Exact = true }).CountAsync())
+                .ShouldBe(0, "a guest must never see the staff all-orders admin list, regardless of the controller's own-order access");
+            guestPage.Url.ShouldNotContain("/Sales/Orders/Index",
+                customMessage: "the guest must be turned away from the admin route entirely, not shown a filtered version of it");
+        }
+
+        /// <summary>
         /// The real-browser counterpart to the HTTP-level (TestServer/AngleSharp-style)
         /// <c>SessionIsolationTests.GuestAccessSession_CannotReachIdentityManage</c> and the unit-level
         /// <c>AppAuthorizationPoliciesTests</c>. Those two prove the authorization *configuration* is
