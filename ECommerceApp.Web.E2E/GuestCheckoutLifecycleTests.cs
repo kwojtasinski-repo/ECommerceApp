@@ -149,6 +149,95 @@ namespace ECommerceApp.Web.E2E
         }
 
         /// <summary>
+        /// Completes the persona matrix alongside <see cref="AnonymousGuestCheckout_CannotReachIdentityManage"/>:
+        /// that test proves a guest who *has* a GuestAccess ticket is still kept out of account
+        /// management. This proves the weaker persona — someone who never checked out at all, no
+        /// GuestAccess cookie, no Identity cookie, nothing — is kept out too, in a real browser. Not
+        /// redundant with the anonymous-cookieless HTTP-level
+        /// <c>SessionIsolationTests.AnonymousCaller_CannotReachIdentityManage</c>: that proves the
+        /// TestServer pipeline denies it, this proves the real Kestrel-hosted one does too.
+        /// </summary>
+        [Fact]
+        public async Task AnonymousVisitor_CannotReachIdentityManage()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            factory.StartKestrelHost();
+
+            await using var anonymousContext = await _browserFixture.Browser.NewContextAsync();
+            var anonymousPage = await anonymousContext.NewPageAsync();
+
+            await anonymousPage.GotoAsync($"{factory.ServerAddress}/Identity/Account/Manage");
+
+            anonymousPage.Url.ShouldContain("/Identity/Account/Login",
+                customMessage: "a caller with no session at all must be redirected to Login by the real pipeline");
+            (await new LoginPage(anonymousPage).IsDisplayed()).ShouldBeTrue();
+        }
+
+        /// <summary>
+        /// The other half of the anonymous-persona matrix: a visitor who never checked out (no
+        /// GuestAccess ticket, no guest cookie at all — a brand-new browser context) must not be able to
+        /// open somebody else's already-placed order by guessing/typing its id, the same way a guest
+        /// with their *own* GuestAccess ticket can't (<see cref="AnonymousGuestCheckout_CannotOpenAnotherGuestsOrderSummary"/>).
+        /// Summary stays <c>[AllowAnonymous]</c> by design (ADR-0030 §11 — a nonexistent/unowned order id
+        /// still routes to the lookup page, not a login wall a guest has no password for), so the
+        /// meaningful assertion is that the order's confirmation content never renders, not the response
+        /// code.
+        /// </summary>
+        [Fact]
+        public async Task AnonymousVisitor_CannotOpenExistingGuestOrderSummary()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            var services = factory.StartKestrelHost();
+            await E2ESeed.AdminAsync(services);
+            var productIds = await E2ESeed.BasketProductsAsync(services);
+
+            await using var ownerContext = await _browserFixture.Browser.NewContextAsync();
+            var ownerPage = await ownerContext.NewPageAsync();
+            var orderId = await new GuestOrderLifecycleScenario().ExecuteAnonymousCheckoutAsync(
+                ownerPage, factory.ServerAddress, productIds[0]);
+
+            // Brand-new context: no GuestSession cookie, no GuestAccess ticket, nothing.
+            await using var anonymousContext = await _browserFixture.Browser.NewContextAsync();
+            var anonymousPage = await anonymousContext.NewPageAsync();
+
+            await anonymousPage.GotoAsync($"{factory.ServerAddress}/Presale/Checkout/Summary/{orderId}");
+
+            anonymousPage.Url.ShouldContain($"/Presale/Checkout/Order/{orderId}",
+                customMessage: "a caller with no session at all must not see someone else's order confirmation, routed to the lookup page instead");
+            (await anonymousPage.GetByRole(AriaRole.Heading, new() { Name = "Zamówienie złożone!" }).CountAsync())
+                .ShouldBe(0, "the owning guest's confirmation content must never render for a cookie-less visitor");
+        }
+
+        /// <summary>
+        /// The positive control for the whole persona matrix: without this, the three denial tests above
+        /// can't be told apart from a bug that redirects *everyone* to Login regardless of identity. A
+        /// real signed-in account must still reach the area the other tests prove guests and anonymous
+        /// visitors are kept out of.
+        /// </summary>
+        [Fact]
+        public async Task RegisteredCustomer_CanReachIdentityManage()
+        {
+            using var factory = new PlaywrightWebApplicationFactory();
+            factory.Sink.SetOutput(_output);
+            var services = factory.StartKestrelHost();
+            await E2ESeed.AdminAsync(services);
+
+            await using var context = await _browserFixture.Browser.NewContextAsync();
+            var page = await context.NewPageAsync();
+            var login = await LoginPage.NavigateAsync(page, factory.ServerAddress);
+            await login.LoginAsync(E2ESeed.AdminEmail, E2ESeed.Password);
+
+            await page.GotoAsync($"{factory.ServerAddress}/Identity/Account/Manage");
+
+            page.Url.ShouldNotContain("/Identity/Account/Login",
+                customMessage: "a real signed-in account must not be bounced to Login the way a guest/anonymous caller is");
+            (await new LoginPage(page).IsDisplayed()).ShouldBeFalse(
+                "the rendered page must be account management, not the login form");
+        }
+
+        /// <summary>
         /// ADR-0030 Phase 9 replaced Phase 7/8's admin-Backoffice-assisted recovery magic link with a
         /// self-service email+code flow on the unified order-lookup page — see
         /// <see cref="GuestOrderLifecycleScenario.ExecuteAnonymousSelfServiceRecoveryAsync"/> for the
