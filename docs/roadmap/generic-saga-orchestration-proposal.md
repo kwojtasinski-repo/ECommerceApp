@@ -23,9 +23,9 @@ the Orders BC. While scoping effort for that, a second look at concrete near-ter
 2. **Cart/checkout corruption recovery** — the cart can end up in a broken/inconsistent state
    through paths other than `OrderPlacementFailed` (the one case workstream 1 just fixed); general
    cart recovery is a repeating shape, not a one-off.
-3. **Inventory availability change → Checkout lock/reservation propagation** — when something goes
+3. **Inventory availability change → Checkout reservation propagation** — when something goes
    wrong in the warehouse (stock adjustment, hold expiry/correction), Availability needs to change
-   state and then push that change to Presale/Checkout so an existing reservation/lock shown to the
+   state and then push that change to Presale/Checkout so an existing reservation shown to the
    user gets invalidated or updated. This is structurally different from the other two: it's not
    purely "failure → compensate", it's **mid-flow state change → notify a dependent step/BC**, which
    the current choreography-only model and even `saga-pattern.md`'s Option B sketch don't explicitly
@@ -52,7 +52,7 @@ caution was correct when only one saga candidate was known; it no longer applies
    per-BC table vs. 1 shared table); the generic-concept requirement makes it non-negotiable, not
    just cheaper.
 3. **The engine must support state-change propagation, not only failure-compensation.** The
-   Inventory→Checkout lock-change case means a step definition needs to be able to say "this step's
+   Inventory→Checkout reservation-change case means a step definition needs to be able to say "this step's
    state changed, notify dependent step(s)" as a first-class transition, alongside the
    already-covered "this step failed, run compensations" transition.
 4. **Existing Option A (`OrderPlacementFailed` compensation handlers, already shipped) is not
@@ -69,7 +69,7 @@ caution was correct when only one saga candidate was known; it no longer applies
 | 1 | **Order Placement** | PlaceOrder → Reserve Stock → Create Payment → Clean Cart; compensate via `OrderPlacementFailed` | 🔴 High — already has Option A choreography compensation (shipped) |
 | 2 | **Refund** | RefundApproved → ReturnStock → NotifyCustomer | 🟢 Low today |
 | 3 | **Cart/checkout corruption recovery** | General cart-recovery shape, of which `OrderPlacementFailed`→cart-restore (workstream 1) is one instance, not the only one | Not yet risk-assessed — needs the same "concrete trigger conditions" research done for workstream 1 before this is scoped |
-| 4 | **Inventory availability change → Checkout lock propagation** | Availability step changes state (not necessarily a failure) → must notify Presale/Checkout to update/invalidate a reservation | Not yet risk-assessed; structurally different (propagation, not just compensation) |
+| 4 | **Inventory availability change → Checkout reservation propagation** | Availability step changes state (not necessarily a failure) → must notify Presale/Checkout to update/invalidate a reservation | Not yet risk-assessed; structurally different (propagation, not just compensation) |
 
 Only #1 has a documented risk assessment today. **#2–#4 need their own "concrete trigger
 conditions" write-ups** (mirroring what `order-placement-compensation-followup.md` did for cart
@@ -263,7 +263,7 @@ propagated.
   (`Pending`/`Completed`/`Failed`/`Compensated`), `OccurredAt`, `Payload` (JSON, step-specific
   data).
 - `ISagaDefinition` (or similar): each BC registers one per saga type (`OrderPlacementSagaDefinition`,
-  `RefundSagaDefinition`, `CartRecoverySagaDefinition`, `AvailabilityLockChangeSagaDefinition`) via
+  `RefundSagaDefinition`, `CartRecoverySagaDefinition`, `AvailabilityReservationChangeSagaDefinition`) via
   DI, declaring its steps and, per step, either a compensating action or a "notify dependent step"
   action — covering requirement 3 (propagation, not just compensation).
 - The engine subscribes to the relevant domain events per registered definition and drives
@@ -288,7 +288,7 @@ tradeoff to make explicitly, not by default.
 | **2** | Decide + implement: retrofit Option A into `OrderPlacementSagaDefinition`, or leave standalone (explicit decision required first) |
 | **3** | `RefundSagaDefinition` — first genuinely new saga on the engine; validates the abstraction with a second real case |
 | **4** | Concrete-trigger-conditions research (cart corruption recovery) → `CartRecoverySagaDefinition` |
-| **5** | Concrete-trigger-conditions research (availability lock propagation) → `AvailabilityLockChangeSagaDefinition` — first user of the "notify dependent step" transition type, validates requirement 3 end-to-end |
+| **5** | Concrete-trigger-conditions research (availability reservation propagation) → `AvailabilityReservationChangeSagaDefinition` — first user of the "notify dependent step" transition type, validates requirement 3 end-to-end |
 
 Phases 3–5 should each be materially cheaper than Phase 1 once the engine exists — that's the
 entire justification for building it generically. If any of them turns out *not* to be cheaper,
@@ -328,7 +328,7 @@ to the full estimate.
 - [ ] Phase 2's open question (retrofit Option A or not) has an explicit answer, recorded here, not
       decided implicitly during coding.
 - [ ] Concrete-trigger-conditions write-ups exist for saga candidates #3 and #4 (cart corruption,
-      availability lock propagation) — mirroring `order-placement-compensation-followup.md`'s
+      availability reservation propagation) — mirroring `order-placement-compensation-followup.md`'s
       "why it's not a rare edge case" section for workstream 1. Do not scope Phase 4/5 off vibes.
 - [ ] `messaging` and `sagas` schema names are confirmed non-conflicting with any in-flight ADR
       (check `docs/adr/` for anything already claiming those names).

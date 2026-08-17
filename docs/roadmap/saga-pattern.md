@@ -103,7 +103,7 @@ intervention. Acceptable for the current traffic/complexity level.
 
 > **Superseded (2026-07-26):** the sketch below (single `OrderLifecycleSaga` owned by Orders) was
 > written when Order Placement was the only known saga candidate. Refund, cart-corruption recovery,
-> and Inventory→Checkout lock propagation have since surfaced as further concrete candidates, which
+> and Inventory→Checkout reservation propagation have since surfaced as further concrete candidates, which
 > tips this from "purpose-built entity" to "generic engine, Order Placement is one definition on
 > it." See [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md) for
 > the current shape, requirements, and implementation plan. Kept below for historical context on
