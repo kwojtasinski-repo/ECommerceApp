@@ -266,33 +266,129 @@ propagated.
   `RefundSagaDefinition`, `CartRecoverySagaDefinition`, `AvailabilityReservationChangeSagaDefinition`) via
   DI, declaring its steps and, per step, either a compensating action or a "notify dependent step"
   action — covering requirement 3 (propagation, not just compensation).
-- The engine subscribes to the relevant domain events per registered definition and drives
-  `SagaInstance`/`SagaStep` transitions generically; it never references a BC-specific message type
-  directly — that mapping lives in each `ISagaDefinition`.
 
-**Open question — not decided, needs explicit resolution before Phase 2 (see below):** does the
+**Resolved (2026-08-17) — trigger model: auto-subscription, not explicit handler calls.** The
+engine does not require any existing or new BC handler to call into it. Instead:
+
+- One generic `SagaTransitionHandler<TMessage> : IIdAwareMessageHandler<TMessage>` class (not one
+  per message type — a single generic implementation) gets registered in DI once per distinct
+  message type that *any* registered `ISagaDefinition` declares interest in (discovered by
+  reflecting over the registered definitions at startup).
+- Because it's `IIdAwareMessageHandler`, `ModuleClient` hands it `outboxMessageId` exactly like it
+  does for `ShipmentDeliveredHandler` today — so it reuses the existing `IProcessedMessageGuard` for
+  exactly-once processing, no new delivery/dedup mechanism.
+- When a message the engine cares about is published (already flowing through Outbox for every
+  retrofitted call site), `ModuleClient.PublishAsync` fans it out to existing business handlers
+  *and* to `SagaTransitionHandler<TMessage>` as an additional passenger. **No existing handler code
+  is touched** — this is what makes requirement 1 (engine never references a BC-specific type)
+  hold: the BC-specific mapping (which field is the `CorrelationId`, which step this message
+  completes) lives entirely inside each `ISagaDefinition`, not in the transition handler.
+- Rejected alternative: handlers explicitly calling `ISagaCoordinator.RecordStepAsync(...)`
+  themselves. Rejected because it requires every current and future handler author to remember to
+  wire it correctly per saga — error-prone and easy to silently omit, vs. one centralized,
+  once-tested dispatch mechanism.
+
+**Resolved (2026-08-17) — persistence: transactionally consistent, reusing existing machinery, not
+a new "strong consistency" build.** `SagaStep` writes happen inside the *same* local transaction as
+the `IProcessedMessageGuard` check — the identical cross-context-transaction-sharing technique the
+Inbox already uses. Any compensating/notify action the engine fires goes through `IOutboxWriter` in
+that same transaction, inheriting Outbox's crash-safe at-least-once delivery. This was chosen over
+a cheaper "best-effort audit trail" because the user flagged data-crash-safety as non-negotiable —
+but it does **not** require building new infrastructure the way Inbox originally did; it is a reuse
+of already-shipped, already-tested machinery, so the cost is much lower than Inbox's own Phase 4
+was.
+
+**Design principle — steps must be independently compensable, not the engine's problem to enforce
+mechanically, but a constraint on every `ISagaDefinition`:** each step must correspond to one
+already-atomic domain operation (single BC, single aggregate write) with its own standalone
+compensating action that does not depend on any other step's internal state. This is why granular,
+single-BC steps are preferred over coarse multi-BC ones — a coarse step can't be "half undone." The
+engine explicitly does **not** attempt a distributed atomic transaction across steps — it tracks
+which already-independent, already-reversible operations completed, and fires the matching
+compensations. No saga step, at any phase, may acquire or hold a lock across steps or await points
+— see the standing constraint recorded in agent memory (`feedback_saga_no_locking`).
+
+**Open question — not decided, needs explicit resolution before Phase 4 (see below):** does the
 existing, already-shipped Option A `OrderPlacementFailed` choreography get retrofitted into an
 `OrderPlacementSagaDefinition` on the new engine, or does it stay as standalone handlers and the
 engine is only used for the three *new* sagas? Retrofitting is more consistent but touches
 already-working, tested code for no functional gain — a real regression-risk-vs-consistency
-tradeoff to make explicitly, not by default.
+tradeoff to make explicitly, not by default. Current recommendation: do not retrofit — start the
+engine's first real usage on Refund (Phase 5), leave Option A as standalone choreography.
 
 ---
 
-## Proposed implementation phases (draft, for later — re-confirm before starting)
+## Proposed implementation phases
 
-| Phase | Scope |
-|---|---|
-| **0** | **Done (2026-08-02), validated PASS.** Outbox pattern: `messaging.Outbox` schema/table/migration, generic poller + dispatcher, retrofit 29 call sites, crash/restart + at-least-once integration tests; consumer-side Inbox/idempotency audit + shared `messaging.Inbox` table where needed; `OutboxCleanupTask`/`InboxCleanupTask` recurring purge jobs (appsettings-configurable retention + enable/disable + dynamic cron). All 5 phases (schema, poller/dispatcher, retrofit, Inbox, cleanup) complete — see `order-placement-compensation-followup.md` workstream 2. |
-| **1** | Saga engine core: `SagaInstance`/`SagaStep` domain + EF config/migration (`sagas` schema), `ISagaDefinition` abstraction + registration mechanism, generic transition/compensation/notify-dependent-step execution |
-| **2** | Decide + implement: retrofit Option A into `OrderPlacementSagaDefinition`, or leave standalone (explicit decision required first) |
-| **3** | `RefundSagaDefinition` — first genuinely new saga on the engine; validates the abstraction with a second real case |
-| **4** | Concrete-trigger-conditions research (cart corruption recovery) → `CartRecoverySagaDefinition` |
-| **5** | Concrete-trigger-conditions research (availability reservation propagation) → `AvailabilityReservationChangeSagaDefinition` — first user of the "notify dependent step" transition type, validates requirement 3 end-to-end |
+Phase 1 (from earlier drafts of this doc) turned out to be as large as the entire Outbox effort
+(2-3 weeks, real abstraction risk) — and Outbox itself, despite being one line in this table as
+"Phase 0", actually shipped as 5 separately-verified sub-phases. Splitting the engine core the same
+way here, instead of pretending it's one atomic unit of work.
 
-Phases 3–5 should each be materially cheaper than Phase 1 once the engine exists — that's the
+| Phase | Scope | Detail level |
+|---|---|---|
+| **0** | **Done (2026-08-02), validated PASS.** Outbox pattern — see `order-placement-compensation-followup.md` workstream 2. | — |
+| **1** | Domain model: `SagaInstance`/`SagaStep` entities, EF configuration, migration (`sagas` schema). No behavior yet — pure persistence layer, mirroring how `messaging.Outbox`'s schema/table landed as its own sub-phase. | Full plan — `.github/plans/09-phase-saga-domain-model-*` |
+| **2** | Engine core: `ISagaDefinition` abstraction, DI auto-registration of `SagaTransitionHandler<TMessage>` per declared message type, failure→compensate transition path (reusing `IProcessedMessageGuard`/`IOutboxWriter` per the resolved design above). | Full plan — `.github/plans/10-phase-saga-engine-core-*` |
+| **3** | "Notify dependent step" transition type (propagation, not compensation — requirement 3) + engine-level tests proving both transition kinds work, using a throwaway test saga definition if no real propagation saga exists yet. | Sketched below — full plan when reached |
+| **4** | Decision + implementation: retrofit Option A into `OrderPlacementSagaDefinition`, or leave standalone (see open question above; current lean is "leave standalone"). | Sketched below |
+| **5** | `RefundSagaDefinition` — first genuinely new saga on the engine; validates the abstraction with a real case. | Sketched below |
+| **6** | Concrete-trigger-conditions research (cart corruption recovery) → `CartRecoverySagaDefinition`. | Sketched below |
+| **7** | Concrete-trigger-conditions research (availability reservation propagation) → `AvailabilityReservationChangeSagaDefinition` — first real user of the "notify dependent step" transition type end-to-end. | Sketched below |
+
+Phases 4–7 should each be materially cheaper than Phases 1–3 once the engine exists — that's the
 entire justification for building it generically. If any of them turns out *not* to be cheaper,
-that's a signal the abstraction in Phase 1 was wrong and needs revisiting before continuing.
+that's a signal the abstraction was wrong and needs revisiting before continuing. Phases 3–7 are
+intentionally sketched at lower detail than 1–2 (accepted explicitly — plan them in full once we
+reach them, informed by what Phases 1–2 actually taught us, rather than over-speccing now against
+unknowns).
+
+### Phase 3 sketch — notify-dependent-step transition
+
+- Extends `ISagaDefinition`'s step spec with a second transition kind alongside "compensate":
+  "notify dependent step" — on this step's state change, invoke a declared action against another
+  step/saga instance (update/invalidate, not roll back).
+- Needs at least one test exercising this path end-to-end before Phase 7 supplies the real use case
+  — a throwaway/test-only `ISagaDefinition` is acceptable per the original proposal's own
+  validation checklist.
+- Open question carried from the original proposal: exact shape of the "notify" action contract
+  (does it re-publish a message via Outbox, same as compensation, or call something more direct?)
+  — leaning towards "also via Outbox" for consistency with the crash-safety design above, but not
+  finalized.
+
+### Phase 4 sketch — Option A retrofit decision
+
+- Mostly a decision-recording phase, not a large build (0 days if "leave standalone" is confirmed,
+  a few days if retrofitting is chosen instead).
+- If retrofitting: wrap the existing `OrderPlacementFailed` compensation handlers
+  (Payments/Inventory/Presale) as an `OrderPlacementSagaDefinition`'s compensating actions — but this
+  touches tested, working code, so needs its own regression-focused test pass, not just "it still
+  compiles."
+
+### Phase 5 sketch — RefundSagaDefinition
+
+- Steps: `RefundApproved` → `ReturnStock` → `NotifyCustomer`, mirroring the existing choreography
+  already in `saga-pattern.md`'s event-chain table.
+- First real proof that a *new* saga definition is materially cheaper than Phase 1/2 — if it isn't,
+  treat that as a signal to revisit the abstraction before Phase 6/7.
+
+### Phase 6 sketch — CartRecoverySagaDefinition
+
+- Needs its own "concrete trigger conditions" research write-up first (mirroring what
+  `order-placement-compensation-followup.md` did for the original cart-restore gap) — general
+  cart/checkout corruption recovery is a repeating shape, not just the one `OrderPlacementFailed`
+  instance already fixed.
+- Scope of the research itself, and the resulting definition, both currently unknown — flagged as
+  an accepted gap per the "phases 3-7 sketched lightly" agreement above.
+
+### Phase 7 sketch — AvailabilityReservationChangeSagaDefinition
+
+- Needs its own concrete-trigger-conditions research write-up (stock adjustment / hold
+  expiry-or-correction scenarios that should push a reservation update to Presale/Checkout).
+- First real (non-throwaway) user of the Phase 3 "notify dependent step" transition — validates
+  requirement 3 end-to-end with a real case, not just a test double.
+- Must not introduce any locking between Availability and Checkout — pure event-driven propagation,
+  per the resolved trigger model above and the standing no-locking constraint.
 
 ---
 
