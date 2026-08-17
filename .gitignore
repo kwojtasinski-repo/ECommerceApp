@@ -390,3 +390,7 @@ docs/rag/cli-*.txt
 # Transient by default — not committed. Force-add a specific phase pair with `git add -f` only
 # when there is a real cross-session continuity reason (e.g. resuming after a context/budget cutoff).
 .github/plans/
+
+# Ad-hoc GPT-5.6 Luna implementation-agent prompt files (repo root). Local scratch/handoff
+# artifacts, never meant to land in the remote repo — kept on disk locally only.
+/gpt5.6luna-*.md
