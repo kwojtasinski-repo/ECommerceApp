@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Sales.Controllers
 {
     [Area("Sales")]
-    [Authorize]
+    [Authorize(Policy = "CustomerOrGuest")]
     public class PaymentsController : BaseController
     {
         private readonly IPaymentService _paymentService;
@@ -110,6 +110,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         public async Task<IActionResult> MyPayments()
         {
             var payments = await _paymentService.GetByUserIdAsync(GetUserId());
+            payments = GuestAccessScope.ScopeToCurrentOrder(User, payments, p => p.OrderId);
             return View(payments);
         }
     }

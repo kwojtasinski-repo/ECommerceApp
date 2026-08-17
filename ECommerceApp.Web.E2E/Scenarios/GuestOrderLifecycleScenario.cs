@@ -8,6 +8,18 @@ namespace ECommerceApp.Web.E2E.Scenarios
 {
     public sealed class GuestOrderLifecycleScenario
     {
+        /// <summary>
+        /// Places an anonymous guest order and returns only its id — the minimal building block for a
+        /// cross-guest isolation check, where the test needs two independently-placed orders and nothing
+        /// past checkout (no payment, no promotion) from either.
+        /// </summary>
+        public async Task<int> ExecuteAnonymousCheckoutAsync(IPage guestPage, string baseAddress, int productId)
+        {
+            var email = $"guest-{Guid.NewGuid():N}@example.com";
+            var summary = await PlaceAnonymousOrderAsync(guestPage, baseAddress, productId, email);
+            return await summary.GetOrderIdAsync();
+        }
+
         public async Task<int> ExecuteAnonymousCheckoutAndPromotionAsync(
             IPage guestPage,
             string baseAddress,
@@ -69,6 +81,35 @@ namespace ECommerceApp.Web.E2E.Scenarios
             (await confirmedSummary.GetOrderIdAsync()).ShouldBe(orderId);
 
             return orderId;
+        }
+
+        /// <summary>
+        /// The anonymous counterpart to <see cref="ExecuteAsync"/>: an unauthenticated guest checks
+        /// out (no login, no account creation) and the order still runs the full admin fulfillment
+        /// path through to delivery. This is the "cart to delivery" coverage for ADR-0030 guest
+        /// checkout that <see cref="ExecuteAnonymousCheckoutAndPromotionAsync"/> deliberately stops
+        /// short of (it proves account promotion instead).
+        /// </summary>
+        public async Task<OrderLifecycleResult> ExecuteAnonymousCheckoutThroughDeliveryAsync(
+            IPage guestPage,
+            IPage adminPage,
+            string baseAddress,
+            int productId)
+        {
+            var email = $"guest-delivery-{Guid.NewGuid():N}@example.com";
+            var summary = await PlaceAnonymousOrderAsync(guestPage, baseAddress, productId, email);
+            var orderId = await summary.GetOrderIdAsync();
+
+            var payment = await summary.OpenPaymentAsync();
+            await payment.ConfirmPaymentAsync();
+
+            var (orderStatusAfterPayment, finalShipmentStatus) =
+                await FulfillThroughDeliveryAsync(adminPage, baseAddress, orderId);
+
+            return new OrderLifecycleResult(
+                orderId,
+                orderStatusAfterPayment == "PaymentConfirmed",
+                finalShipmentStatus);
         }
 
         public async Task<OrderLifecycleResult> ExecuteAsync(
@@ -136,13 +177,29 @@ namespace ECommerceApp.Web.E2E.Scenarios
             IPaymentPage payment = await summary.OpenPaymentAsync();
             await payment.ConfirmPaymentAsync();
 
+            var (orderStatusAfterPayment, finalShipmentStatus) =
+                await FulfillThroughDeliveryAsync(adminPage, baseAddress, orderId);
+
+            return new OrderLifecycleResult(orderId, orderStatusAfterPayment == "PaymentConfirmed", finalShipmentStatus);
+        }
+
+        /// <summary>
+        /// Drives the admin side of fulfillment (create/dispatch/deliver shipment) for an order that
+        /// has already been paid, and reads the order status from the admin's page rather than
+        /// assuming it — this is what proves the customer's payment actually reached the read model
+        /// the back office works from. Shared by both the registered-customer and anonymous-guest
+        /// lifecycle scenarios, which differ only in how the order gets placed and paid.
+        /// </summary>
+        private static async Task<(string OrderStatusAfterPayment, string FinalShipmentStatus)> FulfillThroughDeliveryAsync(
+            IPage adminPage,
+            string baseAddress,
+            int orderId)
+        {
             IOrderFulfillmentPage fulfillment = await OrderFulfillmentPage.NavigateAsync(
                 adminPage,
                 baseAddress,
                 orderId);
 
-            // Read from the admin's page rather than assuming: this is what proves the customer's
-            // payment actually reached the read model the back office works from.
             var orderStatusAfterPayment = await fulfillment.GetOrderStatusAsync();
 
             IShipmentCreatePage shipmentCreate = await fulfillment.OpenCreateShipmentAsync();
@@ -151,10 +208,7 @@ namespace ECommerceApp.Web.E2E.Scenarios
             shipment = await shipment.DispatchAsync();
             shipment = await shipment.DeliverAsync();
 
-            return new OrderLifecycleResult(
-                orderId,
-                orderStatusAfterPayment == "PaymentConfirmed",
-                await shipment.GetStatusAsync());
+            return (orderStatusAfterPayment, await shipment.GetStatusAsync());
         }
 
         private static async Task<IOrderSummaryPage> PlaceAnonymousOrderAsync(

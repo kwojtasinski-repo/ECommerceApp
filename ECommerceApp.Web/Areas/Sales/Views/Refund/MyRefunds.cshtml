@@ -1,4 +1,4 @@
-@model RefundListVm
+@model System.Collections.Generic.IReadOnlyList<ECommerceApp.Application.Sales.Fulfillment.ViewModels.RefundVm>
 
 @{
     ViewData["Title"] = "Moje zwroty";
@@ -6,7 +6,7 @@
 
 <h1>Moje zwroty</h1>
 
-@if (Model.Refunds == null || Model.Refunds.Count == 0)
+@if (Model == null || Model.Count == 0)
 {
     <p><em>Nie masz żadnych zwrotów.</em></p>
 }
@@ -25,7 +25,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var refund in Model.Refunds)
+            @foreach (var refund in Model)
             {
                 <tr>
                     <td>@refund.Id</td>

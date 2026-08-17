@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Presale.Controllers
 {
     [Area("Presale")]
-    [Authorize]
+    [Authorize(Policy = "CustomerOrGuest")]
     public class CheckoutController : BaseController
     {
         private readonly ICartService _cartService;
@@ -230,6 +230,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("OrderAccessByOrderId")]
         public async Task<IActionResult> ConfirmOrderAccess(int id, string code)
         {
             var result = await _verificationCodeClient.RedeemOrderAccessRecoveryAsync(

@@ -13,5 +13,6 @@ namespace ECommerceApp.Domain.Sales.Fulfillment
         Task<IReadOnlyList<Refund>> GetPagedAsync(int pageSize, int pageNo, string search, CancellationToken ct = default);
         Task<int> GetCountAsync(string search, CancellationToken ct = default);
         Task<IReadOnlyList<Refund>> GetByOrderIdAsync(int orderId, CancellationToken ct = default);
+        Task<IReadOnlyList<Refund>> GetByUserIdAsync(string userId, CancellationToken ct = default);
     }
 }

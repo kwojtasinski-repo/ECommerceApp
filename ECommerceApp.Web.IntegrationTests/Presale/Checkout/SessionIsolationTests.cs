@@ -48,6 +48,33 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
                 "Login", customMessage: "ADR-0030 §12: Identity/Manage must remain fully authentication-gated");
         }
 
+        /// <summary>
+        /// The GuestAccess scheme is bundled into the app's <c>DefaultPolicy</c> (Startup.cs) so the
+        /// checkout/payments/orders controllers can accept it — but Identity/Manage relies on that same
+        /// default policy via the framework convention, with no scheme restriction of its own. Probes
+        /// whether a real (non-anonymous) GuestAccess ticket is let past the door the way
+        /// <see cref="AnonymousCaller_CannotReachIdentityManage"/> proves a bare anonymous caller isn't.
+        /// </summary>
+        [Fact]
+        public async Task GuestAccessSession_CannotReachIdentityManage()
+        {
+            var guest = CreateClient(); // auto-redirect on, same as PlaceGuestOrderAsync requires
+            var product = await _factory.CreateAvailableProductAsync();
+            await MintGuestCookieAsync(guest);
+            var afToken = await FetchAntiForgeryTokenAsync(guest, AnonymousTokenSourceUrl);
+            await PlaceGuestOrderAsync(guest, afToken, product, UniqueEmail("identity-manage-probe"));
+            // guest is now GuestAccess-signed-in (not anonymous) — the actual thing under test.
+
+            var response = await guest.GetAsync("/Identity/Account/Manage", CancellationToken);
+
+            response.StatusCode.ShouldBe(HttpStatusCode.OK, "the redirect chain to Login should be followed and land on a real page");
+            response.RequestMessage!.RequestUri!.AbsolutePath.ShouldContain(
+                "Login", customMessage: "ADR-0030 §12: Identity/Manage must remain fully authentication-gated — " +
+                "a GuestAccess-authenticated caller (not a real Identity.Application account) must be redirected to " +
+                "Login by the RequireRealAccount policy, not merely 404 because UserManager.GetUserAsync happens to " +
+                "return null for a non-ApplicationUser principal");
+        }
+
         private async Task AssertCannotCrossSessionAsync(bool authenticatedUnderTest)
         {
             var guestDecoy = CreateClient();

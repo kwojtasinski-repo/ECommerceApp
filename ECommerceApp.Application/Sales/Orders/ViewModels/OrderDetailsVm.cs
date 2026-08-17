@@ -7,6 +7,7 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
     public sealed class OrderItemVm
     {
         public int Id { get; init; }
+        public int OrderId { get; init; }
         public int ItemId { get; init; }
         public int Quantity { get; init; }
         public decimal UnitCost { get; init; }

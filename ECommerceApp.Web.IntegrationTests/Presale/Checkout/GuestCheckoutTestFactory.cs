@@ -8,6 +8,7 @@ using ECommerceApp.Domain.AccountProfile;
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.Domain.Presale.Checkout;
+using ECommerceApp.Domain.Sales.Fulfillment;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Payments;
 using ECommerceApp.Shared.TestInfrastructure;
@@ -117,6 +118,27 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             return await repo.GetCustomerIdAsync(orderId);
         }
 
+        /// <summary>The <c>gst_...</c> (or Identity user id) an order is placed under — what
+        /// <c>MyPayments</c>/<c>MyRefunds</c> filter by. Used to seed a payment/refund row under the
+        /// exact same identity a guest's own order was placed with.</summary>
+        public async Task<string> GetOrderUserIdAsync(int orderId)
+        {
+            using var scope = Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
+            var order = await repo.GetByIdAsync(orderId);
+            return order?.UserId.Value;
+        }
+
+        /// <summary>The id of the (single, in these tests) line item on a placed order — what
+        /// <c>OrderItemsController.Details</c> is addressed by.</summary>
+        public async Task<int> GetOrderItemIdAsync(int orderId)
+        {
+            using var scope = Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
+            var order = await repo.GetByIdWithItemsAsync(orderId);
+            return order.OrderItems[0].Id.Value;
+        }
+
         /// <summary>True if an <see cref="ApplicationUser"/> row exists with the given email —
         /// used to assert that guest checkout/failed promotion attempts never create one.</summary>
         public async Task<bool> ApplicationUserExistsAsync(string email)
@@ -169,6 +191,18 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
             await repo.AddAsync(payment);
             var saved = await repo.GetByOrderIdAsync(orderId);
             return saved.Id.Value;
+        }
+
+        /// <summary>Seeds a real <c>Refund</c> row directly (this factory doesn't drive the actual
+        /// Refund.Request HTTP flow for seeding), used by tests that only need one to already exist,
+        /// scoped to <paramref name="orderId"/>/<paramref name="userId"/>.</summary>
+        public async Task<int> CreateRefundRequestAsync(int orderId, int productId, string userId, string reason = "Niezgodny towar")
+        {
+            using var scope = Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IRefundRepository>();
+            var refund = Refund.Create(orderId, reason, false, new[] { RefundItem.Create(productId, 1) }, userId);
+            var id = await repo.AddAsync(refund);
+            return id;
         }
     }
 

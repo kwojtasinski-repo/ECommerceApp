@@ -77,5 +77,13 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories
                 .Where(r => r.OrderId == orderId)
                 .OrderByDescending(r => r.RequestedAt)
                 .ToListAsync(ct);
+
+        public async Task<IReadOnlyList<Refund>> GetByUserIdAsync(string userId, CancellationToken ct = default)
+            => await _context.Refunds
+                .AsNoTracking()
+                .Include(r => r.Items)
+                .Where(r => r.UserId == userId)
+                .OrderByDescending(r => r.RequestedAt)
+                .ToListAsync(ct);
     }
 }

@@ -170,6 +170,40 @@ namespace ECommerceApp.Web.IntegrationTests.Presale.Checkout
                 "rejection routes to the unified order-lookup path, not a dead-end Access Denied page");
         }
 
+        /// <summary>
+        /// OrderItemsController.Details had no ownership check at all before this fix — any
+        /// authenticated caller (guest or real customer) could view any order's line item by id, a
+        /// straightforward cross-account IDOR reachable one click away from a guest's own Order Details
+        /// page ("Szczegóły" per line). Now wired through the same IOrderAccessAuthorizer as every other
+        /// order-scoped resource route.
+        /// </summary>
+        [Fact]
+        public async Task OrderItemsDetails_AnonymousWithGuestAccess_AllowsOwnOrder_RejectsOtherOrder()
+        {
+            var productId = await _factory.CreateAvailableProductAsync();
+
+            var clientA = CreateClient();
+            await MintGuestCookieAsync(clientA);
+            var tokenA = await FetchAntiForgeryTokenAsync(clientA, AnonymousTokenSourceUrl);
+            var (orderIdA, _) = await PlaceGuestOrderAsync(clientA, tokenA, productId, UniqueEmail("order-items-own"));
+            var itemIdA = await _factory.GetOrderItemIdAsync(orderIdA);
+
+            var ownResponse = await clientA.GetAsync($"/Sales/OrderItems/Details/{itemIdA}", CancellationToken);
+            ownResponse.StatusCode.ShouldBe(HttpStatusCode.OK, "the order-access cookie should authorize the anonymous caller for their own order's line item");
+
+            var clientB = CreateClient();
+            await MintGuestCookieAsync(clientB);
+            var tokenB = await FetchAntiForgeryTokenAsync(clientB, AnonymousTokenSourceUrl);
+            var (orderIdB, _) = await PlaceGuestOrderAsync(clientB, tokenB, productId, UniqueEmail("order-items-other"));
+            var itemIdB = await _factory.GetOrderItemIdAsync(orderIdB);
+
+            var otherResponse = await clientA.GetAsync($"/Sales/OrderItems/Details/{itemIdB}", CancellationToken);
+            otherResponse.RequestMessage!.RequestUri!.AbsolutePath.ShouldContain(
+                "/Presale/Checkout/Order/", Case.Insensitive,
+                "clientA's order-access cookie is scoped to order A and must not unlock order B's line item; " +
+                "rejection routes to the unified order-lookup path, not a dead-end Access Denied page");
+        }
+
         [Fact]
         public async Task SalesOrdersDetails_AnonymousWithGuestAccess_AllowsOwnOrder_RejectsOtherOrder()
         {

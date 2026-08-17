@@ -74,6 +74,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             => new()
             {
                 Id = item.Id.Value,
+                OrderId = item.OrderId.Value,
                 ItemId = item.ItemId,
                 Quantity = item.Quantity,
                 UnitCost = item.UnitCost.Amount,

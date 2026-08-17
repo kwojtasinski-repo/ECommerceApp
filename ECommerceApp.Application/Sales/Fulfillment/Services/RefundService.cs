@@ -146,6 +146,12 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             return refunds.Select(MapToVm).ToList();
         }
 
+        public async Task<IReadOnlyList<RefundVm>> GetByUserIdAsync(string userId, CancellationToken ct = default)
+        {
+            var refunds = await _refunds.GetByUserIdAsync(userId, ct);
+            return refunds.Select(MapToVm).ToList();
+        }
+
         private static RefundVm MapToVm(Refund refund)
             => new(
                 refund.Id.Value,

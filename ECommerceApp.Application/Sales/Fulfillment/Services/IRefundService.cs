@@ -15,5 +15,6 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
         Task<RefundDetailsVm> GetRefundAsync(int refundId, CancellationToken ct = default);
         Task<RefundListVm> GetRefundsAsync(int pageSize, int pageNo, string search, CancellationToken ct = default);
         Task<IReadOnlyList<RefundVm>> GetByOrderIdAsync(int orderId, CancellationToken ct = default);
+        Task<IReadOnlyList<RefundVm>> GetByUserIdAsync(string userId, CancellationToken ct = default);
     }
 }

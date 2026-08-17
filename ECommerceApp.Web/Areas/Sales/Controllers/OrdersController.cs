@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Sales.Controllers
 {
     [Area("Sales")]
-    [Authorize]
+    [Authorize(Policy = "CustomerOrGuest")]
     public class OrdersController : BaseController
     {
         private readonly IOrderService _orderService;
@@ -46,6 +46,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         {
             var userId = GetUserId();
             var orders = await _orderService.GetOrdersByUserIdAsync(userId);
+            orders = GuestAccessScope.ScopeToCurrentOrder(User, orders, o => o.Id);
             return View(orders);
         }
 

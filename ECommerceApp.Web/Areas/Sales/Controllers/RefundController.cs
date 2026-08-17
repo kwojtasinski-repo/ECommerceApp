@@ -2,6 +2,7 @@ using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
 using ECommerceApp.Application.Sales.Fulfillment.Services;
 using ECommerceApp.Application.Sales.Orders.Services;
+using ECommerceApp.Web.Areas.Presale.Authorization;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Sales.Controllers
 {
     [Area("Sales")]
-    [Authorize]
+    [Authorize(Policy = "CustomerOrGuest")]
     public class RefundController : BaseController
     {
         private readonly IRefundService _refundService;
@@ -123,8 +124,9 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         public async Task<IActionResult> MyRefunds()
         {
             var userId = GetUserId();
-            var model = await _refundService.GetRefundsAsync(20, 1, userId);
-            return View(model);
+            var refunds = await _refundService.GetByUserIdAsync(userId);
+            refunds = GuestAccessScope.ScopeToCurrentOrder(User, refunds, r => r.OrderId);
+            return View(refunds);
         }
     }
 }
