@@ -154,7 +154,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         // ── ReserveAsync ──────────────────────────────────────────────────────
 
         [Fact]
-        public async Task ReserveAsync_PhysicalProduct_ShouldReserveStockAndCreateReservationAndScheduleTimeout()
+        public async Task ReserveAsync_PhysicalProduct_ShouldReserveStockAndCreateReservation()
         {
             var snapshot = ProductSnapshot.Create(1, "Widget", isDigital: false, CatalogProductStatus.Orderable);
             var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
@@ -171,9 +171,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             _stockHoldRepo.Verify(r => r.AddAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
             _deferredScheduler.Verify(s => s.ScheduleAsync(
-                PaymentWindowTimeoutJob.JobTaskName,
-                It.Is<string>(e => e.StartsWith("42:1:3")),
-                dto.ExpiresAt, It.IsAny<CancellationToken>()), Times.Once);
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
             _outboxWriter.Verify(w => w.EnqueueAsync(
                 It.Is<StockAvailabilityChanged>(m => m.ProductId == 1 && m.AvailableQuantity == 7),
                 _txMock.Object,

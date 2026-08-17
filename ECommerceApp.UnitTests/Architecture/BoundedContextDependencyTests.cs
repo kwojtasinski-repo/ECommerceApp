@@ -389,7 +389,7 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(PaymentMessages)     // PaymentConfirmedHandler, RefundApprovedHandler
                         .And().AreNot(CatalogMessages)     // ProductPublished/Unpublished/DiscontinuedHandler
                         .And().AreNot(FulfillmentMessages)  // ShipmentDelivered/Failed/PartiallyDeliveredHandler
-                        .And().AreNot(AppTimeManagement))  // StockAdjustmentJob, PaymentWindowTimeoutJob
+                        .And().AreNot(AppTimeManagement))  // StockAdjustmentJob
                 .Because("Inventory application must not depend on other BCs except via message contracts")
                 .Check(Architecture);
         }

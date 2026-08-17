@@ -144,8 +144,6 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             var stockHold = StockHold.Create(new StockProductId(dto.ProductId), new ReservationOrderId(dto.OrderId), dto.Quantity, dto.ExpiresAt);
             await _stockHoldRepo.AddAsync(stockHold, ct);
 
-            var timeoutEntityId = $"{dto.OrderId}:{dto.ProductId}:{dto.Quantity}";
-            await _deferredScheduler.ScheduleAsync(PaymentWindowTimeoutJob.JobTaskName, timeoutEntityId, dto.ExpiresAt, ct);
             return ReserveStockResult.Success;
         }
 

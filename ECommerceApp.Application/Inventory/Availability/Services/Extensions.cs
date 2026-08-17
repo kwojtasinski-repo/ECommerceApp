@@ -20,7 +20,6 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 .AddScoped<IStockService, StockService>()
                 .AddScoped<IStockQueryService, StockQueryService>();
             services
-                .AddScoped<IScheduledTask, PaymentWindowTimeoutJob>()
                 .AddScoped<IScheduledTask, StockAdjustmentJob>();
             services
                 .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()

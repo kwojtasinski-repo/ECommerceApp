@@ -466,27 +466,26 @@ public sealed class PinnedRealGraphTests
     }
 
     [Fact]
-    public void Real_graph_has_only_the_four_deferred_schedule_edges()
+    public void Real_graph_has_only_the_three_deferred_schedule_edges()
     {
         var graph = BuildRealGraph();
         var expected = new[]
         {
-            ("ECommerceApp.Application.Inventory.Availability.Services.StockService.ReserveAsync", "ECommerceApp.Application.Inventory.Availability.Handlers.PaymentWindowTimeoutJob"),
             ("ECommerceApp.Application.Inventory.Availability.Services.StockService.AdjustAsync", "ECommerceApp.Application.Inventory.Availability.Handlers.StockAdjustmentJob"),
             ("ECommerceApp.Application.Presale.Checkout.Services.SoftReservationService.HoldAsync", "ECommerceApp.Application.Presale.Checkout.Handlers.SoftReservationExpiredJob"),
             ("ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacedHandler", "ECommerceApp.Application.Sales.Payments.Handlers.PaymentWindowExpiredJob")
         };
 
         var schedules = graph.Edges.Where(edge => edge.Type == "SCHEDULES").ToArray();
-        Assert.Equal(4, schedules.Length);
+        Assert.Equal(3, schedules.Length);
         foreach (var (source, target) in expected)
         {
             Assert.Contains(schedules, edge => edge.SourceId == source && edge.TargetId == target);
         }
 
         Assert.DoesNotContain(schedules, edge => edge.SourceId.EndsWith("OrderPlacementFailedHandler", StringComparison.Ordinal));
-        Assert.Equal(4, graph.Nodes.Count(node => node.Label == "Job" && Equals(node.Properties["triggerMode"], "Deferred")));
-        Assert.Equal(6, graph.Nodes.Count(node => node.Label == "Job" && node.Properties["triggerMode"] is null));
+        Assert.Equal(3, graph.Nodes.Count(node => node.Label == "Job" && Equals(node.Properties["triggerMode"], "Deferred")));
+        Assert.Equal(7, graph.Nodes.Count(node => node.Label == "Job" && node.Properties["triggerMode"] is null));
     }
 
     [Fact]
@@ -495,9 +494,8 @@ public sealed class PinnedRealGraphTests
         var graph = BuildRealGraph();
         var operatesOn = graph.Edges.Where(edge => edge.Type == "OPERATES_ON").ToArray();
 
-        Assert.Equal(10, operatesOn.Length);
+        Assert.Equal(9, operatesOn.Length);
         Assert.Equal(3, operatesOn.Count(edge => edge.SourceId.EndsWith("StockAdjustmentJob", StringComparison.Ordinal)));
-        Assert.Equal(2, operatesOn.Count(edge => edge.SourceId.EndsWith("PaymentWindowTimeoutJob", StringComparison.Ordinal)));
         Assert.Equal(0, operatesOn.Count(edge => edge.SourceId.EndsWith("CurrencyRateSyncTask", StringComparison.Ordinal)));
         Assert.Equal(1, operatesOn.Count(edge => edge.SourceId.EndsWith("UnclaimedGuestProfileCleanupTask", StringComparison.Ordinal)));
         Assert.Contains(operatesOn, edge => edge.SourceId.EndsWith("UnclaimedGuestProfileCleanupTask", StringComparison.Ordinal) && edge.TargetId.EndsWith("UserProfile", StringComparison.Ordinal));
