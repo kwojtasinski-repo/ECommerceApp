@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Sales.Controllers
 {
     [Area("Sales")]
-    [Authorize(Policy = "CustomerOrGuest")]
+    [Authorize(Policy = AppAuthorizationPolicies.CustomerOrGuestPolicy)]
     public class RefundController : BaseController
     {
         private readonly IRefundService _refundService;

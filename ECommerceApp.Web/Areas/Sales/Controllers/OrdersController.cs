@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Sales.Controllers
 {
     [Area("Sales")]
-    [Authorize(Policy = "CustomerOrGuest")]
+    [Authorize(Policy = AppAuthorizationPolicies.CustomerOrGuestPolicy)]
     public class OrdersController : BaseController
     {
         private readonly IOrderService _orderService;

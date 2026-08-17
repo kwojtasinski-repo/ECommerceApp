@@ -93,27 +93,9 @@ namespace ECommerceApp.Web
                 options.ClientId = configurationSection["ClientId"];
                 options.ClientSecret = configurationSection["ClientSecret"];
             });
-            services.AddAuthorization(options =>
-            {
-                // Deliberately NOT widened to include GuestAccess: this is the app-wide default for
-                // every bare [Authorize] (every Razor Pages area/folder convention too, notably
-                // Identity/Manage via AddDefaultIdentity) — a GuestAccess ticket is not a real
-                // ApplicationUser, so it must stay out of anything that doesn't explicitly opt in.
-                options.DefaultPolicy = new AuthorizationPolicyBuilder(IdentityConstants.ApplicationScheme)
-                    .RequireAuthenticatedUser()
-                    .Build();
-                options.AddPolicy("OrderAccess", policy =>
-                    policy.Requirements.Add(new OrderAccessRequirement()));
-                // The explicit opt-in for the handful of controllers (checkout, orders, payments,
-                // refunds, order items) that must accept an anonymous-turned-GuestAccess caller as well
-                // as a real signed-in customer. Everything else in the app stays ApplicationScheme-only
-                // by default — see DefaultPolicy above.
-                options.AddPolicy("CustomerOrGuest", policy =>
-                    policy.AddAuthenticationSchemes(
-                            IdentityConstants.ApplicationScheme,
-                            GuestAccessDefaults.AuthenticationScheme)
-                        .RequireAuthenticatedUser());
-            });
+            // See AppAuthorizationPolicies for what this configures and why it's a separate,
+            // unit-testable method rather than an inline lambda.
+            services.AddAuthorization(AppAuthorizationPolicies.Configure);
             services.AddScoped<IAuthorizationHandler, OrderAccessAuthorizationHandler>();
             services.AddRateLimiter(options =>
             {

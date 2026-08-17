@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Sales.Controllers
 {
     [Area("Sales")]
-    [Authorize(Policy = "CustomerOrGuest")]
+    [Authorize(Policy = AppAuthorizationPolicies.CustomerOrGuestPolicy)]
     public class OrderItemsController : BaseController
     {
         private readonly IOrderItemService _orderItemService;

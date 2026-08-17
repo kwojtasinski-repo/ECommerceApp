@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.Web.Areas.Presale.Controllers
 {
     [Area("Presale")]
-    [Authorize(Policy = "CustomerOrGuest")]
+    [Authorize(Policy = AppAuthorizationPolicies.CustomerOrGuestPolicy)]
     public class CheckoutController : BaseController
     {
         private readonly ICartService _cartService;
