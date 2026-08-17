@@ -517,6 +517,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 		docs\roadmap\rag-remote-multitenant.md = docs\roadmap\rag-remote-multitenant.md
 		docs\roadmap\README.md = docs\roadmap\README.md
 		docs\roadmap\saga-pattern.md = docs\roadmap\saga-pattern.md
+		docs\roadmap\generic-saga-orchestration-proposal.md = docs\roadmap\generic-saga-orchestration-proposal.md
 		docs\roadmap\storefront-offers.md = docs\roadmap\storefront-offers.md
 	EndProjectSection
 EndProject

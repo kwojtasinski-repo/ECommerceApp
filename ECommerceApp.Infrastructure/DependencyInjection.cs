@@ -5,6 +5,7 @@ using ECommerceApp.Infrastructure.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM.Auth;
 using ECommerceApp.Infrastructure.Messaging;
+using ECommerceApp.Infrastructure.Sagas;
 using ECommerceApp.Infrastructure.Supporting.Currencies;
 using ECommerceApp.Infrastructure.Inventory.Availability;
 using ECommerceApp.Infrastructure.Presale.Checkout;
@@ -34,6 +35,7 @@ namespace ECommerceApp.Infrastructure
             services.AddCatalogInfrastructure(configuration);
             services.AddCurrencyInfrastructure(configuration);
             services.AddMessagingInfrastructure(configuration);
+            services.AddSagaInfrastructure(configuration);
             services.AddTimeManagementInfrastructure(configuration);
             services.AddAvailabilityInfrastructure(configuration);
             services.AddPresaleInfrastructure(configuration);
