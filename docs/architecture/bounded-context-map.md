@@ -178,13 +178,15 @@ Sales/Payments, Sales/Orders) is unchanged, but what flows through it changed fr
 issuance/lookup (`IOrderAccessClient`, Phase 7) to a resource-based authorization check
 (`IOrderAccessAuthorizer`, wrapping `IAuthorizationService.AuthorizeAsync(user, resource,
 "OrderAccess")`) — both controllers now inject `IOrderAccessAuthorizer` directly instead of
-`IOrderAccessClient`. **Residual gap found during validation, not fixed** (the Phase 9 plan
-explicitly listed `IOrderAccessClient`/`OrderAccessToken` persistence under "Files NOT to touch"):
-`IOrderAccessClient` and its two adapters (`ECommerceApp.Infrastructure/Sales/{Payments,Orders}/Adapters/OrderAccessClientAdapter.cs`)
-are still defined and DI-registered but are no longer injected anywhere — confirmed via
-solution-wide grep for constructor injection sites, zero hits. Now dead code; left in place rather
-than removed unilaterally, since the plan protected this file set explicitly and its removal is a
-separate, deliberate decision.
+`IOrderAccessClient`.
+
+**Follow-up (2026-08-17, same-day)**: `IOrderAccessClient` and its two adapters were confirmed
+genuinely dead (zero constructor-injection sites solution-wide, both consuming controllers already
+on `IOrderAccessAuthorizer`, and each of the two `OrderAccessClientAdapterTests` files tested
+nothing else) and removed — the contract interfaces, adapters, DI registrations, and their
+isolated unit tests. `OrderAccessToken`/`IOrderAccessService`/`IOrderAccessTokenRepository` (the
+actual persistence layer `IOrderAccessClient` used to front) are untouched, still the backing store
+for the `GuestAccess` cookie's revocation check.
 
 ---
 

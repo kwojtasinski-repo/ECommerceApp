@@ -1,5 +1,4 @@
 using ECommerceApp.Application.Sales.Payments.DTOs;
-using ECommerceApp.Application.Sales.Payments.Contracts;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Application.Sales.Payments.ViewModels;
 using ECommerceApp.Domain.Sales.Payments;

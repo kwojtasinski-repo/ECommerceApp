@@ -122,6 +122,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("GuestCheckoutPlaceOrder")]
         public async Task<IActionResult> PlaceOrder(PlaceOrderVm vm)
         {
             var customer = new CheckoutCustomer(
@@ -348,6 +349,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("GuestCheckoutAddToCart")]
         public async Task<IActionResult> AddToCart(int productId, int quantity, string returnUrl)
         {
             if (quantity < 1)

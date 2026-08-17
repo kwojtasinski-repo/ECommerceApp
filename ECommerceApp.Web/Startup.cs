@@ -14,7 +14,6 @@ using ECommerceApp.Application;
 using Microsoft.AspNetCore.Localization;
 using ECommerceApp.Web.Filters;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
-using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Presale.Checkout.Options;
 using ECommerceApp.Web.Areas.Presale.Services;
 using ECommerceApp.Web.Services;
@@ -50,6 +49,7 @@ namespace ECommerceApp.Web
             services.AddInfrastructure(Configuration);
             services.AddScoped<IShopperIdentityResolver, ShopperIdentityResolver>();
             services.AddScoped<IOrderAccessAuthorizer, OrderAccessAuthorizer>();
+            services.AddScoped<GuestAccessPrincipalValidator>();
 
             services.AddControllersWithViews(options =>
             {
@@ -78,38 +78,14 @@ namespace ECommerceApp.Web
                     options.Cookie.SameSite = SameSiteMode.Lax;
                     options.ExpireTimeSpan = TimeSpan.FromDays(30);
                     options.SlidingExpiration = true;
-                    options.Events.OnValidatePrincipal = async context =>
-                    {
-                        var validatedAt = context.Principal?.FindFirst(GuestAccessDefaults.ValidatedAtClaim)?.Value;
-                        if (DateTimeOffset.TryParse(validatedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var lastValidated)
-                            && DateTimeOffset.UtcNow - lastValidated < TimeSpan.FromMinutes(5))
-                            return;
-
-                        var orderIdValue = context.Principal?.FindFirst(GuestAccessDefaults.OrderIdClaim)?.Value;
-                        var token = context.Principal?.FindFirst(GuestAccessDefaults.BackingTokenClaim)?.Value;
-                        if (!int.TryParse(orderIdValue, out var orderId) || string.IsNullOrWhiteSpace(token))
-                        {
-                            context.RejectPrincipal();
-                            return;
-                        }
-
-                        var orderAccessService = context.HttpContext.RequestServices
-                            .GetRequiredService<IOrderAccessService>();
-                        if (!await orderAccessService.HasAccessAsync(orderId, token, context.HttpContext.RequestAborted))
-                        {
-                            context.RejectPrincipal();
-                            return;
-                        }
-
-                        var identity = context.Principal.Identity as System.Security.Claims.ClaimsIdentity;
-                        var existingValidationClaim = identity?.FindFirst(GuestAccessDefaults.ValidatedAtClaim);
-                        if (existingValidationClaim is not null)
-                            identity.RemoveClaim(existingValidationClaim);
-                        identity?.AddClaim(new System.Security.Claims.Claim(
-                                GuestAccessDefaults.ValidatedAtClaim,
-                                DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)));
-                        context.ShouldRenew = true;
-                    };
+                    // The events delegate runs at ConfigureServices time — no request-scoped service
+                    // exists yet to constructor-inject, so resolving GuestAccessPrincipalValidator per
+                    // request via RequestServices is the standard ASP.NET Core pattern for cookie events.
+                    // The actual revocation logic lives in (and is unit-tested on) that class, not here.
+                    options.Events.OnValidatePrincipal = context =>
+                        context.HttpContext.RequestServices
+                            .GetRequiredService<GuestAccessPrincipalValidator>()
+                            .ValidateAsync(context);
                 })
                 .AddGoogle(options =>
             {
@@ -170,6 +146,34 @@ namespace ECommerceApp.Web
                         {
                             PermitLimit = 5,
                             Window = TimeSpan.FromMinutes(15),
+                            QueueLimit = 0,
+                            AutoReplenishment = true
+                        }));
+
+                // Per-IP limits on the two guest checkout actions that actually grow DB footprint for an
+                // anonymous caller: AddToCart is also where ShopperIdentityResolver first mints a new
+                // GuestSession cookie for a brand-new visitor (guest-cookie issuance has no dedicated
+                // endpoint of its own — it is a side effect of this action, not a separate one), and
+                // PlaceOrder POST is where a UserProfile + Order actually get created. Attached via
+                // [EnableRateLimiting("...")] directly on the actions (not GlobalLimiter path/route
+                // matching) — simplest correct option for a plain per-IP check with no per-resource key.
+                options.AddPolicy("GuestCheckoutAddToCart", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 30,
+                            Window = TimeSpan.FromMinutes(10),
+                            QueueLimit = 0,
+                            AutoReplenishment = true
+                        }));
+                options.AddPolicy("GuestCheckoutPlaceOrder", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(10),
                             QueueLimit = 0,
                             AutoReplenishment = true
                         }));
