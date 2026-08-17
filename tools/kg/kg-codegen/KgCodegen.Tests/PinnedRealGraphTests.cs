@@ -156,8 +156,8 @@ public sealed class PinnedRealGraphTests
 
         Assert.Equal(["Administrator", "Manager", "Service"],
             graph.Nodes.Where(node => node.Label == "Role").Select(node => node.Id).OrderBy(id => id));
-        Assert.Equal(["TrustedApiUser"],
-            graph.Nodes.Where(node => node.Label == "Policy").Select(node => node.Id));
+        Assert.Equal(["CustomerOrGuest", "TrustedApiUser"],
+            graph.Nodes.Where(node => node.Label == "Policy").Select(node => node.Id).OrderBy(id => id));
         Assert.DoesNotContain(graph.Nodes, node => node.Id is "ManagingRole" or "MaintenanceRole" or "StorefrontIndex");
     }
 
@@ -210,9 +210,9 @@ public sealed class PinnedRealGraphTests
             .Where(edge => edge.Type == "GOVERNED_BY" && edge.SourceId.Contains("Web.Areas.Sales.Controllers.OrdersController.Index", StringComparison.Ordinal))
             .ToArray();
 
-        Assert.Equal(6, orderEdges.Length);
-        Assert.Equal(3, orderEdges.Count(edge => edge.SourceId.EndsWith("Index", StringComparison.Ordinal)));
-        Assert.Equal(3, orderEdges.Count(edge => edge.SourceId.EndsWith("Index#2", StringComparison.Ordinal)));
+        Assert.Equal(8, orderEdges.Length);
+        Assert.Equal(4, orderEdges.Count(edge => edge.SourceId.EndsWith("Index", StringComparison.Ordinal)));
+        Assert.Equal(4, orderEdges.Count(edge => edge.SourceId.EndsWith("Index#2", StringComparison.Ordinal)));
         Assert.DoesNotContain(graph.Edges, edge => edge.Type == "GOVERNED_BY" && edge.SourceId.Contains("API.Controllers.Sales.OrdersController.GetById", StringComparison.Ordinal));
     }
 
