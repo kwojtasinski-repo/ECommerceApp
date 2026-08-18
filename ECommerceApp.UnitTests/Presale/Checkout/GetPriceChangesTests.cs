@@ -42,12 +42,10 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
         public void Dispose() => _cache.Dispose();
 
-        private static int _nextId = 1;
-
         private static SoftReservation MakeReservation(int productId, decimal unitPrice)
         {
             var r = SoftReservation.Create(productId, "user-1", 1, unitPrice, DateTime.UtcNow.AddMinutes(15));
-            typeof(SoftReservation).GetProperty("Id")!.SetValue(r, new SoftReservationId(_nextId++));
+            typeof(SoftReservation).GetProperty("Id")!.SetValue(r, new SoftReservationId(productId));
             return r;
         }
 
