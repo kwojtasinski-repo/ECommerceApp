@@ -38,6 +38,8 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(CouponRemovedFromOrder), "coupons.coupon.removed-from-order");
             Register(typeof(FulfillmentRefundApproved), "fulfillment.refund.approved");
             Register(typeof(FulfillmentRefundRejected), "fulfillment.refund.rejected");
+            Register(typeof(RefundStockReturned), "fulfillment.refund.stock-returned");
+            Register(typeof(RefundCustomerNotified), "fulfillment.refund.customer-notified");
             Register(typeof(ShipmentDispatched), "fulfillment.shipment.dispatched");
             Register(typeof(ShipmentDelivered), "fulfillment.shipment.delivered");
             Register(typeof(ShipmentFailed), "fulfillment.shipment.failed");

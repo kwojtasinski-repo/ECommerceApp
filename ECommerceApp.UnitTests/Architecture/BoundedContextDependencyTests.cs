@@ -44,6 +44,9 @@ namespace ECommerceApp.UnitTests.Architecture
         private static readonly IObjectProvider<IType> Messaging =
             InNsTree("ECommerceApp.Application.Messaging", "Application.Messaging");
 
+        private static readonly IObjectProvider<IType> ApplicationSagas =
+            InNsTree("ECommerceApp.Application.Sagas", "Application.Sagas");
+
         private static readonly IObjectProvider<IType> InfrastructureMessaging =
             InNsTree("ECommerceApp.Infrastructure.Messaging", "Infrastructure.Messaging");
 
@@ -367,7 +370,8 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(DomainFulfillment)
                         .And().AreNot(SharedDomain)
                         .And().AreNot(SharedApplication)
-                        .And().AreNot(Messaging))
+                        .And().AreNot(Messaging)
+                        .And().AreNot(ApplicationSagas))
                 .Because("Fulfillment application must not depend on other BCs except via message contracts")
                 .Check(Architecture);
         }

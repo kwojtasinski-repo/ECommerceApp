@@ -105,7 +105,11 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private PaymentConfirmedEmailHandler CreateHandler()
         {
             _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
+            return new(
+                _emails.Object,
+                _resolver.Object,
+                _emailResolver.Object,
+                _processedMessageGuard.Object);
         }
 
         private static PaymentConfirmed Message(int paymentId = 1, int orderId = 10)
@@ -172,11 +176,17 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
+        private readonly Mock<IOutboxWriter> _outboxWriter = new();
 
         private RefundApprovedEmailHandler CreateHandler()
         {
             _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
+            return new(
+                _emails.Object,
+                _resolver.Object,
+                _emailResolver.Object,
+                _processedMessageGuard.Object,
+                _outboxWriter.Object);
         }
 
         private static FulfillmentMessages.RefundApproved Message(int refundId = 1, int orderId = 10)
@@ -233,6 +243,21 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Actions != null && t.Actions[0].Url.Contains("55")),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_WhenEmailSent_ShouldPublishCustomerNotified()
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
+                     .ReturnsAsync("user-1");
+            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-1", It.IsAny<CancellationToken>()))
+                      .ReturnsAsync("user@test.com");
+
+            await CreateHandler().HandleAsync(Message(refundId: 55), 1, TestContext.Current.CancellationToken);
+
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<RefundCustomerNotified>(m => m.RefundId == 55),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
     }

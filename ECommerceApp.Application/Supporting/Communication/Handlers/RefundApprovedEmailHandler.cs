@@ -14,17 +14,20 @@ namespace ECommerceApp.Application.Supporting.Communication.Handlers
         private readonly IOrderUserResolver _userResolver;
         private readonly IUserEmailResolver _emailResolver;
         private readonly IProcessedMessageGuard _processedMessageGuard;
+        private readonly IOutboxWriter _outboxWriter;
 
         public RefundApprovedEmailHandler(
             IEmailService emails,
             IOrderUserResolver userResolver,
             IUserEmailResolver emailResolver,
-            IProcessedMessageGuard processedMessageGuard)
+            IProcessedMessageGuard processedMessageGuard,
+            IOutboxWriter outboxWriter)
         {
             _emails = emails;
             _userResolver = userResolver;
             _emailResolver = emailResolver;
             _processedMessageGuard = processedMessageGuard;
+            _outboxWriter = outboxWriter;
         }
 
         public async Task HandleAsync(RefundApproved message, CancellationToken ct = default)
@@ -61,6 +64,8 @@ namespace ECommerceApp.Application.Supporting.Communication.Handlers
                       $"został zatwierdzony dnia {message.OccurredAt:d}.",
                 Actions: new[] { new EmailAction("Szczegóły zwrotu", $"/sales/refunds/{message.RefundId}") }
             ), ct);
+
+            await _outboxWriter.EnqueueAsync(new RefundCustomerNotified(message.RefundId), ct);
         }
     }
 }

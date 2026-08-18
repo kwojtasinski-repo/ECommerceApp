@@ -12,15 +12,18 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
         private readonly IStockService _stockService;
         private readonly IInventoryUnitOfWork _unitOfWork;
         private readonly IProcessedMessageGuard _processedMessageGuard;
+        private readonly IOutboxWriter _outboxWriter;
 
         public RefundApprovedHandler(
             IStockService stockService,
             IInventoryUnitOfWork unitOfWork,
-            IProcessedMessageGuard processedMessageGuard)
+            IProcessedMessageGuard processedMessageGuard,
+            IOutboxWriter outboxWriter)
         {
             _stockService = stockService;
             _unitOfWork = unitOfWork;
             _processedMessageGuard = processedMessageGuard;
+            _outboxWriter = outboxWriter;
         }
 
         public async Task HandleAsync(RefundApproved message, CancellationToken ct = default)
@@ -47,6 +50,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                     await _stockService.ReturnAsync(item.ProductId, item.Quantity, ct);
                 }
 
+                await _outboxWriter.EnqueueAsync(new RefundStockReturned(message.RefundId), transaction, ct);
                 await transaction.CommitAsync(ct);
             }
         }

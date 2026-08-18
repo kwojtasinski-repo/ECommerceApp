@@ -1,5 +1,8 @@
 using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sagas;
+using ECommerceApp.Application.Sales.Fulfillment.Messages;
+using ECommerceApp.Application.Sales.Fulfillment.Sagas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +22,10 @@ namespace ECommerceApp.Infrastructure.Sagas
             services.AddScoped<ISagaPayloadSerializer, SagaPayloadSerializer>();
             services.AddScoped<ISagaUnitOfWork, SagaUnitOfWork>();
             services.AddScoped<ISagaRepository, SagaRepository>();
+            services.AddScoped<ISagaDefinition, RefundSagaDefinition>();
+            services.AddScoped<IMessageHandler<RefundApproved>, SagaTransitionHandler<RefundApproved>>();
+            services.AddScoped<IMessageHandler<RefundStockReturned>, SagaTransitionHandler<RefundStockReturned>>();
+            services.AddScoped<IMessageHandler<RefundCustomerNotified>, SagaTransitionHandler<RefundCustomerNotified>>();
 
             return services;
         }
