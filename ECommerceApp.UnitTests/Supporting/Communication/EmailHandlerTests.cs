@@ -22,9 +22,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private OrderPlacedEmailHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(_emails.Object, _emailResolver.Object, _processedMessageGuard.Object);
         }
 
@@ -102,9 +105,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private PaymentConfirmedEmailHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(
                 _emails.Object,
                 _resolver.Object,
@@ -178,9 +184,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
         private readonly Mock<IOutboxWriter> _outboxWriter = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private RefundApprovedEmailHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(
                 _emails.Object,
                 _resolver.Object,
@@ -269,9 +278,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private OrderCancelledEmailHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
         }
 
@@ -325,9 +337,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private PaymentExpiredEmailHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(_emails.Object, _resolver.Object, _emailResolver.Object, NullLogger<PaymentExpiredEmailHandler>.Instance, _processedMessageGuard.Object);
         }
 
@@ -396,9 +411,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private RefundRejectedEmailHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
         }
 

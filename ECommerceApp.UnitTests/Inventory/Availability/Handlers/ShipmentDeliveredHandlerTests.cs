@@ -24,6 +24,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
 
         public ShipmentDeliveredHandlerTests()
         {
+            SetupShipmentProcessingDefaults();
+        }
+
+        private void SetupShipmentProcessingDefaults()
+        {
             _txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_txMock.Object);
             _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))

@@ -18,9 +18,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private RefundApprovedNotificationHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(_notifications.Object, _resolver.Object, _processedMessageGuard.Object);
         }
 
@@ -61,9 +64,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
+        private void SetupMessageAccepted()
+            => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
         private RefundRejectedNotificationHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAccepted();
             return new(_notifications.Object, _resolver.Object, _processedMessageGuard.Object);
         }
 
