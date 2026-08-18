@@ -6,6 +6,7 @@ using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Messages;
+using ECommerceApp.Application.Presale.Checkout.Messages;
 using FulfillmentRefundApproved = ECommerceApp.Application.Sales.Fulfillment.Messages.RefundApproved;
 using FulfillmentRefundRejected = ECommerceApp.Application.Sales.Fulfillment.Messages.RefundRejected;
 
@@ -50,6 +51,7 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(OrderPlacementFailed), "orders.order.placement-failed");
             Register(typeof(OrderShipped), "orders.order.shipped");
             Register(typeof(OrderCancelled), "orders.order.cancelled");
+            Register(typeof(CheckoutReservationRevertRequested), "presale.checkout.reservation-revert-requested");
         }
 
         internal static void Register(Type messageType, string key)

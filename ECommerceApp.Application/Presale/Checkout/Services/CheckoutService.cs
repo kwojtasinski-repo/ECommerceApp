@@ -1,6 +1,9 @@
 using ECommerceApp.Application.Presale.Checkout.Contracts;
+using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Presale.Checkout.Messages;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Domain.Presale.Checkout;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -16,17 +19,23 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         private readonly IOrderClient _orderClient;
         private readonly ICartService _cartService;
         private readonly IOptionsMonitor<PresaleOptions> _options;
+        private readonly IOutboxWriter _outboxWriter;
+        private readonly ILogger<CheckoutService> _logger;
 
         public CheckoutService(
             ISoftReservationService softReservationService,
             IOrderClient orderClient,
             ICartService cartService,
-            IOptionsMonitor<PresaleOptions> options)
+            IOptionsMonitor<PresaleOptions> options,
+            IOutboxWriter outboxWriter,
+            ILogger<CheckoutService> logger)
         {
             _softReservationService = softReservationService;
             _orderClient = orderClient;
             _cartService = cartService;
             _options = options;
+            _outboxWriter = outboxWriter;
+            _logger = logger;
         }
 
         public async Task<InitiateCheckoutResult> InitiateAsync(PresaleUserId userId, CancellationToken ct = default)
@@ -86,7 +95,17 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .Select(r => new CheckoutLine(r.ProductId.Value, r.Quantity.Value, r.UnitPrice.Amount))
                 .ToList();
 
-            var result = await _orderClient.PlaceOrderAsync(customerId, currencyId, userId.Value, customer, lines, ct);
+            OrderPlacementResult result;
+            try
+            {
+                result = await _orderClient.PlaceOrderAsync(customerId, currencyId, userId.Value, customer, lines, ct);
+            }
+            catch (Exception ex)
+            {
+                await RevertReservationsOrScheduleRetryAsync(userId, ex, ct);
+                throw;
+            }
+
             if (!result.IsSuccess)
             {
                 await _softReservationService.RevertAllForUserAsync(userId, ct);
@@ -94,6 +113,43 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             }
 
             return CheckoutResult.Succeeded(result.OrderId!.Value);
+        }
+
+        private async Task RevertReservationsOrScheduleRetryAsync(
+            PresaleUserId userId,
+            Exception ex,
+            CancellationToken ct)
+        {
+            try
+            {
+                await _softReservationService.RevertAllForUserAsync(userId, ct);
+                _logger.LogWarning(
+                    ex,
+                    "PlaceOrderAsync threw for user {UserId}; reservations reverted synchronously.",
+                    userId.Value);
+            }
+            catch (Exception revertEx)
+            {
+                _logger.LogError(
+                    revertEx,
+                    "PlaceOrderAsync threw for user {UserId} and synchronous revert also failed; scheduling durable retry.",
+                    userId.Value);
+
+                try
+                {
+                    await _outboxWriter.EnqueueAsync(new CheckoutReservationRevertRequested(userId.Value), ct);
+                }
+                catch (Exception enqueueEx)
+                {
+                    // Must not let this replace the original order-placement exception on the caller's
+                    // throw; — the caller already lost the synchronous revert too, so the only remaining
+                    // record of the stuck reservations is this log entry.
+                    _logger.LogError(
+                        enqueueEx,
+                        "PlaceOrderAsync threw for user {UserId}, synchronous revert failed, and scheduling the durable retry also failed; reservations are stuck with no automated recovery.",
+                        userId.Value);
+                }
+            }
         }
 
         public async Task CancelAsync(PresaleUserId userId, CancellationToken ct = default)

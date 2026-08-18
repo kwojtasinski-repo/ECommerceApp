@@ -410,6 +410,7 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(SharedDomain)
                         .And().AreNot(SharedApplication)
                         .And().AreNot(Messaging)
+                        .And().AreNot(ApplicationSagas)     // CartRecoverySagaDefinition (ISagaDefinition, ISagaStepSpec)
                         .And().AreNot(OrderMessages)       // OrderPlacedHandler
                         .And().AreNot(InventoryMessages)   // StockAvailabilityChangedHandler
                         .And().AreNot(CatalogMessages)     // ProductDetailsCacheInvalidationHandler

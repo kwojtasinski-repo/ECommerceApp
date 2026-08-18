@@ -2,6 +2,7 @@ using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Presale.Checkout.Handlers;
+using ECommerceApp.Application.Presale.Checkout.Messages;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .AddScoped<IMessageHandler<StockAvailabilityChanged>, StockAvailabilityChangedHandler>()
                 .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()
                 .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>()
+                .AddScoped<IMessageHandler<CheckoutReservationRevertRequested>, CheckoutReservationRevertRequestedHandler>()
                 // Product metadata changes → evict storefront product-details cache
                 .AddScoped<IMessageHandler<ProductUpdated>, ProductDetailsCacheInvalidationHandler>()
                 .AddScoped<IMessageHandler<ProductPublished>, ProductDetailsCacheInvalidationHandler>()

@@ -3,6 +3,8 @@ using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sagas;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Sagas;
+using ECommerceApp.Application.Presale.Checkout.Messages;
+using ECommerceApp.Application.Presale.Checkout.Sagas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +28,8 @@ namespace ECommerceApp.Infrastructure.Sagas
             services.AddScoped<IMessageHandler<RefundApproved>, SagaTransitionHandler<RefundApproved>>();
             services.AddScoped<IMessageHandler<RefundStockReturned>, SagaTransitionHandler<RefundStockReturned>>();
             services.AddScoped<IMessageHandler<RefundCustomerNotified>, SagaTransitionHandler<RefundCustomerNotified>>();
+            services.AddScoped<ISagaDefinition, CartRecoverySagaDefinition>();
+            services.AddScoped<IMessageHandler<CheckoutReservationRevertRequested>, SagaTransitionHandler<CheckoutReservationRevertRequested>>();
 
             return services;
         }

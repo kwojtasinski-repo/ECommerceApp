@@ -1,11 +1,14 @@
 using ECommerceApp.Application.Presale.Checkout;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Results;
+using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Presale.Checkout.Messages;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
 using AwesomeAssertions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -21,6 +24,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         private readonly Mock<ISoftReservationService> _softReservationService = new();
         private readonly Mock<IOrderClient> _orderClient = new();
         private readonly Mock<ICartService> _cartService = new();
+        private readonly Mock<IOutboxWriter> _outboxWriter = new();
+        private readonly Mock<ILogger<CheckoutService>> _logger = new();
         private readonly ICheckoutService _sut;
 
         private static readonly PresaleUserId UserId = new("user-1");
@@ -44,7 +49,9 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 _softReservationService.Object,
                 _orderClient.Object,
                 _cartService.Object,
-                optionsMonitor);
+                optionsMonitor,
+                _outboxWriter.Object,
+                _logger.Object);
         }
 
         private static int _nextId = 1;
@@ -72,7 +79,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OrderPlacementResult.Failed(reason));
 
-        // ¦¦ AC: NoSoftReservations when no active reservations ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+        // ï¿½ï¿½ AC: NoSoftReservations when no active reservations ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         [Fact]
         public async Task PlaceOrderAsync_NoActiveReservations_ReturnsNoSoftReservations()
@@ -86,7 +93,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             result.Should().BeOfType<CheckoutResult.NoSoftReservations>();
         }
 
-        // ¦¦ AC: On order failure — reservations left intact ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+        // ï¿½ï¿½ AC: On order failure ï¿½ reservations left intact ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         [Fact]
         public async Task PlaceOrderAsync_OrderFailed_SoftReservationsNotRemoved()
@@ -135,7 +142,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Which.Reason.Should().NotBeNullOrEmpty();
         }
 
-        // ¦¦ AC: SoftReservation.UnitPrice flows to IOrderClient ¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+        // ï¿½ï¿½ AC: SoftReservation.UnitPrice flows to IOrderClient ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         [Fact]
         public async Task PlaceOrderAsync_Success_UnitPriceFromReservationNotFromCatalog()
@@ -194,7 +201,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             capturedUserId.Should().Be("user-1");
         }
 
-        // ¦¦ AC: Success — orderId returned ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+        // ï¿½ï¿½ AC: Success ï¿½ orderId returned ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         [Fact]
         public async Task PlaceOrderAsync_Success_ReturnsSuccessWithOrderId()
@@ -211,7 +218,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Which.OrderId.Should().Be(99);
         }
 
-        // ¦¦ AC: Success — reservations committed (cleanup delegated to OrderPlacedHandler) ¦¦¦
+        // ï¿½ï¿½ AC: Success ï¿½ reservations committed (cleanup delegated to OrderPlacedHandler) ï¿½ï¿½ï¿½
 
         [Fact]
         public async Task PlaceOrderAsync_Success_CommitsAllReservations()
@@ -249,7 +256,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 Times.Never);
         }
 
-        // ¦¦ AC: On order failure — reservations reverted to Active ¦¦¦¦¦¦¦¦¦¦¦¦
+        // ï¿½ï¿½ AC: On order failure ï¿½ reservations reverted to Active ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         [Fact]
         public async Task PlaceOrderAsync_OrderFailed_RevertsAllReservations()
@@ -265,6 +272,54 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _softReservationService.Verify(
                 s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task PlaceOrderAsync_OrderClientThrows_RevertsReservationsAndPropagatesException()
+        {
+            var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
+            var expected = new InvalidOperationException("order client failed");
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation> { reservation });
+            _orderClient
+                .Setup(o => o.PlaceOrderAsync(
+                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
+                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(expected);
+
+            var action = () => _sut.PlaceOrderAsync(UserId, 1, 1, DefaultCustomer, TestContext.Current.CancellationToken);
+
+            await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("order client failed");
+            _softReservationService.Verify(s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(o => o.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task PlaceOrderAsync_OrderClientAndRevertThrow_SchedulesRetryAndPropagatesOriginalException()
+        {
+            var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
+            var expected = new InvalidOperationException("order client failed");
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation> { reservation });
+            _softReservationService
+                .Setup(s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("revert failed"));
+            _orderClient
+                .Setup(o => o.PlaceOrderAsync(
+                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
+                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(expected);
+
+            var action = () => _sut.PlaceOrderAsync(UserId, 1, 1, DefaultCustomer, TestContext.Current.CancellationToken);
+
+            await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("order client failed");
+            _outboxWriter.Verify(o => o.EnqueueAsync(
+                It.Is<CheckoutReservationRevertRequested>(m => m.UserId == UserId.Value),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // ?? AC: EmptyCart ??????????????????????????????????????????????????????
