@@ -7,6 +7,17 @@ namespace ECommerceApp.UnitTests.Messaging
 {
     public class OutboxMessageTests
     {
+        private static DateTime FailMessageRepeatedly(OutboxMessage message, DateTime failedAt, int failureCount)
+        {
+            for (var attempt = 0; attempt < failureCount; attempt++)
+            {
+                failedAt = failedAt.AddMinutes(1);
+                message.Fail("boom", failedAt);
+            }
+
+            return failedAt;
+        }
+
         [Fact]
         public void Create_SetsStatusPending()
         {
@@ -129,12 +140,7 @@ namespace ECommerceApp.UnitTests.Messaging
             // proving the 1-hour DefaultMaxBackoff fallback is actually applied when the caller
             // (as today's tests do) omits the maxBackoff argument.
             var message = OutboxMessage.Create("test-message", "{}", maxRetries: 50);
-            var failedAt = message.CreatedAt;
-            for (var i = 0; i < 20; i++)
-            {
-                failedAt = failedAt.AddMinutes(1);
-                message.Fail("boom", failedAt);
-            }
+            var failedAt = FailMessageRepeatedly(message, message.CreatedAt, failureCount: 20);
 
             (message.NextAttemptAt - failedAt).Should().BeLessThanOrEqualTo(TimeSpan.FromHours(1));
         }

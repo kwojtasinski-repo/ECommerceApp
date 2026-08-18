@@ -44,9 +44,9 @@ namespace ECommerceApp.UnitTests.Web
         }
 
         [Fact]
-        public async Task GuestAccess_RequiresMatchingUserAndOrderClaims()
+        public async Task GuestAccess_MatchingUserAndOrderClaims_Succeeds()
         {
-            var matchingResult = await AuthorizeAsync(
+            var result = await AuthorizeAsync(
                 new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, "guest-42"),
@@ -54,7 +54,14 @@ namespace ECommerceApp.UnitTests.Web
                 },
                 new OrderAccessResource(7, "guest-42"),
                 GuestScheme);
-            var differentOrderResult = await AuthorizeAsync(
+
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GuestAccess_DifferentOrderClaim_Fails()
+        {
+            var result = await AuthorizeAsync(
                 new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, "guest-42"),
@@ -62,7 +69,14 @@ namespace ECommerceApp.UnitTests.Web
                 },
                 new OrderAccessResource(8, "guest-42"),
                 GuestScheme);
-            var differentUserResult = await AuthorizeAsync(
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GuestAccess_DifferentUserClaim_Fails()
+        {
+            var result = await AuthorizeAsync(
                 new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, "guest-42"),
@@ -71,9 +85,7 @@ namespace ECommerceApp.UnitTests.Web
                 new OrderAccessResource(7, "guest-99"),
                 GuestScheme);
 
-            matchingResult.Should().BeTrue();
-            differentOrderResult.Should().BeFalse();
-            differentUserResult.Should().BeFalse();
+            result.Should().BeFalse();
         }
 
         private static async Task<bool> AuthorizeAsync(
