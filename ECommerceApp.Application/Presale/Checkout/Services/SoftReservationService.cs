@@ -193,6 +193,37 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             await _reservationRepo.DeleteCommittedForUserAsync(presaleUserId, ct);
         }
 
+        public async Task InvalidateExcessForProductAsync(int productId, int availableQuantity, CancellationToken ct = default)
+        {
+            PresaleProductId presaleProductId = productId;
+            var active = await _reservationRepo.GetActiveByProductIdAsync(presaleProductId, ct);
+            var remainingQuantity = active.Sum(r => r.Quantity.Value);
+            if (remainingQuantity <= availableQuantity)
+            {
+                return;
+            }
+
+            foreach (var reservation in active.OrderByDescending(r => r.ExpiresAt))
+            {
+                if (remainingQuantity <= availableQuantity)
+                {
+                    break;
+                }
+
+                await _deferredScheduler.CancelAsync(
+                    SoftReservationExpiredJob.JobTaskName,
+                    reservation.Id?.Value.ToString() ?? "",
+                    ct);
+                await _reservationRepo.DeleteAsync(reservation, ct);
+                _cache.Remove(CacheKey(reservation.ProductId.Value, reservation.UserId.Value));
+
+                if (_productUserIndex.TryGetValue(reservation.ProductId.Value, out var set))
+                    lock (set) { set.Remove(reservation.UserId.Value); }
+
+                remainingQuantity -= reservation.Quantity.Value;
+            }
+        }
+
         public async Task<IReadOnlyList<SoftReservationPriceChangeVm>> GetPriceChangesAsync(PresaleUserId userId, CancellationToken ct = default)
         {
             var reservations = await _reservationRepo.GetByUserIdAsync(userId, ct);

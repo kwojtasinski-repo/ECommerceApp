@@ -233,5 +233,68 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
             await act.Should().NotThrowAsync();
         }
+
+        // ── InvalidateExcessForProductAsync ──────────────────────────────────
+
+        [Fact]
+        public async Task InvalidateExcessForProductAsync_UnderCapacity_ShouldNotDeleteReservations()
+        {
+            var reservations = new List<SoftReservation>
+            {
+                SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(10))
+            };
+            _reservationRepo.Setup(r => r.GetActiveByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(reservations);
+
+            await _service.InvalidateExcessForProductAsync(1, 2, TestContext.Current.CancellationToken);
+
+            _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()), Times.Never);
+            _deferredScheduler.Verify(d => d.CancelAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InvalidateExcessForProductAsync_OverCapacity_ShouldRemoveNewestReservationsFirst()
+        {
+            var oldest = SoftReservation.Create(1, "oldest", 2, 10m, DateTime.UtcNow.AddMinutes(10));
+            var newest = SoftReservation.Create(1, "newest", 2, 10m, DateTime.UtcNow.AddMinutes(20));
+            var reservations = new List<SoftReservation> { oldest, newest };
+            _reservationRepo.Setup(r => r.GetActiveByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(reservations);
+
+            await _service.InvalidateExcessForProductAsync(1, 2, TestContext.Current.CancellationToken);
+
+            _reservationRepo.Verify(r => r.DeleteAsync(newest, It.IsAny<CancellationToken>()), Times.Once);
+            _reservationRepo.Verify(r => r.DeleteAsync(oldest, It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InvalidateExcessForProductAsync_ShortfallRequiresAll_ShouldRemoveAllActiveReservations()
+        {
+            var first = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(10));
+            var second = SoftReservation.Create(1, "user-2", 2, 10m, DateTime.UtcNow.AddMinutes(20));
+            _reservationRepo.Setup(r => r.GetActiveByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { first, second });
+
+            await _service.InvalidateExcessForProductAsync(1, 0, TestContext.Current.CancellationToken);
+
+            _reservationRepo.Verify(r => r.DeleteAsync(first, It.IsAny<CancellationToken>()), Times.Once);
+            _reservationRepo.Verify(r => r.DeleteAsync(second, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InvalidateExcessForProductAsync_ActiveQueryExcludesCommittedReservations()
+        {
+            var active = SoftReservation.Create(1, "active", 3, 10m, DateTime.UtcNow.AddMinutes(10));
+            var committed = SoftReservation.Create(1, "committed", 3, 10m, DateTime.UtcNow.AddMinutes(20));
+            committed.Commit();
+            _reservationRepo.Setup(r => r.GetActiveByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { active });
+
+            await _service.InvalidateExcessForProductAsync(1, 2, TestContext.Current.CancellationToken);
+
+            _reservationRepo.Verify(r => r.DeleteAsync(active, It.IsAny<CancellationToken>()), Times.Once);
+            _reservationRepo.Verify(r => r.DeleteAsync(committed, It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 }

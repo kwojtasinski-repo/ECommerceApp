@@ -81,23 +81,7 @@ namespace ECommerceApp.Infrastructure.Sagas
                         {
                             step.MarkCompleted();
                             await _repository.AddStepAsync(step, ct);
-
-                            var requiredStepNames = definition.Steps
-                                .Where(s => s.Kind == SagaTransitionKind.Success)
-                                .Select(s => s.StepName)
-                                .ToHashSet(StringComparer.Ordinal);
-                            var completedStepNames = (await _repository.GetStepsAsync(saga.Id, ct)
-                                    ?? Array.Empty<SagaStep>())
-                                .Where(s => s.Status == SagaStepStatus.Completed)
-                                .Select(s => s.StepName)
-                                .ToHashSet(StringComparer.Ordinal);
-
-                            if (requiredStepNames.IsSubsetOf(completedStepNames))
-                            {
-                                saga.MarkCompleted();
-                                await _repository.UpdateAsync(saga, ct);
-                            }
-
+                            await TryCompleteSagaAsync(definition, saga, ct);
                             continue;
                         }
 
@@ -126,6 +110,7 @@ namespace ECommerceApp.Infrastructure.Sagas
                             }
 
                             await _repository.AddStepAsync(step, ct);
+                            await TryCompleteSagaAsync(definition, saga, ct);
 
                             continue;
                         }
@@ -163,6 +148,28 @@ namespace ECommerceApp.Infrastructure.Sagas
                 }
 
                 await transaction.CommitAsync(ct);
+            }
+        }
+
+        private async Task TryCompleteSagaAsync(
+            ISagaDefinition definition,
+            SagaInstance saga,
+            CancellationToken ct)
+        {
+            var requiredStepNames = definition.Steps
+                .Where(s => s.Kind == SagaTransitionKind.Success || s.Kind == SagaTransitionKind.Notify)
+                .Select(s => s.StepName)
+                .ToHashSet(StringComparer.Ordinal);
+            var completedStepNames = (await _repository.GetStepsAsync(saga.Id, ct)
+                    ?? Array.Empty<SagaStep>())
+                .Where(s => s.Status == SagaStepStatus.Completed)
+                .Select(s => s.StepName)
+                .ToHashSet(StringComparer.Ordinal);
+
+            if (requiredStepNames.IsSubsetOf(completedStepNames))
+            {
+                saga.MarkCompleted();
+                await _repository.UpdateAsync(saga, ct);
             }
         }
 

@@ -15,6 +15,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         Task RemoveAllForUserAsync(string userId, CancellationToken ct = default);
         Task RemoveActiveForUserAsync(string userId, CancellationToken ct = default);
         Task RemoveCommittedForUserAsync(string userId, CancellationToken ct = default);
+        Task InvalidateExcessForProductAsync(int productId, int availableQuantity, CancellationToken ct = default);
         Task CommitAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
         Task RevertAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);

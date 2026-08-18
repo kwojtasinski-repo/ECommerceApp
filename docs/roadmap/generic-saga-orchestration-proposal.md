@@ -1,6 +1,6 @@
 # Generic saga orchestration engine — requirements & implementation proposal
 
-> **Status:** Phases 1–6 implemented and validated. Phase 7 remains intentionally deferred.
+> **Status:** Phases 1–7 implemented. Phase 7 closes the generic saga roadmap; independent validation remains a separate review step.
 > Existing Option A choreography compensation handlers remain standalone. The generic engine is
 > available for later concrete definitions without changing those handlers today.
 > [`saga-pattern.md`](./saga-pattern.md#option-b--process-manager-per-saga-future-when-option-a-proves-insufficient)
@@ -336,11 +336,11 @@ way here, instead of pretending it's one atomic unit of work.
 | **0** | **Done (2026-08-02), validated PASS.** Outbox pattern — see `order-placement-compensation-followup.md` workstream 2. | — |
 | **1** | **Done (2026-08-17), validated PASS.** Domain model: `SagaInstance`/`SagaStep` entities, EF configuration, generated migration (`sagas` schema), repository and unit-of-work. | Implemented and tested |
 | **2** | **Done (2026-08-17), independently validated PASS after 2 fixes.** Engine core: `ISagaDefinition`, explicit DI registration per Saga definition/message type, failure as a distinct failed step, compensation through `IOutboxWriter`, and generic `ISagaPayloadSerializer`/`SagaTransitionContext` for typed payload access. Independent review found and fixed two gaps in the initial implementation: (1) a non-starting step (`StartsNewInstance = false`) with no running instance found could still spuriously create one when `Kind == Success` (the null-instance guard only checked `Kind == Failure`) — fixed to skip on either kind; (2) `SagaInstance` never transitioned to `Completed` on the happy path (no logic compared completed steps against the definition's required `Success` steps) — fixed by checking, after each `Success` step completes, whether all of the definition's `Success`-kind step names are now completed for that instance. See the "Known accepted limitation" note above for a third gap (`Compensating` never auto-resolves to `Failed`) that was deliberately **not** engineered around — it mirrors ADR-0026's already-accepted Option A limitation. 3 new tests added (24/24 Sagas, 1166/1166 full suite). | Implemented, reviewed, and fixed |
-| **3** | **Done (2026-08-18), independently validated PASS after 1 fix.** Added `SagaTransitionKind.Notify`, per-step nullable `NotifyFactory`, crash-safe Outbox enqueue in the existing saga transaction, and engine-level coverage for publishing and no-factory no-op behavior. Notify steps complete themselves but leave the saga `Running`; they do not participate in the Phase 2 all-required-success completion check. **Independent review found and fixed a real bug in the initial implementation**: the `Notify` branch called `AddStepAsync` (which persists via `SaveChangesAsync` immediately) *before* `GetStepsAsync`, so the subsequent `GetStepsAsync` saw the just-persisted step and it got appended a second time — `SagaTransitionContext`'s `ToDictionary(step => step.StepName)` then threw `ArgumentException` on the duplicate key. This would have thrown on **every** real `Notify` step execution, factory or not (context is built unconditionally), first hit by Phase 7. Not caught by the 2 original unit tests because neither mocked `GetStepsAsync` — Moq's unconfigured default (`null` → `Array.Empty<SagaStep>()` via the handler's `??`) hid the duplication. Fixed by reordering to match the already-correct `Failure` branch (`GetStepsAsync` before `AddStepAsync`); added a regression test that mocks `GetStepsAsync` to only "see" a step once `AddStepAsync` actually ran, so it fails if the ordering regresses. | Implemented, independently reviewed, and fixed (`27/27` Saga tests, `1169/1169` unit tests) |
+| **3** | **Done (2026-08-18), independently validated PASS after 1 fix.** Added `SagaTransitionKind.Notify`, per-step nullable `NotifyFactory`, crash-safe Outbox enqueue in the existing saga transaction, and engine-level coverage for publishing and no-factory no-op behavior. Notify steps complete themselves and now participate in the all-required-step completion check. **Independent review found and fixed a real bug in the initial implementation**: the `Notify` branch called `AddStepAsync` (which persists via `SaveChangesAsync` immediately) *before* `GetStepsAsync`, so the subsequent `GetStepsAsync` saw the just-persisted step and it got appended a second time — `SagaTransitionContext`'s `ToDictionary(step => step.StepName)` then threw `ArgumentException` on the duplicate key. This would have thrown on **every** real `Notify` step execution, factory or not (context is built unconditionally), first hit by Phase 7. Not caught by the 2 original unit tests because neither mocked `GetStepsAsync` — Moq's unconfigured default (`null` → `Array.Empty<SagaStep>()` via the handler's `??`) hid the duplication. Fixed by reordering to match the already-correct `Failure` branch (`GetStepsAsync` before `AddStepAsync`); added a regression test that mocks `GetStepsAsync` to only "see" a step once `AddStepAsync` actually ran, so it fails if the ordering regresses. | Implemented, independently reviewed, and fixed (`27/27` Saga tests, `1169/1169` unit tests) |
 | **4** | ~~Decision + implementation: retrofit Option A~~ — **resolved as a decision only, no code** (see "Resolved (2026-08-17)" above): leave Option A standalone. Nothing left to implement for this phase. | Done (decision-only) |
 | **5** | **Done (2026-08-18), independently validated PASS.** `RefundSagaDefinition` — first genuinely new saga on the engine, option (a) (full 3-step, human-confirmed 2026-08-18): `RefundApproved` (`Success`, starts instance) → `RefundStockReturned` (`Success`) → `RefundCustomerNotified` (`Success`); `CompensationFactory => null` (no recovery path exists for this flow, an accepted pre-existing limitation, not new). Scope stayed at the original 2 handlers (Inventory stock return, Communication email) after a fan-out recount found `RefundApproved` actually fans out to 5 handlers, not 2 — the other 3 (in-app notification, order record, payment status) stay outside the saga by deliberate scope decision, untouched. Required a new transaction-less `IOutboxWriter.EnqueueAsync(IMessage, CancellationToken)` overload for the email handler, which has no BC `DbContext` of its own to anchor a transaction on — implemented via `CrossContextTransactionScope`, correctly disposed (`await using`, rollback-if-not-completed) so it doesn't repeat an earlier connection-leak incident (see `git log --grep=Coupons`). Independent validation re-ran build/unit/integration from scratch (not just re-reading Luna's numbers) specifically hunting for a repeat of Phase 3's exact bug class (write-then-read-back ordering assumption) — found none; all new publish calls are fire-and-forget after existing logic, no query-back in the same transaction. Confirmed both new message types registered in `MessageTypeRegistry` (the exact miss that has bitten this repo before) and that the saga's `SagaTransitionHandler<RefundApproved>` is a 6th additive `IMessageHandler<RefundApproved>` registration alongside the pre-existing 5, none of which were touched. `RefundApprovedHandlerDuplicateDeliveryTests`/`RefundApprovedEmailHandlerDuplicateDeliveryTests` re-verified still pass with their original assertions intact. New end-to-end integration test (`RefundSagaCompletionTests`) proves the full chain against a real `SagasDbContext`, not a mock. Build 0 errors; `1172/1172` unit tests; `251/251` integration tests. | Implemented, independently reviewed, PASS |
 | **6** | **Done (2026-08-18), independently validated PASS.** `CartRecoverySagaDefinition` — scope came out much narrower than "cart corruption recovery" suggested. Research traced every path that mutates cart/soft-reservation state and found three candidate gaps, two of which were explicitly excluded: (1) `CartService`/`SoftReservationService` internal atomicity bugs (per-item loop / cancel-job-then-delete-row orderings) are same-process, same-BC, fixable by a plain transaction — not saga-shaped, out of scope; (2) `OrderPlacedHandler`'s happy-path ordering already gets at-least-once redelivery from `OutboxDispatcher`, so its only real residual failure mode is Outbox retry-exhaustion → `DeadLetter`, which is a generic cross-cutting gap already flagged in `order-placement-compensation-followup.md`, not cart-specific — folding it into this phase would have conflated two different problems. The one real, scoped gap: `CheckoutService.PlaceOrderAsync` commits reservations, then calls `_orderClient.PlaceOrderAsync`; `OrderService.PlaceOrderFromPresaleAsync` (the method that call actually reaches) had no try/catch around its outbox-enqueue, unlike its sibling `PlaceOrderAsync(PlaceOrderDto)` which does — an apparent oversight, not a deliberate asymmetry. An unguarded throw there left `Committed` reservations permanently orphaned (`SoftReservationExpiredJob` explicitly skips `Committed` status). Fixed with the two-layer design the plan called for: **Layer 1**, a plain synchronous try/catch in `CheckoutService.PlaceOrderAsync` calling `RevertAllForUserAsync` directly — zero added cost on the happy path, `throw;` preserved so HTTP-visible behavior is unchanged. **Layer 2**, reached only if that direct revert itself also throws: publishes `CheckoutReservationRevertRequested` via the Phase 5 transaction-less `IOutboxWriter.EnqueueAsync` overload, picked up by a one-step `CartRecoverySagaDefinition` (`CompensationFactory => null` — the step *is* the compensation) and a plain `IMessageHandler` (no `IProcessedMessageGuard` needed — `RevertAllForUserAsync`'s `WHERE Status == Committed` filter makes redelivery a natural no-op, same classification Phase 4 gave 22 of 48 handlers). Independent validation confirmed: scope wasn't expanded (no changes to `SoftReservationService.cs`/`CartService.cs`/`OutboxDispatcher.cs`/`OrderPlacedHandler.cs`); the common case still routes through the direct call, not the saga; the graceful-failure branch (`!result.IsSuccess`) untouched with its original tests intact; new message type registered in `MessageTypeRegistry`; DI registrations additive alongside Phase 5's `RefundSagaDefinition`, none of which were touched; new end-to-end integration test proves the fallback chain against a real `SagasDbContext`. Build 0 errors; `1176/1176` unit tests; `252/252` integration tests. | Implemented, independently reviewed, PASS |
-| **7** | Concrete-trigger-conditions research (availability reservation propagation) → `AvailabilityReservationChangeSagaDefinition` — first real user of the "notify dependent step" transition type end-to-end. **Depends on Phase 3.** | **Full plan** — `.github/plans/14-phase-saga-availability-reservation-propagation-*` — research-first, no code proposed yet |
+| **7** | **Implemented (2026-08-18).** `StockAvailabilityChanged` now drives `AvailabilityReservationChangeSagaDefinition` with a `Notify` step. The downstream handler invalidates only `Active` soft reservations that exceed the new availability, newest-first by `ExpiresAt`; `Committed` rows remain untouched. The shared engine now completes Notify-only instances, so repeated product events create fresh instances rather than being swallowed by a stuck Running instance. | Implemented; awaiting independent validation |
 
 Phases 4–7 should each be materially cheaper than Phases 1–3 once the engine exists — that's the
 entire justification for building it generically. **Planning them in full (2026-08-17) surfaced two
@@ -367,6 +367,71 @@ Phase 6's research (2026-08-18) enumerated the other paths beyond the one `Order
 instance already fixed, and found "cart/checkout corruption recovery" was not actually a repeating
 shape — only one gap was saga-shaped (see the Phase 6 row above); the other two candidates were
 same-BC atomicity fixes or an already-known cross-cutting Outbox concern, both deliberately excluded.
+
+### Phase 7 closure record (2026-08-18)
+
+Phase 7 is a UX-quality improvement, not the system's overselling safety boundary. The hard
+`StockItem` aggregate invariant still rejects an order that exceeds real availability at order
+placement; `SoftReservation` is a separate, non-atomic Presale hold. This phase therefore removes
+stale active holds early so cart and checkout views converge sooner, while preserving the existing
+late failure path as the final safety check.
+
+The invalidation policy is deliberately full removal. When active holds exceed the availability
+reported by `StockAvailabilityChanged`, the handler removes the newest holds first, using descending
+`ExpiresAt` as the stable proxy for hold order. It never queries or deletes `Committed` reservations.
+The saga step remains unconditional and cheap; the downstream handler performs the capacity check and
+is naturally idempotent because every delivery recomputes current database state.
+
+The shared-engine defect found during this phase was terminal-state handling for a Notify-only
+definition. Before the fix, the step was completed but the instance stayed `Running`, so the next
+repeated event found the same completed step and was silently skipped. The fix checks both `Success`
+and `Notify` declarations after either branch, preserving the existing behavior for Success-only
+Refund and CartRecovery definitions.
+
+**Rejected alternative, considered before the engine fix:** correlating on `$"{ProductId}:{OccurredAt.Ticks}"`
+(a unique id per event) instead of touching the engine at all. This would have avoided the symptom —
+each event always starts a fresh instance, nothing ever gets stuck — without fixing the actual defect
+(an instance that can never reach a terminal state), and would have left `sagas.SagaInstances` growing
+without bound forever with no cleanup job for that growth. Rejected explicitly during design: "correlation
+id like that is patching a hole in the whole thing." `ProductId` stays the correlation id; the engine
+fix above is the real fix.
+
+```mermaid
+sequenceDiagram
+  participant A as Availability
+  participant O as Shared Outbox
+  participant S as SagaTransitionHandler
+  participant N as CheckoutReservationAvailabilityDropped
+  participant R as SoftReservationService
+
+  A->>O: enqueue StockAvailabilityChanged(product, available)
+  O->>S: dispatch event
+  S->>S: create product-correlated saga
+  S->>S: complete Notify step and saga instance
+  S->>O: enqueue CheckoutReservationAvailabilityDropped
+  O->>N: dispatch notification
+  N->>R: recompute active hold total
+  R->>R: remove newest active holds until total fits
+```
+
+```mermaid
+flowchart LR
+  E1[Event 1: ProductId repeats] --> B1[Before: Notify step completed]
+  B1 --> B2[Instance remains Running]
+  B2 --> B3[Event 2 finds same instance]
+  B3 --> B4[Existing step is skipped forever]
+
+  E2[Event 1: ProductId repeats] --> A1[After: Notify step completed]
+  A1 --> A2[Completion check includes Success and Notify]
+  A2 --> A3[Instance becomes Completed]
+  A3 --> A4[Event 2 starts a fresh instance]
+  A4 --> A5[Notify fires again]
+```
+
+The implementation is covered by focused engine regression tests, saga-definition and handler unit
+tests, reservation-policy unit tests, and a real `SagasDbContext` integration test that verifies both
+terminal saga state and newest-first row deletion. The plan and validation prompt remain available for
+the independent review session; this closure record does not replace that review.
 
 ---
 
@@ -480,5 +545,5 @@ left as a hope-it-doesn't-happen gap.
 - [`order-placement-compensation-followup.md`](./order-placement-compensation-followup.md) —
   workstream 1 (cart restore, done) and workstream 2 (Outbox, next up) still apply; this doc's
   Phase 0 *is* workstream 2, just specified in more detail.
-- [`README.md` F3](./README.md#future-architectural-considerations) — link this doc alongside
-  `saga-pattern.md` once scope here stabilizes.
+- [`README.md` F3](./README.md#future-architectural-considerations) — linked alongside `saga-pattern.md`
+  in the F3 row's Tracking column; scope stabilized with Phase 7 (2026-08-18), F3 marked closed there.

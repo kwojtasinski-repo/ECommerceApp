@@ -40,6 +40,10 @@ namespace ECommerceApp.UnitTests.Sagas
             repository.Setup(x => x.AddStepAsync(It.IsAny<SagaStep>(), It.IsAny<CancellationToken>()))
                 .Callback<SagaStep, CancellationToken>((step, _) => createdStep = step)
                 .Returns(Task.CompletedTask);
+            repository.Setup(x => x.GetStepsAsync(7, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => createdStep is null
+                    ? Array.Empty<SagaStep>()
+                    : new[] { createdStep });
 
             var guard = new Mock<IProcessedMessageGuard>();
             guard.Setup(x => x.TryMarkProcessedAsync(
@@ -118,6 +122,10 @@ namespace ECommerceApp.UnitTests.Sagas
             repository.Setup(x => x.AddStepAsync(It.IsAny<SagaStep>(), It.IsAny<CancellationToken>()))
                 .Callback<SagaStep, CancellationToken>((step, _) => createdStep = step)
                 .Returns(Task.CompletedTask);
+            repository.Setup(x => x.GetStepsAsync(7, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => createdStep is null
+                    ? Array.Empty<SagaStep>()
+                    : new[] { createdStep });
 
             var guard = new Mock<IProcessedMessageGuard>();
             guard.Setup(x => x.TryMarkProcessedAsync(
@@ -274,7 +282,7 @@ namespace ECommerceApp.UnitTests.Sagas
         }
 
         [Fact]
-        public async Task NotifyTransition_EnqueuesNotifyMessage_LeavesSagaStatusUnchanged()
+        public async Task NotifyTransition_EnqueuesNotifyMessage_CompletesSaga()
         {
             var transaction = new Mock<IOutboxTransaction>();
             var unitOfWork = new Mock<ISagaUnitOfWork>();
@@ -292,6 +300,11 @@ namespace ECommerceApp.UnitTests.Sagas
             repository.Setup(x => x.AddStepAsync(It.IsAny<SagaStep>(), It.IsAny<CancellationToken>()))
                 .Callback<SagaStep, CancellationToken>((step, _) => createdStep = step)
                 .Returns(Task.CompletedTask);
+
+            repository.Setup(x => x.GetStepsAsync(7, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => createdStep is null
+                    ? Array.Empty<SagaStep>()
+                    : new[] { createdStep });
 
             var guard = new Mock<IProcessedMessageGuard>();
             guard.Setup(x => x.TryMarkProcessedAsync(
@@ -316,12 +329,87 @@ namespace ECommerceApp.UnitTests.Sagas
 
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
-            saga.Status.Should().Be(SagaInstanceStatus.Running);
+            saga.Status.Should().Be(SagaInstanceStatus.Completed);
             createdStep!.Status.Should().Be(SagaStepStatus.Completed);
             outboxWriter.Verify(
                 x => x.EnqueueAsync(notification, transaction.Object, It.IsAny<CancellationToken>()),
                 Times.Once);
             transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task NotifyTransition_SecondDeliveryAfterCompletion_CreatesNewInstanceAndNotifiesAgain()
+        {
+            var transaction = new Mock<IOutboxTransaction>();
+            var unitOfWork = new Mock<ISagaUnitOfWork>();
+            unitOfWork.Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(transaction.Object);
+
+            var firstSaga = SagaInstance.Create("TestSaga", "order-123");
+            SetId(firstSaga, 7);
+            SagaInstance? secondSaga = null;
+            var repository = new Mock<ISagaRepository>();
+            var findRunningCalls = 0;
+            var addedSteps = new Dictionary<long, List<SagaStep>>();
+            repository.Setup(x => x.FindRunningAsync("TestSaga", "order-123", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => ++findRunningCalls == 1 ? firstSaga : null);
+            repository.Setup(x => x.AddAsync(It.IsAny<SagaInstance>(), It.IsAny<CancellationToken>()))
+                .Callback<SagaInstance, CancellationToken>((instance, _) =>
+                {
+                    SetId(instance, 8);
+                    secondSaga = instance;
+                })
+                .Returns(Task.CompletedTask);
+            repository.Setup(x => x.FindStepAsync(It.IsAny<long>(), "NotifyCustomer", It.IsAny<CancellationToken>()))
+                .ReturnsAsync((SagaStep?)null);
+            repository.Setup(x => x.AddStepAsync(It.IsAny<SagaStep>(), It.IsAny<CancellationToken>()))
+                .Callback<SagaStep, CancellationToken>((step, _) =>
+                {
+                    if (!addedSteps.TryGetValue(step.SagaInstanceId, out var steps))
+                    {
+                        steps = new List<SagaStep>();
+                        addedSteps[step.SagaInstanceId] = steps;
+                    }
+
+                    steps.Add(step);
+                })
+                .Returns(Task.CompletedTask);
+            repository.Setup(x => x.GetStepsAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((long sagaId, CancellationToken _) =>
+                    addedSteps.TryGetValue(sagaId, out var steps)
+                        ? steps
+                        : Array.Empty<SagaStep>());
+
+            var guard = new Mock<IProcessedMessageGuard>();
+            guard.Setup(x => x.TryMarkProcessedAsync(
+                    10, It.IsAny<string>(), transaction.Object, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            var outboxWriter = new Mock<IOutboxWriter>();
+            var notification = new TestNotification("order-123");
+            var handler = CreateHandler(
+                new TestSagaDefinition(
+                    new TestStepSpec(
+                        typeof(TestMessage),
+                        "NotifyCustomer",
+                        SagaTransitionKind.Notify,
+                        true,
+                        _ => notification),
+                    null),
+                unitOfWork,
+                repository,
+                outboxWriter,
+                guard,
+                new TestPayloadSerializer());
+
+            await handler.HandleAsync(new TestMessage("order-123"), 10);
+            await handler.HandleAsync(new TestMessage("order-123"), 10);
+
+            firstSaga.Status.Should().Be(SagaInstanceStatus.Completed);
+            secondSaga.Should().NotBeNull();
+            secondSaga!.Status.Should().Be(SagaInstanceStatus.Completed);
+            repository.Verify(x => x.AddAsync(It.IsAny<SagaInstance>(), It.IsAny<CancellationToken>()), Times.Once);
+            outboxWriter.Verify(
+                x => x.EnqueueAsync(notification, transaction.Object, It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Fact]

@@ -52,6 +52,7 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(OrderShipped), "orders.order.shipped");
             Register(typeof(OrderCancelled), "orders.order.cancelled");
             Register(typeof(CheckoutReservationRevertRequested), "presale.checkout.reservation-revert-requested");
+            Register(typeof(CheckoutReservationAvailabilityDropped), "presale.checkout.reservation-availability-dropped");
         }
 
         internal static void Register(Type messageType, string key)

@@ -35,6 +35,11 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
                 .Where(r => r.UserId == userId)
                 .ToListAsync(ct);
 
+        public async Task<IReadOnlyList<SoftReservation>> GetActiveByProductIdAsync(PresaleProductId productId, CancellationToken ct = default)
+            => await _context.SoftReservations
+                .Where(r => r.ProductId == productId && r.Status == SoftReservationStatus.Active)
+                .ToListAsync(ct);
+
         public async Task<IReadOnlyList<SoftReservation>> GetActiveByUserIdAsync(PresaleUserId userId, CancellationToken ct = default)
             => await _context.SoftReservations
                 .Where(r => r.UserId == userId && r.Status == SoftReservationStatus.Active)

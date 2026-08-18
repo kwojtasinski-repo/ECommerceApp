@@ -28,6 +28,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()
                 .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>()
                 .AddScoped<IMessageHandler<CheckoutReservationRevertRequested>, CheckoutReservationRevertRequestedHandler>()
+                .AddScoped<IMessageHandler<CheckoutReservationAvailabilityDropped>, CheckoutReservationAvailabilityDroppedHandler>()
                 // Product metadata changes → evict storefront product-details cache
                 .AddScoped<IMessageHandler<ProductUpdated>, ProductDetailsCacheInvalidationHandler>()
                 .AddScoped<IMessageHandler<ProductPublished>, ProductDetailsCacheInvalidationHandler>()

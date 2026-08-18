@@ -10,6 +10,7 @@ namespace ECommerceApp.Domain.Presale.Checkout
         Task<SoftReservation> FindAsync(PresaleProductId productId, PresaleUserId userId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetByProductIdAsync(PresaleProductId productId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetByUserIdAsync(PresaleUserId userId, CancellationToken ct = default);
+        Task<IReadOnlyList<SoftReservation>> GetActiveByProductIdAsync(PresaleProductId productId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetActiveByUserIdAsync(PresaleUserId userId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetCommittedByUserIdAsync(PresaleUserId userId, CancellationToken ct = default);
         Task AddAsync(SoftReservation reservation, CancellationToken ct = default);
