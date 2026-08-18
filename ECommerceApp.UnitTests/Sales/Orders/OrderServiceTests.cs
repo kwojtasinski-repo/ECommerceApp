@@ -40,6 +40,25 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         private static OrderItem CreateCartItem(int itemId, int quantity, decimal unitCost, string userId)
             => OrderItem.Create(new OrderProductId(itemId), quantity, new UnitCost(unitCost), userId);
 
+        private Order SetupValidOrderPlacement(int orderId, string userId, IReadOnlyList<OrderItem> cartItems)
+        {
+            _customerChecker.Setup(c => c.ExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _orderItemRepo.Setup(r => r.GetByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>())).ReturnsAsync(cartItems);
+            _customerResolver.Setup(r => r.ResolveAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(CreateCustomer());
+            _orderRepo.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>())).ReturnsAsync(orderId);
+            _orderItemRepo.Setup(r => r.AssignToOrderAsync(It.IsAny<IReadOnlyList<int>>(), orderId, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var placedOrder = Order.Create(1, 1, userId, OrderNumber.Generate(), CreateCustomer());
+            foreach (var cartItem in cartItems)
+                placedOrder.AddItem(cartItem);
+
+            _orderRepo.Setup(r => r.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(placedOrder);
+            _orderRepo.Setup(r => r.UpdateAsync(placedOrder, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+            return placedOrder;
+        }
+
         private Mock<IOutboxTransaction> SetupTransaction()
         {
             var txMock = new Mock<IOutboxTransaction>();
@@ -58,18 +77,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             const string userId = "user-1";
             var cartItems = new List<OrderItem> { CreateCartItem(10, 2, 25m, userId) };
             var txMock = SetupTransaction();
-
-            _customerChecker.Setup(c => c.ExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _orderItemRepo.Setup(r => r.GetByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>())).ReturnsAsync(cartItems);
-            _customerResolver.Setup(r => r.ResolveAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(CreateCustomer());
-            _orderRepo.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>())).ReturnsAsync(501);
-            _orderItemRepo.Setup(r => r.AssignToOrderAsync(It.IsAny<IReadOnlyList<int>>(), 501, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-
-            var placedOrder = Order.Create(1, 1, userId, OrderNumber.Generate(), CreateCustomer());
-            placedOrder.AddItem(CreateCartItem(10, 2, 25m, userId));
-            _orderRepo.Setup(r => r.GetByIdWithItemsAsync(501, It.IsAny<CancellationToken>())).ReturnsAsync(placedOrder);
-            _orderRepo.Setup(r => r.UpdateAsync(placedOrder, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            var placedOrder = SetupValidOrderPlacement(501, userId, cartItems);
 
             var svc = CreateService();
             var dto = new PlaceOrderDto(CustomerId: 1, CurrencyId: 1, UserId: userId, CartItemIds: new List<int> { 10 });
@@ -137,22 +145,8 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             const string userId = "user-1";
             var cartItems = new List<OrderItem> { CreateCartItem(10, 2, 25m, userId) };
-
-            var txMock = new Mock<IOutboxTransaction>();
-            _uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-
-            _customerChecker.Setup(c => c.ExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _orderItemRepo.Setup(r => r.GetByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>())).ReturnsAsync(cartItems);
-            _customerResolver.Setup(r => r.ResolveAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(CreateCustomer());
-            _orderRepo.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>())).ReturnsAsync(501);
-            _orderItemRepo.Setup(r => r.AssignToOrderAsync(It.IsAny<IReadOnlyList<int>>(), 501, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-
-            var placedOrder = Order.Create(1, 1, userId, OrderNumber.Generate(), CreateCustomer());
-            placedOrder.AddItem(CreateCartItem(10, 2, 25m, userId));
-            _orderRepo.Setup(r => r.GetByIdWithItemsAsync(501, It.IsAny<CancellationToken>())).ReturnsAsync(placedOrder);
-            _orderRepo.Setup(r => r.UpdateAsync(placedOrder, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            var txMock = SetupTransaction();
+            var placedOrder = SetupValidOrderPlacement(501, userId, cartItems);
 
             _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<OrderPlaced>(), txMock.Object, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("serialization boom"));
