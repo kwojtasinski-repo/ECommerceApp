@@ -3,6 +3,7 @@ namespace ECommerceApp.Application.Sagas
     public enum SagaTransitionKind : byte
     {
         Success = 0,
-        Failure = 1
+        Failure = 1,
+        Notify = 2
     }
 }

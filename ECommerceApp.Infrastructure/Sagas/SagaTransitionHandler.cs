@@ -101,6 +101,35 @@ namespace ECommerceApp.Infrastructure.Sagas
                             continue;
                         }
 
+                        if (stepSpec.Kind == SagaTransitionKind.Notify)
+                        {
+                            step.MarkCompleted();
+
+                            var notifySteps = await _repository.GetStepsAsync(saga.Id, ct)
+                                ?? Array.Empty<SagaStep>();
+                            var notifyContext = new SagaTransitionContext(
+                                saga,
+                                notifySteps.Select(existingStep => new SagaStepPayload(
+                                        existingStep.StepName,
+                                        ResolveMessageType(definition, existingStep.StepName),
+                                        existingStep.Payload))
+                                    .Append(new SagaStepPayload(
+                                        step.StepName,
+                                        stepSpec.MessageType,
+                                        step.Payload)),
+                                _payloadSerializer);
+
+                            if (stepSpec.NotifyFactory is not null)
+                            {
+                                await _outboxWriter.EnqueueAsync(
+                                    stepSpec.NotifyFactory(notifyContext), transaction, ct);
+                            }
+
+                            await _repository.AddStepAsync(step, ct);
+
+                            continue;
+                        }
+
                         step.MarkFailed();
                         var steps = await _repository.GetStepsAsync(saga.Id, ct)
                             ?? Array.Empty<SagaStep>();

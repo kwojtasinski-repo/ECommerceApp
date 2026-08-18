@@ -10,5 +10,6 @@ namespace ECommerceApp.Application.Sagas
         SagaTransitionKind Kind { get; }
         bool StartsNewInstance { get; }
         Func<IMessage, string> ExtractCorrelationId { get; }
+        Func<SagaTransitionContext, IMessage>? NotifyFactory { get; }
     }
 }
