@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -15,14 +16,11 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         [Fact]
         public async Task RedeliverAsync_SameOrderPlaced_ShouldSendEmailExactlyOnce()
         {
-            var message = new OrderPlaced(
-                OrderId: 1,
-                Items: new List<OrderPlacedItem>(),
-                UserId: PROPER_CUSTOMER_ID,
-                ExpiresAt: DateTime.UtcNow.AddHours(1),
-                OccurredAt: DateTime.UtcNow,
-                TotalAmount: 100m,
-                CurrencyId: 1);
+            var message = OrderPlacedTestData.Create(
+                totalAmount: 100m,
+                userId: PROPER_CUSTOMER_ID,
+                expirationHours: 1,
+                includeItem: false);
 
             await RedeliverAsync(message, outboxMessageId: 940005, CancellationToken);
             await RedeliverAsync(message, outboxMessageId: 940005, CancellationToken);
@@ -38,14 +36,11 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         [Fact]
         public async Task RedeliverAsync_SameOrderPlaced_ShouldNotifyExactlyOnce()
         {
-            var message = new OrderPlaced(
-                OrderId: 1,
-                Items: new List<OrderPlacedItem>(),
-                UserId: PROPER_CUSTOMER_ID,
-                ExpiresAt: DateTime.UtcNow.AddHours(1),
-                OccurredAt: DateTime.UtcNow,
-                TotalAmount: 100m,
-                CurrencyId: 1);
+            var message = OrderPlacedTestData.Create(
+                totalAmount: 100m,
+                userId: PROPER_CUSTOMER_ID,
+                expirationHours: 1,
+                includeItem: false);
 
             await RedeliverAsync(message, outboxMessageId: 940006, CancellationToken);
             await RedeliverAsync(message, outboxMessageId: 940006, CancellationToken);

@@ -18,14 +18,28 @@ namespace ECommerceApp.UnitTests.AccountProfile
         private readonly Mock<IGuestAccountProvisioner> _users = new();
         private readonly Mock<IVerificationCodeClient> _codes = new();
 
-        [Fact]
-        public async Task ExecuteAsync_NoMatchingProfiles_DoesNotGenerateCode()
+        private void SetupNoMatchingProfiles()
         {
             _profiles.Setup(repository => repository.GetByEmailAsync("guest@test.com", false))
                 .ReturnsAsync(new List<UserProfile>());
+        }
 
+        private void SetupNoRegisteredUsers()
+        {
+            _users.Setup(users => users.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync(new HashSet<string>());
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoMatchingProfiles_DoesNotGenerateCode()
+        {
+            // Arrange
+            SetupNoMatchingProfiles();
+
+            // Act
             var context = await ExecuteAsync("guest@test.com");
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>();
             _codes.Verify(client => client.RequestGuestAccountLinkAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
         }
@@ -33,30 +47,35 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ExecuteAsync_OneUnclaimedProfile_GeneratesCodeForEmail()
         {
+            // Arrange
             var profile = CreateProfile("gst_1");
             SetupCandidates(profile);
 
+            // Act
             await ExecuteAsync("guest@test.com");
 
+            // Assert
             _codes.Verify(client => client.RequestGuestAccountLinkAsync("guest@test.com", It.IsAny<System.Threading.CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ExecuteAsync_MultipleUnclaimedProfiles_GeneratesOneCode()
         {
+            // Arrange
             var first = CreateProfile("gst_1");
             var second = CreateProfile("gst_2");
             SetupCandidates(first, second);
 
+            // Act
             await ExecuteAsync("guest@test.com");
 
+            // Assert
             _codes.Verify(client => client.RequestGuestAccountLinkAsync("guest@test.com", It.IsAny<System.Threading.CancellationToken>()), Times.Once);
         }
 
         private async Task<JobExecutionContext> ExecuteAsync(string email)
         {
-            _users.Setup(users => users.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
-                .ReturnsAsync(new HashSet<string>());
+            SetupNoRegisteredUsers();
             var context = new JobExecutionContext(email, "execution-1");
             await new GuestAccountLinkCheckJob(_profiles.Object, _users.Object, _codes.Object)
                 .ExecuteAsync(context, TestContext.Current.CancellationToken);

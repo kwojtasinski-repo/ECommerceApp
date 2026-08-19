@@ -52,7 +52,7 @@ Then load **only the relevant** per-stack instructions based on which files chan
 | `.cs` in `API/`                     | `web-api.instructions.md`           |
 | `.cshtml` or `wwwroot/`             | `frontend.instructions.md`          |
 | `Domain/Shared/`                    | `shared-primitives.instructions.md` |
-| `UnitTests/` or `IntegrationTests/` | `testing.instructions.md`           |
+| `UnitTests/`, `IntegrationTests/`, `Web.IntegrationTests/`, `Web.E2E/`, `E2E.Backend/`, or `Shared.TestInfrastructure/` | `testing.instructions.md`           |
 | `Infrastructure/Migrations/`        | `migration-policy.instructions.md`  |
 
 > **Context budget**: load at most 2 context files + relevant per-stack instructions. Never bulk-load everything.

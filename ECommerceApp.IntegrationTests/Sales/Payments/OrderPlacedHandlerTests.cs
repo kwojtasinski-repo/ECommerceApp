@@ -2,9 +2,8 @@ using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -18,14 +17,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
             int orderId = 1,
             decimal totalAmount = 150m,
             int currencyId = 1)
-            => new(
-                OrderId: orderId,
-                Items: new List<OrderPlacedItem> { new(ProductId: 10, Quantity: 2) },
-                UserId: "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e",
-                ExpiresAt: DateTime.UtcNow.AddHours(24),
-                OccurredAt: DateTime.UtcNow,
-                TotalAmount: totalAmount,
-                CurrencyId: currencyId);
+            => OrderPlacedTestData.Create(orderId, totalAmount, currencyId);
 
         // ── Payment creation ─────────────────────────────────────────────
 

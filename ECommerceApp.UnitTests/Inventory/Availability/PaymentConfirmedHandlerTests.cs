@@ -23,14 +23,17 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_ShouldConfirmReservationsByOrder()
         {
+            // Arrange
             var message = new PaymentConfirmed(
                 PaymentId: 1,
                 OrderId: 42,
                 Items: new[] { new PaymentConfirmedItem(10, 2), new PaymentConfirmedItem(20, 1) },
                 OccurredAt: DateTime.UtcNow);
 
+            // Act
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ConfirmHoldsByOrderAsync(
                 42, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -38,14 +41,17 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_ShouldNotCallPerItemConfirm()
         {
+            // Arrange
             var message = new PaymentConfirmed(
                 PaymentId: 1,
                 OrderId: 42,
                 Items: new[] { new PaymentConfirmedItem(10, 2) },
                 OccurredAt: DateTime.UtcNow);
 
+            // Act
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ConfirmAsync(
                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -53,14 +59,17 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_EmptyItems_ShouldStillCallConfirmByOrder()
         {
+            // Arrange
             var message = new PaymentConfirmed(
                 PaymentId: 1,
                 OrderId: 99,
                 Items: Array.Empty<PaymentConfirmedItem>(),
                 OccurredAt: DateTime.UtcNow);
 
+            // Act
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ConfirmHoldsByOrderAsync(
                 99, It.IsAny<CancellationToken>()), Times.Once);
         }

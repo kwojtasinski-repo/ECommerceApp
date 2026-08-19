@@ -24,18 +24,25 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public void TaskName_ShouldBeRefreshTokenCleanup()
         {
-            CreateTask().TaskName.Should().Be("RefreshTokenCleanup");
+            // Arrange
+            var task = CreateTask();
+
+            // Act Assert
+            task.TaskName.Should().Be("RefreshTokenCleanup");
         }
 
         [Fact]
         public async Task ExecuteAsync_ShouldCallDeleteExpiredAndReportSuccess()
         {
-            _refreshTokens.Setup(r => r.DeleteExpiredAsync(It.IsAny<CancellationToken>())).ReturnsAsync(3);
+            // Arrange
+            SetupExpiredTokenDeletion(3);
             var context = new JobExecutionContext(null, "exec-1");
             var task = CreateTask();
 
+            // Act
             await task.ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("3");
             _refreshTokens.Verify(r => r.DeleteExpiredAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -44,12 +51,15 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task ExecuteAsync_WhenNoExpiredTokens_ShouldReportZero()
         {
-            _refreshTokens.Setup(r => r.DeleteExpiredAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+            // Arrange
+            SetupExpiredTokenDeletion(0);
             var context = new JobExecutionContext(null, "exec-2");
             var task = CreateTask();
 
+            // Act
             await task.ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("0");
         }
@@ -57,15 +67,29 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task ExecuteAsync_WhenRepositoryThrows_ShouldReportFailure()
         {
-            _refreshTokens.Setup(r => r.DeleteExpiredAsync(It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new System.Exception("DB connection failed"));
+            // Arrange
+            SetupExpiredTokenDeletionFailure("DB connection failed");
             var context = new JobExecutionContext(null, "exec-3");
             var task = CreateTask();
 
+            // Act
             await task.ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Failure>()
                 .Which.Error.Should().Contain("DB connection failed");
+        }
+
+        private void SetupExpiredTokenDeletion(int deletedCount)
+        {
+            _refreshTokens.Setup(r => r.DeleteExpiredAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(deletedCount);
+        }
+
+        private void SetupExpiredTokenDeletionFailure(string message)
+        {
+            _refreshTokens.Setup(r => r.DeleteExpiredAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new System.Exception(message));
         }
     }
 }

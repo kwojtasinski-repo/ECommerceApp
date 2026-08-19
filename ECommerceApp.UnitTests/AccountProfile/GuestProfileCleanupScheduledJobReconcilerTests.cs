@@ -17,13 +17,16 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ReconcileAsync_JobMissing_CreatesWithConfigScheduleAndEnabledState()
         {
+            // Arrange
             var repository = new Mock<IScheduledJobRepository>();
-            repository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((ScheduledJob)null);
+            SetupMissingJob(repository);
             var options = new GuestProfileCleanupOptions { Enabled = false, Schedule = "15 4 * * *" };
             var reconciler = CreateReconciler(repository, options);
 
+            // Act
             await reconciler.ReconcileAsync(CancellationToken.None);
 
+            // Assert
             repository.Verify(r => r.AddAsync(It.Is<ScheduledJob>(job =>
                 job.Name.Value == "UnclaimedGuestProfileCleanup" && job.Schedule.Value == "15 4 * * *" && !job.IsEnabled), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -31,14 +34,17 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ReconcileAsync_JobExistsWithDifferentSchedule_UpdatesSchedule()
         {
+            // Arrange
             var repository = new Mock<IScheduledJobRepository>();
             var job = ScheduledJob.Create("UnclaimedGuestProfileCleanup", "0 4 * * *", null, 3);
-            repository.Setup(r => r.GetByNameAsync("UnclaimedGuestProfileCleanup", It.IsAny<CancellationToken>())).ReturnsAsync(job);
+            SetupExistingJob(repository, job);
             var options = new GuestProfileCleanupOptions { Schedule = "45 5 * * *" };
             var reconciler = CreateReconciler(repository, options);
 
+            // Act
             await reconciler.ReconcileAsync(CancellationToken.None);
 
+            // Assert
             job.Schedule.Value.Should().Be("45 5 * * *");
             repository.Verify(r => r.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -46,26 +52,44 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ReconcileAsync_JobMatchesConfig_NoOpUpdate()
         {
+            // Arrange
             var repository = new Mock<IScheduledJobRepository>();
             var job = ScheduledJob.Create("UnclaimedGuestProfileCleanup", "0 4 * * *", null, 3);
-            repository.Setup(r => r.GetByNameAsync("UnclaimedGuestProfileCleanup", It.IsAny<CancellationToken>())).ReturnsAsync(job);
+            SetupExistingJob(repository, job);
             var reconciler = CreateReconciler(repository, new GuestProfileCleanupOptions());
 
+            // Act
             await reconciler.ReconcileAsync(CancellationToken.None);
 
+            // Assert
             repository.Verify(r => r.UpdateAsync(It.IsAny<ScheduledJob>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task ReconcileAsync_MalformedCronInConfig_LogsAndDoesNotCrashStartup()
         {
+            // Arrange
             var repository = new Mock<IScheduledJobRepository>();
-            repository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((ScheduledJob)null);
+            SetupMissingJob(repository);
             var reconciler = CreateReconciler(repository, new GuestProfileCleanupOptions { Schedule = "invalid" });
 
+            // Act
             await reconciler.ReconcileAsync(CancellationToken.None);
 
+            // Assert
             repository.Verify(r => r.AddAsync(It.Is<ScheduledJob>(job => job.Schedule.Value == "0 4 * * *"), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        private static void SetupMissingJob(Mock<IScheduledJobRepository> repository)
+        {
+            repository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ScheduledJob)null);
+        }
+
+        private static void SetupExistingJob(Mock<IScheduledJobRepository> repository, ScheduledJob job)
+        {
+            repository.Setup(r => r.GetByNameAsync("UnclaimedGuestProfileCleanup", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(job);
         }
 
         private static GuestProfileCleanupScheduledJobReconciler CreateReconciler(

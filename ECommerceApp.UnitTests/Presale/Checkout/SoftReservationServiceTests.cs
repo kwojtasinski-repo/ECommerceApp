@@ -52,10 +52,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task HoldAsync_StockSnapshotNotFound_ShouldReturnFalse()
         {
+            // Arrange
             SetupStockSnapshot(1, null);
 
+            // Act
             var result = await _service.HoldAsync(1, "user-1", 2, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeFalse();
             _reservationRepo.Verify(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -63,6 +66,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task HoldAsync_InsufficientAvailableStock_ShouldReturnFalse()
         {
+            // Arrange
             var snapshot = StockSnapshot.Create(1, 3, DateTime.UtcNow);
             var existing = new List<SoftReservation>
             {
@@ -72,36 +76,44 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             SetupStockSnapshot(1, snapshot);
             SetupReservationsForProduct(1, existing);
 
+            // Act
             var result = await _service.HoldAsync(1, "user-1", 3, TestContext.Current.CancellationToken); // 3 - 2 = 1 available, needs 3
 
+            // Assert
             result.Should().BeFalse();
         }
 
         [Fact]
         public async Task HoldAsync_UnitPriceNotFound_ShouldReturnFalse()
         {
+            // Arrange
             var snapshot = StockSnapshot.Create(1, 10, DateTime.UtcNow);
 
             SetupStockSnapshot(1, snapshot);
             SetupReservationsForProduct(1, new List<SoftReservation>());
             SetupUnitPrice(1, null);
 
+            // Act
             var result = await _service.HoldAsync(1, "user-1", 2, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeFalse();
         }
 
         [Fact]
         public async Task HoldAsync_AllConditionsMet_ShouldPersistScheduleCacheAndReturnTrue()
         {
+            // Arrange
             var snapshot = StockSnapshot.Create(1, 10, DateTime.UtcNow);
             SetupStockSnapshot(1, snapshot);
             SetupReservationsForProduct(1, new List<SoftReservation>());
             SetupUnitPrice(1, 49.99m);
             SetupSchedule();
 
+            // Act
             var result = await _service.HoldAsync(1, "user-1", 2, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeTrue();
             _reservationRepo.Verify(r => r.AddAsync(
                 It.Is<SoftReservation>(s => s.ProductId.Value == 1
@@ -116,14 +128,17 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task HoldAsync_AllConditionsMet_ShouldStoreReservationInCache()
         {
+            // Arrange
             var snapshot = StockSnapshot.Create(1, 10, DateTime.UtcNow);
             SetupStockSnapshot(1, snapshot);
             SetupReservationsForProduct(1, new List<SoftReservation>());
             SetupUnitPrice(1, 10m);
             SetupSchedule();
 
+            // Act
             await _service.HoldAsync(1, "user-1", 1, TestContext.Current.CancellationToken);
 
+            // Assert
             var cached = await _service.GetAsync(1, "user-1", TestContext.Current.CancellationToken);
             cached.Should().NotBeNull();
             cached!.ProductId.Value.Should().Be(1);
@@ -134,11 +149,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetAsync_ReservationInCache_ShouldReturnFromCacheWithoutDbCall()
         {
+            // Arrange
             var reservation = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(15));
             _cache.Set("sr:1:user-1", reservation, TimeSpan.FromMinutes(15));
 
+            // Act
             var result = await _service.GetAsync(1, "user-1", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().NotBeNull();
             result!.ProductId.Value.Should().Be(1);
             _reservationRepo.Verify(r => r.GetByProductIdAsync(It.IsAny<PresaleProductId>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -147,8 +165,12 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetAsync_ReservationNotInCache_ShouldReturnNull()
         {
+            // Arrange
+
+            // Act
             var result = await _service.GetAsync(99, "nobody", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeNull();
         }
 
@@ -157,12 +179,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RemoveAsync_ReservationExists_ShouldCancelJobAndDeleteFromDb()
         {
+            // Arrange
             var reservation = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(15));
             SetupReservation(1, "user-1", reservation);
             SetupCancel();
 
+            // Act
             await _service.RemoveAsync(1, "user-1", TestContext.Current.CancellationToken);
 
+            // Assert
             _deferredScheduler.Verify(d => d.CancelAsync(
                 SoftReservationExpiredJob.JobTaskName, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.DeleteAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
@@ -171,10 +196,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RemoveAsync_ReservationNotExists_ShouldNotCallDeleteOrCancel()
         {
+            // Arrange
             SetupReservation(99, "nobody", null);
 
+            // Act
             var act = async () => await _service.RemoveAsync(99, "nobody", TestContext.Current.CancellationToken);
 
+            // Assert
             await act.Should().NotThrowAsync();
             _deferredScheduler.Verify(d => d.CancelAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -185,6 +213,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RemoveAllForProductAsync_MultipleReservations_ShouldCancelAllJobsAndDeleteAll()
         {
+            // Arrange
             var reservations = new List<SoftReservation>
             {
                 SoftReservation.Create(1, "user-1", 1, 10m, DateTime.UtcNow.AddMinutes(10)),
@@ -193,8 +222,10 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             SetupReservationsForProduct(1, reservations);
             SetupCancel();
 
+            // Act
             await _service.RemoveAllForProductAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             _deferredScheduler.Verify(d => d.CancelAsync(
                 SoftReservationExpiredJob.JobTaskName, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
             _reservationRepo.Verify(r => r.DeleteAllForProductAsync(1, It.IsAny<CancellationToken>()), Times.Once);
@@ -203,10 +234,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RemoveAllForProductAsync_NoReservations_ShouldNotThrow()
         {
+            // Arrange
             SetupReservationsForProduct(1, new List<SoftReservation>());
 
+            // Act
             var act = async () => await _service.RemoveAllForProductAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             await act.Should().NotThrowAsync();
         }
 
@@ -215,14 +249,17 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InvalidateExcessForProductAsync_UnderCapacity_ShouldNotDeleteReservations()
         {
+            // Arrange
             var reservations = new List<SoftReservation>
             {
                 SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(10))
             };
             SetupActiveReservationsForProduct(1, reservations);
 
+            // Act
             await _service.InvalidateExcessForProductAsync(1, 2, TestContext.Current.CancellationToken);
 
+            // Assert
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()), Times.Never);
             _deferredScheduler.Verify(d => d.CancelAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -231,13 +268,16 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InvalidateExcessForProductAsync_OverCapacity_ShouldRemoveNewestReservationsFirst()
         {
+            // Arrange
             var oldest = SoftReservation.Create(1, "oldest", 2, 10m, DateTime.UtcNow.AddMinutes(10));
             var newest = SoftReservation.Create(1, "newest", 2, 10m, DateTime.UtcNow.AddMinutes(20));
             var reservations = new List<SoftReservation> { oldest, newest };
             SetupActiveReservationsForProduct(1, reservations);
 
+            // Act
             await _service.InvalidateExcessForProductAsync(1, 2, TestContext.Current.CancellationToken);
 
+            // Assert
             _reservationRepo.Verify(r => r.DeleteAsync(newest, It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.DeleteAsync(oldest, It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -245,12 +285,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InvalidateExcessForProductAsync_ShortfallRequiresAll_ShouldRemoveAllActiveReservations()
         {
+            // Arrange
             var first = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(10));
             var second = SoftReservation.Create(1, "user-2", 2, 10m, DateTime.UtcNow.AddMinutes(20));
             SetupActiveReservationsForProduct(1, new[] { first, second });
 
+            // Act
             await _service.InvalidateExcessForProductAsync(1, 0, TestContext.Current.CancellationToken);
 
+            // Assert
             _reservationRepo.Verify(r => r.DeleteAsync(first, It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.DeleteAsync(second, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -258,13 +301,16 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InvalidateExcessForProductAsync_ActiveQueryExcludesCommittedReservations()
         {
+            // Arrange
             var active = SoftReservation.Create(1, "active", 3, 10m, DateTime.UtcNow.AddMinutes(10));
             var committed = SoftReservation.Create(1, "committed", 3, 10m, DateTime.UtcNow.AddMinutes(20));
             committed.Commit();
             SetupActiveReservationsForProduct(1, new[] { active });
 
+            // Act
             await _service.InvalidateExcessForProductAsync(1, 2, TestContext.Current.CancellationToken);
 
+            // Assert
             _reservationRepo.Verify(r => r.DeleteAsync(active, It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.DeleteAsync(committed, It.IsAny<CancellationToken>()), Times.Never);
         }

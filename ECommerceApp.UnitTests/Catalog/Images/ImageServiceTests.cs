@@ -103,13 +103,16 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         [Fact]
         public async Task given_too_many_images_should_throw_an_exception()
         {
+            // Arrange
             var image = CreateImageVm();
             image.Id = 0;
             image.Images.Add(AddFileToIFormFile("acs"));
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.Add(image);
 
+            // Assert
             (await action.Should().ThrowExactlyAsync<BusinessException>())
                 .WithMessage("Cannot add more than one images use another method");
         }
@@ -117,11 +120,14 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         [Fact]
         public async Task given_invalid_image_should_throw_an_exception()
         {
+            // Arrange
             var image = CreateImageVm();
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.Add(image);
 
+            // Assert
             (await action.Should().ThrowExactlyAsync<BusinessException>())
                 .WithMessage("When adding object Id should be equals 0");
         }
@@ -129,13 +135,16 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         [Fact]
         public async Task given_valid_image_with_invalid_files_should_throw_an_exception()
         {
+            // Arrange
             var image = CreateImageVm();
             image.Id = 0;
             image.Images = null;
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.Add(image);
 
+            // Assert
             (await action.Should().ThrowExactlyAsync<BusinessException>())
                 .WithMessage("Adding image without source is not allowed");
         }
@@ -210,24 +219,30 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         [Fact]
         public async Task given_images_with_invalid_extension_should_throw_an_exception()
         {
+            // Arrange
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.AddImages(images);
 
+            // Assert
             await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
         public async Task given_invalid_images_should_throw_an_exception()
         {
+            // Arrange
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile>(), ItemId = itemId };
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.AddImages(images);
 
+            // Assert
             (await action.Should().ThrowExactlyAsync<BusinessException>())
                 .WithMessage("Adding image without source is not allowed");
         }
@@ -235,12 +250,15 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         [Fact]
         public async Task given_null_images_should_throw_an_exception()
         {
+            // Arrange
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = null, ItemId = itemId };
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.AddImages(images);
 
+            // Assert
             (await action.Should().ThrowExactlyAsync<BusinessException>())
                 .WithMessage("Adding image without source is not allowed");
         }

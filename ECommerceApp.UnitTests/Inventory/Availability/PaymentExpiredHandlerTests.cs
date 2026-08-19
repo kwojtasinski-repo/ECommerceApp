@@ -26,25 +26,38 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             => new(PaymentId: paymentId, OrderId: orderId, OccurredAt: DateTime.UtcNow,
                    CorrelationId: correlationId ?? Guid.NewGuid());
 
+        private void SetupReleaseAllHolds()
+        {
+            _stockService
+                .Setup(s => s.ReleaseAllHoldsForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
         // ── Happy path ────────────────────────────────────────────────────────
 
         [Fact]
         public async Task HandleAsync_ShouldCallReleaseAllHoldsForOrder()
         {
+            // Arrange
             var message = CreateMessage(orderId: 7);
 
+            // Act
             await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReleaseAllHoldsForOrderAsync(7, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task HandleAsync_ShouldPassOrderIdFromMessage()
         {
+            // Arrange
             var message = CreateMessage(orderId: 42, paymentId: 99);
 
+            // Act
             await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReleaseAllHoldsForOrderAsync(42, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.VerifyNoOtherCalls();
         }
@@ -54,11 +67,10 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_WhenNoHoldsExist_ShouldCompleteWithoutError()
         {
-            _stockService
-                .Setup(s => s.ReleaseAllHoldsForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            // Arrange
+            SetupReleaseAllHolds();
 
-            // No exception should be thrown when no holds exist
+            // Act Assert
             await CreateHandler().HandleAsync(CreateMessage(), TestContext.Current.CancellationToken);
         }
 
@@ -67,14 +79,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_WithSpecificCorrelationId_ShouldNotDropIt()
         {
+            // Arrange
             var correlationId = Guid.NewGuid();
             var message = CreateMessage(orderId: 5, correlationId: correlationId);
 
-            // The handler doesn't return CorrelationId, but it must not throw — the id
-            // travels through the message and is visible in logs (ILogger). This test
-            // simply ensures the handler accepts a non-default CorrelationId without error.
+            // Act
             await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReleaseAllHoldsForOrderAsync(5, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -83,13 +95,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_CalledTwiceForSameOrder_ShouldDelegateToServiceBothTimes()
         {
-            // The handler itself is stateless — idempotency is enforced by IStockService.
-            // We verify the handler does NOT suppress the second call (no internal guard).
+            // Arrange
             var message = CreateMessage(orderId: 3);
 
+            // Act
             await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
             await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReleaseAllHoldsForOrderAsync(3, It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
     }

@@ -215,7 +215,7 @@ namespace ECommerceApp.Web.E2E
 
             guestPage.Url.ShouldContain("/Identity/Account/Login",
                 customMessage: "a GuestAccess-authenticated guest must not reach AccountProfile, an area reserved for real accounts");
-            (await new LoginPage(guestPage).IsDisplayed()).ShouldBeTrue();
+            (await LoginPage.FromPage(guestPage).IsDisplayed()).ShouldBeTrue();
         }
 
         /// <summary>
@@ -286,7 +286,7 @@ namespace ECommerceApp.Web.E2E
 
             guestPage.Url.ShouldContain("/Identity/Account/Login",
                 customMessage: "a GuestAccess-authenticated guest must be redirected to Login by the real pipeline, not let into account management");
-            (await new LoginPage(guestPage).IsDisplayed()).ShouldBeTrue(
+            (await LoginPage.FromPage(guestPage).IsDisplayed()).ShouldBeTrue(
                 "the login form must actually be what's rendered, not merely a URL that happens to contain 'Login'");
 
             orderId.ShouldBeGreaterThan(0);
@@ -315,7 +315,7 @@ namespace ECommerceApp.Web.E2E
 
             anonymousPage.Url.ShouldContain("/Identity/Account/Login",
                 customMessage: "a caller with no session at all must be redirected to Login by the real pipeline");
-            (await new LoginPage(anonymousPage).IsDisplayed()).ShouldBeTrue();
+            (await LoginPage.FromPage(anonymousPage).IsDisplayed()).ShouldBeTrue();
         }
 
         /// <summary>
@@ -377,7 +377,7 @@ namespace ECommerceApp.Web.E2E
 
             page.Url.ShouldNotContain("/Identity/Account/Login",
                 customMessage: "a real signed-in account must not be bounced to Login the way a guest/anonymous caller is");
-            (await new LoginPage(page).IsDisplayed()).ShouldBeFalse(
+            (await LoginPage.FromPage(page).IsDisplayed()).ShouldBeFalse(
                 "the rendered page must be account management, not the login form");
         }
 

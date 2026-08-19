@@ -8,7 +8,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
     {
         private readonly IPage _page;
 
-        public LoginPage(IPage page)
+        private LoginPage(IPage page)
         {
             _page = page;
         }
@@ -18,6 +18,8 @@ namespace ECommerceApp.Web.E2E.PageObjects
             await page.GotoAsync($"{baseAddress}/Identity/Account/Login");
             return new LoginPage(page);
         }
+
+        public static LoginPage FromPage(IPage page) => new(page);
 
         public async Task LoginAsync(string email, string password)
         {

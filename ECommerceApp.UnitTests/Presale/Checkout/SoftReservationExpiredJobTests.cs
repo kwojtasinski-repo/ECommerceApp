@@ -29,16 +29,20 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public void TaskName_ShouldMatchJobTaskNameConstant()
         {
+            // Arrange Act Assert
             _job.TaskName.Should().Be(SoftReservationExpiredJob.JobTaskName);
         }
 
         [Fact]
         public async Task ExecuteAsync_MissingEntityId_ShouldReportFailure()
         {
+            // Arrange
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
+            // Act
             await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Failure>()
                 .Which.Error.Should().Contain("Missing EntityId");
         }
@@ -46,10 +50,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task ExecuteAsync_InvalidEntityId_ShouldReportFailure()
         {
+            // Arrange
             var context = new JobExecutionContext("not-an-int", Guid.NewGuid().ToString());
 
+            // Act
             await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Failure>()
                 .Which.Error.Should().Contain("not-an-int");
         }
@@ -57,12 +64,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task ExecuteAsync_ReservationNotFound_ShouldReportSuccessNoOp()
         {
-            _reservationRepo.Setup(r => r.GetByIdAsync(It.IsAny<SoftReservationId>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync((SoftReservation)null!);
+            // Arrange
+            SetupReservationLookup(null);
             var context = new JobExecutionContext("42", Guid.NewGuid().ToString());
 
+            // Act
             await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("No-op");
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
@@ -71,15 +80,17 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task ExecuteAsync_ReservationFound_ShouldDeleteFromDbAndEvictCacheAndReportSuccess()
         {
+            // Arrange
             var reservation = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(15));
             _cache.Set("sr:1:user-1", reservation, TimeSpan.FromMinutes(15));
 
-            _reservationRepo.Setup(r => r.GetByIdAsync(It.IsAny<SoftReservationId>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(reservation);
+            SetupReservationLookup(reservation);
             var context = new JobExecutionContext("1", Guid.NewGuid().ToString());
 
+            // Act
             await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
+            // Assert
             _reservationRepo.Verify(r => r.DeleteAsync(reservation, It.IsAny<System.Threading.CancellationToken>()), Times.Once);
             _cache.TryGetValue("sr:1:user-1", out _).Should().BeFalse();
             context.Outcome.Should().BeOfType<JobOutcome.Success>();
@@ -88,28 +99,39 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task ExecuteAsync_MissingEntityId_ShouldNotCallDeleteAsync()
         {
+            // Arrange
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
+            // Act
             await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
+            // Assert
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task ExecuteAsync_CommittedReservation_ShouldSkipAndReportSuccessNoOp()
         {
+            // Arrange
             var reservation = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(15));
             reservation.Commit();
 
-            _reservationRepo.Setup(r => r.GetByIdAsync(It.IsAny<SoftReservationId>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(reservation);
+            SetupReservationLookup(reservation);
             var context = new JobExecutionContext("1", Guid.NewGuid().ToString());
 
+            // Act
             await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
+            // Assert
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
             context.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("No-op");
+        }
+
+        private void SetupReservationLookup(SoftReservation? reservation)
+        {
+            _reservationRepo.Setup(r => r.GetByIdAsync(It.IsAny<SoftReservationId>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(reservation);
         }
     }
 }

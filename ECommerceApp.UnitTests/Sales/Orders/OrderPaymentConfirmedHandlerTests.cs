@@ -34,44 +34,61 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             "Jan", "Kowalski", "jan@example.com", "123456789",
             false, null, null, "Główna", "1", null, "67-100", "Nowa Sól", "Polska");
 
+        private void SetupOrderNotFound()
+        {
+            _orderRepo
+                .Setup(r => r.GetByIdWithItemsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Order)null);
+        }
+
+        private void SetupOrder(Order order)
+        {
+            _orderRepo
+                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(order);
+        }
+
         // ── HandleAsync ───────────────────────────────────────────────────────
 
         [Fact]
         public async Task HandleAsync_OrderNotFound_ShouldNotUpdateRepository()
         {
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Order)null);
+            // Arrange
+            SetupOrderNotFound();
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(), TestContext.Current.CancellationToken);
 
+            // Assert
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task HandleAsync_AlreadyPaidOrder_ShouldNotUpdateRepository()
         {
+            // Arrange
             var order = CreateOrder();
             order.ConfirmPayment(5);
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrder(order);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1, paymentId: 10), TestContext.Current.CancellationToken);
 
+            // Assert
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task HandleAsync_UnpaidOrder_ShouldConfirmPaymentAndUpdate()
         {
+            // Arrange
             var order = CreateOrder();
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrder(order);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1, paymentId: 42), TestContext.Current.CancellationToken);
 
+            // Assert
             order.Status.Should().Be(OrderStatus.PaymentConfirmed);
             order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentConfirmed);
             _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);

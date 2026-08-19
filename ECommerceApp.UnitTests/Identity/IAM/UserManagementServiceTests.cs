@@ -49,12 +49,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task GetUserByIdAsync_NonExistentId_ShouldThrowBusinessException()
         {
+            // Arrange
             const string id = "non-existent-id";
             SetupUserLookup(id, null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.GetUserByIdAsync(id);
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"User with id '{id}' was not found");
         }
@@ -62,12 +64,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task GetUserRoleAsync_NonExistentId_ShouldThrowBusinessException()
         {
+            // Arrange
             const string userId = "missing-user";
             SetupUserLookup(userId, null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.GetUserRoleAsync(userId);
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"User with id '{userId}' was not found");
         }
@@ -75,12 +79,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task ChangeUserRoleAsync_UserNotFound_ShouldThrowBusinessException()
         {
+            // Arrange
             const string userId = "missing-user";
             SetupUserLookup(userId, null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.ChangeUserRoleAsync(userId, "role-1");
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"User with id '{userId}' was not found");
         }
@@ -88,12 +94,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task DeleteUserAsync_UserNotFound_ShouldThrowBusinessException()
         {
+            // Arrange
             const string userId = "missing-user";
             SetupUserLookup(userId, null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.DeleteUserAsync(userId);
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"User with id '{userId}' was not found");
         }
@@ -101,6 +109,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task DeleteUserAsync_ValidUser_ShouldDeleteUser()
         {
+            // Arrange
             const string userId = "user-1";
             var user = new ApplicationUser { Id = userId };
             SetupUserLookup(userId, user);
@@ -109,15 +118,18 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             var service = CreateService();
             Func<Task> act = async () => await service.DeleteUserAsync(userId);
 
+            // Act/Assert
             await act.Should().NotThrowAsync();
         }
 
         [Fact]
         public async Task UpdateUserAsync_NullVm_ShouldThrowBusinessException()
         {
+            // Arrange
             var service = CreateService();
             Func<Task> act = async () => await service.UpdateUserAsync(null);
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"{nameof(UserDetailsVm)} cannot be null");
         }
@@ -125,12 +137,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task UpdateUserAsync_UserNotFound_ShouldThrowBusinessException()
         {
+            // Arrange
             var vm = new UserDetailsVm { Id = "missing-user", Email = "x@x.com", UserName = "x@x.com" };
             SetupUserLookup(vm.Id, null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.UpdateUserAsync(vm);
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"User with id '{vm.Id}' was not found");
         }
@@ -138,9 +152,11 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task CreateUserAsync_NullVm_ShouldThrowBusinessException()
         {
+            // Arrange
             var service = CreateService();
             Func<Task> act = async () => await service.CreateUserAsync(null);
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"{nameof(CreateUserVm)} cannot be null");
         }
@@ -148,12 +164,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task ChangePasswordAsync_UserNotFound_ShouldThrowBusinessException()
         {
+            // Arrange
             const string userId = "missing-user";
             SetupUserLookup(userId, null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.ChangePasswordAsync(userId, "NewPass1!");
 
+            // Act/Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage($"User with id '{userId}' was not found");
         }
@@ -161,6 +179,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task ChangePasswordAsync_ValidUser_ShouldChangePassword()
         {
+            // Arrange
             const string userId = "user-1";
             const string newPassword = "NewPass1!";
             var user = new ApplicationUser { Id = userId };
@@ -170,6 +189,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             var service = CreateService();
             Func<Task> act = async () => await service.ChangePasswordAsync(userId, newPassword);
 
+            // Act/Assert
             await act.Should().NotThrowAsync();
         }
     }

@@ -20,8 +20,14 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
 
         private OrderPlacedNotificationHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAsUnprocessed();
             return new(_notifications.Object, _processedMessageGuard.Object);
+        }
+
+        private void SetupMessageAsUnprocessed()
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
         }
 
         private static OrderPlaced Message(int orderId = 1, string userId = "user-1")
@@ -30,8 +36,14 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_PushesNotificationToOrderOwner()
         {
-            await CreateHandler().HandleAsync(Message(orderId: 42, userId: "user-42"), 1, TestContext.Current.CancellationToken);
+            // Arrange
+            var handler = CreateHandler();
+            var message = Message(orderId: 42, userId: "user-42");
 
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
+
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 "user-42",
                 "OrderPlaced",
@@ -42,8 +54,14 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_MessageContainsOrderId()
         {
-            await CreateHandler().HandleAsync(Message(orderId: 7), 1, TestContext.Current.CancellationToken);
+            // Arrange
+            var handler = CreateHandler();
+            var message = Message(orderId: 7);
 
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
+
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(),
                 "OrderPlaced",
@@ -60,8 +78,14 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
 
         private OrderCancelledNotificationHandler CreateHandler()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupMessageAsUnprocessed();
             return new(_notifications.Object, _resolver.Object, _processedMessageGuard.Object);
+        }
+
+        private void SetupMessageAsUnprocessed()
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
         }
 
         private static OrderCancelled Message(int orderId = 1)
@@ -70,11 +94,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserResolved_PushesNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(5, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-5");
+            // Arrange
+            SetupUserResolution("user-5");
+            var handler = CreateHandler();
+            var message = Message(orderId: 5);
 
-            await CreateHandler().HandleAsync(Message(orderId: 5), 1, TestContext.Current.CancellationToken);
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 "user-5",
                 "OrderCancelled",
@@ -85,14 +113,24 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            // Arrange
+            SetupUserResolution(null);
+            var handler = CreateHandler();
+            var message = Message();
 
-            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
+
+            private void SetupUserResolution(string userId)
+            {
+                _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(userId);
+            }
     }
 
     public class OrderRequiresAttentionNotificationHandlerTests
@@ -100,9 +138,11 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_CompletesWithoutException()
         {
+            // Arrange
             var handler = new OrderRequiresAttentionNotificationHandler(NullLogger<OrderRequiresAttentionNotificationHandler>.Instance);
             var message = new OrderRequiresAttention(99, "Shipment failed", DateTime.UtcNow);
 
+            // Act Assert
             await handler.HandleAsync(message, TestContext.Current.CancellationToken);
         }
     }

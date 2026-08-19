@@ -31,21 +31,33 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             return payment;
         }
 
+        private void SetupPendingPaymentConfirmation(Payment payment, Mock<IOutboxTransaction> transaction)
+        {
+            _paymentRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(payment);
+            _uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(transaction.Object);
+            transaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _paymentRepo.Setup(r => r.UpdateAsync(payment, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        }
+
+        private void SetupPaymentNotFound(int paymentId)
+        {
+            _paymentRepo.Setup(r => r.GetByIdAsync(paymentId, It.IsAny<CancellationToken>())).ReturnsAsync((Payment)null);
+        }
+
         [Fact]
         public async Task ConfirmAsync_PendingPayment_EnqueuesAndCommits()
         {
+            // Arrange
             var payment = CreatePendingPayment(id: 1, orderId: 42);
-            _paymentRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(payment);
-
             var txMock = new Mock<IOutboxTransaction>();
-            _uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _paymentRepo.Setup(r => r.UpdateAsync(payment, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-
+            SetupPendingPaymentConfirmation(payment, txMock);
             var svc = CreateService();
+
+            // Act
             var result = await svc.ConfirmAsync(new ConfirmPaymentDto(1, "TX-1"));
 
+            // Assert
             result.Should().Be(PaymentOperationResult.Success);
             _paymentRepo.Verify(r => r.UpdateAsync(payment, It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(
@@ -58,11 +70,14 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ConfirmAsync_NonExistentPayment_ReturnsPaymentNotFound_AndDoesNotOpenTransaction()
         {
-            _paymentRepo.Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>())).ReturnsAsync((Payment)null);
-
+            // Arrange
+            SetupPaymentNotFound(999);
             var svc = CreateService();
+
+            // Act
             var result = await svc.ConfirmAsync(new ConfirmPaymentDto(999, "TX-1"));
 
+            // Assert
             result.Should().Be(PaymentOperationResult.PaymentNotFound);
             _uow.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }

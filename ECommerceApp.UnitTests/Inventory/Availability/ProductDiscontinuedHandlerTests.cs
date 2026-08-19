@@ -20,17 +20,31 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _handler = new ProductDiscontinuedHandler(_snapshotRepo.Object);
         }
 
+        private void SetupExistingSnapshot(ProductSnapshot snapshot)
+        {
+            _snapshotRepo.Setup(r => r.GetByProductIdAsync(42, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(snapshot);
+        }
+
+        private void SetupNoSnapshot()
+        {
+            _snapshotRepo.Setup(r => r.GetByProductIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ProductSnapshot)null);
+        }
+
         [Fact]
         public async Task HandleAsync_ExistingSnapshot_ShouldUpsertWithDiscontinuedStatus()
         {
+            // Arrange
             var existing = ProductSnapshot.Create(42, "Widget", false, CatalogProductStatus.Orderable);
-            _snapshotRepo.Setup(r => r.GetByProductIdAsync(42, It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(existing);
+            SetupExistingSnapshot(existing);
 
             var message = new ProductDiscontinued(ProductId: 42, OccurredAt: DateTime.UtcNow);
 
+            // Act
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _snapshotRepo.Verify(r => r.UpsertAsync(
                 It.Is<ProductSnapshot>(s =>
                     s.ProductId == 42 &&
@@ -43,13 +57,15 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_NoExistingSnapshot_ShouldNotUpsert()
         {
-            _snapshotRepo.Setup(r => r.GetByProductIdAsync(99, It.IsAny<CancellationToken>()))
-                         .ReturnsAsync((ProductSnapshot)null);
+            // Arrange
+            SetupNoSnapshot();
 
             var message = new ProductDiscontinued(ProductId: 99, OccurredAt: DateTime.UtcNow);
 
+            // Act
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             _snapshotRepo.Verify(r => r.UpsertAsync(
                 It.IsAny<ProductSnapshot>(), It.IsAny<CancellationToken>()), Times.Never);
         }

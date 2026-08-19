@@ -29,6 +29,11 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             _unitOfWork = new Mock<IPaymentsUnitOfWork>();
             _transaction = new Mock<IOutboxTransaction>();
             _processedMessageGuard = new Mock<IProcessedMessageGuard>();
+            SetupTransactionWorkflow();
+        }
+
+        private void SetupTransactionWorkflow()
+        {
             _unitOfWork
                 .Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_transaction.Object);
@@ -40,6 +45,22 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
         }
+
+            private void SetupPaymentCapture(Action<Payment> capturePayment)
+            {
+                _paymentRepo
+                .Setup(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
+                .Callback<Payment, CancellationToken>((payment, _) => capturePayment(payment))
+                .Returns(Task.CompletedTask);
+            }
+
+            private void SetupJobScheduling(Action<string, DateTime> captureSchedule)
+            {
+                _scheduler
+                .Setup(s => s.ScheduleAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .Callback<string, string, DateTime, CancellationToken>((name, _, scheduledAt, _) => captureSchedule(name, scheduledAt))
+                .Returns(Task.CompletedTask);
+            }
 
         private OrderPlacedHandler CreateHandler()
             => new(
@@ -59,14 +80,14 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_ValidMessage_ShouldCreatePaymentAndPersist()
         {
+            // Arrange
             Payment savedPayment = null;
-            _paymentRepo
-                .Setup(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
-                .Callback<Payment, CancellationToken>((p, _) => savedPayment = p)
-                .Returns(Task.CompletedTask);
+            SetupPaymentCapture(payment => savedPayment = payment);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 7, total: 49.99m, currencyId: 2), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             savedPayment.Should().NotBeNull();
             savedPayment!.OrderId.Value.Should().Be(7);
             savedPayment.TotalAmount.Should().Be(49.99m);
@@ -79,30 +100,30 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_ValidMessage_ShouldScheduleJobWithPaymentWindowExpiredJobName()
         {
+            // Arrange
             string scheduledJobName = null;
-            _scheduler
-                .Setup(s => s.ScheduleAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, DateTime, CancellationToken>((name, _, _, _) => scheduledJobName = name)
-                .Returns(Task.CompletedTask);
+            SetupJobScheduling((name, _) => scheduledJobName = name);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             scheduledJobName.Should().Be(PaymentWindowExpiredJob.JobTaskName);
         }
 
         [Fact]
         public async Task HandleAsync_ValidMessage_ShouldScheduleJobAtExpiresAt()
         {
+            // Arrange
             var expiresAt = DateTime.UtcNow.AddDays(5);
             var message = new OrderPlaced(1, new List<OrderPlacedItem>(), "user-1", expiresAt, DateTime.UtcNow, 99m, 1);
             DateTime? scheduledAt = null;
-            _scheduler
-                .Setup(s => s.ScheduleAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, DateTime, CancellationToken>((_, _, at, _) => scheduledAt = at)
-                .Returns(Task.CompletedTask);
+            SetupJobScheduling((_, at) => scheduledAt = at);
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             scheduledAt.Should().Be(expiresAt);
         }
     }

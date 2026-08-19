@@ -64,6 +64,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetAllForUserAsync_ReturnsAllReservationsForUser()
         {
+            // Arrange
             var reservations = new List<SoftReservation>
             {
                 MakeReservation(productId: 1, unitPrice: 10m),
@@ -71,18 +72,23 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             };
             SetupReservations(reservations);
 
+            // Act
             var result = await _sut.GetAllForUserAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().HaveCount(2);
         }
 
         [Fact]
         public async Task GetAllForUserAsync_NoReservations_ReturnsEmpty()
         {
+            // Arrange
             SetupReservations(new List<SoftReservation>());
 
+            // Act
             var result = await _sut.GetAllForUserAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeEmpty();
         }
 
@@ -91,25 +97,31 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPriceChangesAsync_NoPriceChange_ReturnsEmpty()
         {
+            // Arrange
             const decimal price = 50m;
             var reservation = MakeReservation(productId: 1, unitPrice: price);
             SetupReservations(new List<SoftReservation> { reservation });
             SetupCurrentPrice(1, price);
 
+            // Act
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeEmpty();
         }
 
         [Fact]
         public async Task GetPriceChangesAsync_PriceRaised_ReturnsVmWithBothPrices()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 2, unitPrice: 40m);
             SetupReservations(new List<SoftReservation> { reservation });
             SetupCurrentPrice(2, 60m);
 
+            // Act
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().ContainSingle()
                 .Which.Should().Match<Application.Presale.Checkout.ViewModels.SoftReservationPriceChangeVm>(
                     vm => vm.ProductId == 2 && vm.LockedPrice == 40m && vm.CurrentPrice == 60m);
@@ -118,12 +130,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPriceChangesAsync_PriceDropped_ReturnsVmWithBothPrices()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 3, unitPrice: 100m);
             SetupReservations(new List<SoftReservation> { reservation });
             SetupCurrentPrice(3, 80m);
 
+            // Act
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().ContainSingle()
                 .Which.Should().Match<Application.Presale.Checkout.ViewModels.SoftReservationPriceChangeVm>(
                     vm => vm.LockedPrice == 100m && vm.CurrentPrice == 80m);
@@ -132,14 +147,17 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPriceChangesAsync_OnlyChangedLinesReturned()
         {
+            // Arrange
             var unchanged = MakeReservation(productId: 1, unitPrice: 20m);
             var changed = MakeReservation(productId: 2, unitPrice: 30m);
             SetupReservations(new List<SoftReservation> { unchanged, changed });
             SetupCurrentPrice(1, 20m);
             SetupCurrentPrice(2, 35m);
 
+            // Act
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().ContainSingle()
                 .Which.ProductId.Should().Be(2);
         }
@@ -147,12 +165,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPriceChangesAsync_CatalogReturnsNull_LineExcluded()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 4, unitPrice: 25m);
             SetupReservations(new List<SoftReservation> { reservation });
             SetupCurrentPrice(4, null);
 
+            // Act
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeEmpty();
         }
     }

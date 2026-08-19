@@ -41,10 +41,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RequestOrderAccessRecoveryAsync_UsesOrderPurposeAndSubject()
         {
+            // Arrange
             SetupOrderAccessCodeGeneration();
 
+            // Act
             var result = await CreateAdapter().RequestOrderAccessRecoveryAsync(42);
 
+            // Assert
             result.Should().Be("code");
             _verificationCodes.Verify(service => service.GenerateAsync(
                 VerificationPurpose.GuestOrderAccess,
@@ -56,10 +59,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RedeemOrderAccessRecoveryAsync_ResolvesOnlyTheSubjectOrder()
         {
+            // Arrange
             SetupOrderAccessRedemption();
 
+            // Act
             var result = await CreateAdapter().RedeemOrderAccessRecoveryAsync("code");
 
+            // Assert
             result.Success.Should().BeTrue();
             result.OrderId.Should().Be(42);
             result.UserProfileId.Should().Be(7);

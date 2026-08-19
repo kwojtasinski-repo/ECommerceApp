@@ -5,6 +5,7 @@ using ECommerceApp.Domain.AccountProfile;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace ECommerceApp.IntegrationTests.AccountProfile
 
         private async Task<UserProfile> SeedProfileAsync(string userId, DateTime createdAt)
         {
-            var profile = UserProfile.Create(userId, "Jan", "Kowalski", false, null, null, $"{userId}@example.com", "500600700");
+            var profile = UserProfileTestData.Create(userId);
             SetPrivateProperty(profile, nameof(UserProfile.CreatedAt), createdAt);
             await GetRequiredService<IUserProfileRepository>().AddAsync(profile);
             return profile;

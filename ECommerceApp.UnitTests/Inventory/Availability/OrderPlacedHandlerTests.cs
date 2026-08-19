@@ -32,6 +32,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_MultipleItems_ShouldReserveEachItem()
         {
+            // Arrange
             var items = new[]
             {
                 new OrderPlacedItem(10, 2),
@@ -47,8 +48,10 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 TotalAmount: 100m,
                 CurrencyId: 1);
 
+            // Act
             await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReserveAsync(
                 It.Is<ReserveStockDto>(d =>
                     d.ProductId == 10 &&
@@ -71,6 +74,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_SingleItem_ShouldReserveOnce()
         {
+            // Arrange
             var items = new[] { new OrderPlacedItem(30, 1) };
             var message = new OrderPlaced(
                 OrderId: 7,
@@ -81,8 +85,10 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 TotalAmount: 50m,
                 CurrencyId: 1);
 
+            // Act
             await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReserveAsync(
                 It.Is<ReserveStockDto>(d => d.ProductId == 30 && d.OrderId == 7 && d.Quantity == 1),
                 It.IsAny<CancellationToken>()), Times.Once);
@@ -91,6 +97,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task HandleAsync_EmptyItems_ShouldNotCallReserve()
         {
+            // Arrange
             var message = new OrderPlaced(
                 OrderId: 1,
                 Items: Array.Empty<OrderPlacedItem>(),
@@ -100,8 +107,10 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 TotalAmount: 0m,
                 CurrencyId: 1);
 
+            // Act
             await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReserveAsync(
                 It.IsAny<ReserveStockDto>(), It.IsAny<CancellationToken>()), Times.Never);
         }

@@ -68,12 +68,15 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ExecuteAsync_PendingPayment_ShouldPublishWithNonEmptyCorrelationId()
         {
+            // Arrange
             PaymentExpired captured = null;
             SetupPaymentLookup(1, CreatePendingPayment(paymentId: 1, orderId: 10));
             SetupTransactionAndPaymentExpiredOutbox(paymentExpired => captured = paymentExpired);
 
+            // Act
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
 
+            // Assert
             captured.Should().NotBeNull();
             captured!.CorrelationId.Should().NotBe(Guid.Empty);
         }
@@ -81,6 +84,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ExecuteAsync_TwoSeparateRuns_ShouldPublishDifferentCorrelationIds()
         {
+            // Arrange
             var payment1 = CreatePendingPayment(paymentId: 1, orderId: 10);
             var payment2 = CreatePendingPayment(paymentId: 2, orderId: 20);
 
@@ -90,9 +94,11 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             var correlationIds = new System.Collections.Generic.List<Guid>();
             SetupTransactionAndPaymentExpiredOutbox(paymentExpired => correlationIds.Add(paymentExpired.CorrelationId));
 
+            // Act
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
             await CreateJob().ExecuteAsync(Context("2"), CancellationToken.None);
 
+            // Assert
             correlationIds.Count.Should().Be(2);
             correlationIds[0].Should().NotBe(Guid.Empty);
             correlationIds[1].Should().NotBe(Guid.Empty);
@@ -102,12 +108,15 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ExecuteAsync_PendingPayment_PublishedMessageShouldCarryCorrectPaymentAndOrderIds()
         {
+            // Arrange
             PaymentExpired captured = null;
             SetupPaymentLookup(5, CreatePendingPayment(paymentId: 5, orderId: 42));
             SetupTransactionAndPaymentExpiredOutbox(paymentExpired => captured = paymentExpired);
 
+            // Act
             await CreateJob().ExecuteAsync(Context("5"), CancellationToken.None);
 
+            // Assert
             captured.Should().NotBeNull();
             captured!.PaymentId.Should().Be(5);
             captured.OrderId.Should().Be(42);
@@ -118,12 +127,15 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ExecuteAsync_WhenPaymentNotPending_ShouldNotStampACorrelationId()
         {
+            // Arrange
             var payment = CreatePendingPayment(paymentId: 1, orderId: 10);
             payment.Confirm();
             SetupPaymentLookup(1, payment);
 
+            // Act
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
 
+            // Assert
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
     }

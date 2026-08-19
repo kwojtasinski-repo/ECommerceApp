@@ -71,34 +71,47 @@ namespace ECommerceApp.E2E.Backend.Sales.Orders
         [Fact]
         public async Task PlaceOrderAsync_FailureBetweenOrderWriteAndOutboxCommit_RollsBackOrderAndOrderItemAssignment()
         {
+            // Arrange
             var userId = $"rollback-e2e-{Guid.NewGuid():N}";
             var customerId = await SeedCustomerAsync();
             var cartItemId = await SeedCartItemAsync(userId);
 
             var service = GetRequiredService<IOrderService>();
-            var dto = new PlaceOrderDto(customerId, CurrencyId: 1, UserId: userId, CartItemIds: new List<int> { cartItemId });
+            var dto = CreateRollbackOrder(customerId, userId, cartItemId);
 
             // AssignToOrderThrowingRepository (wired in OrderRollbackE2EWebApplicationFactory) throws
             // from AssignToOrderAsync, which runs after Order.AddAsync but before the Outbox commit —
             // exactly the window this test targets.
+            // Act
             var ex = await Record.ExceptionAsync(() => service.PlaceOrderAsync(dto, CancellationToken));
             _output.WriteLine(ex?.ToString() ?? "(no exception thrown)");
+
+            // Assert
             ex.ShouldNotBeNull();
             ex.ShouldBeOfType<InvalidOperationException>();
             ex.Message.ShouldContain("Simulated failure");
 
             // The Order write must have been rolled back along with the doomed Outbox enqueue —
             // querying by UserId (not by a guessed id) proves no Order row was left behind at all.
+            // Act
             var orderRepo = GetRequiredService<IOrderRepository>();
             var orders = await orderRepo.GetByUserIdAsync(userId, CancellationToken);
+
+            // Assert
             orders.ShouldBeEmpty();
 
             // The cart item must still be an unassigned cart item (OrderId rolled back to null),
             // not left dangling as attached to a since-rolled-back order.
+            // Act
             var itemRepo = GetRequiredService<IOrderItemRepository>();
             var cartItem = await itemRepo.GetByIdAsync(cartItemId, CancellationToken);
+
+            // Assert
             cartItem.ShouldNotBeNull();
             cartItem.OrderId.ShouldBeNull();
         }
+
+        private static PlaceOrderDto CreateRollbackOrder(int customerId, string userId, int cartItemId)
+            => new(customerId, CurrencyId: 1, UserId: userId, CartItemIds: new List<int> { cartItemId });
     }
 }

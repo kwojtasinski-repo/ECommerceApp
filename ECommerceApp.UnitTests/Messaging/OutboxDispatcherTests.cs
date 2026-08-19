@@ -45,21 +45,36 @@ namespace ECommerceApp.UnitTests.Messaging
                 NullLogger<OutboxDispatcher>.Instance);
         }
 
+            private void SetupSuccessfulPublish(Action<IMessage> captureMessage)
+            {
+                _moduleClient
+                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
+                .Callback<IMessage, long?>((message, _) => captureMessage(message))
+                .Returns(Task.CompletedTask);
+            }
+
+            private void SetupPublishFailure(string message)
+            {
+                _moduleClient
+                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
+                .ThrowsAsync(new InvalidOperationException(message));
+            }
+
         [Fact]
         public async Task DispatchAsync_ValidMessage_CallsModuleClientAndMarksDispatched()
         {
+            // Arrange
             var key = TestMessageKey;
             var payload = JsonSerializer.Serialize(new TestMessage { Value = 7 });
             var message = OutboxMessage.Create(key, payload);
 
             IMessage? published = null;
-            _moduleClient
-                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
-                .Callback<IMessage, long?>((m, _) => published = m)
-                .Returns(Task.CompletedTask);
+            SetupSuccessfulPublish(publishedMessage => published = publishedMessage);
 
+            // Act
             await _dispatcher.DispatchAsync(message, CancellationToken.None);
 
+            // Assert
             _moduleClient.Verify(m => m.PublishAsync(It.IsAny<IMessage>(), message.Id), Times.Once);
             published.Should().BeOfType<TestMessage>();
             ((TestMessage)published!).Value.Should().Be(7);
@@ -70,10 +85,13 @@ namespace ECommerceApp.UnitTests.Messaging
         [Fact]
         public async Task DispatchAsync_UnknownMessageTypeKey_MarksFailedNotThrow()
         {
+            // Arrange
             var message = OutboxMessage.Create($"unregistered-{Guid.NewGuid():N}", "{}");
 
+            // Act
             Func<Task> act = () => _dispatcher.DispatchAsync(message, CancellationToken.None);
 
+            // Assert
             await act.Should().NotThrowAsync();
             _moduleClient.Verify(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()), Times.Never);
             message.Status.Should().Be(OutboxStatus.Pending);
@@ -84,15 +102,15 @@ namespace ECommerceApp.UnitTests.Messaging
         [Fact]
         public async Task DispatchAsync_ModuleClientThrows_MarksFailedWithBackoff()
         {
+            // Arrange
             var key = TestMessageKey;
             var message = OutboxMessage.Create(key, JsonSerializer.Serialize(new TestMessage { Value = 3 }));
+            SetupPublishFailure("handler exploded");
 
-            _moduleClient
-                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
-                .ThrowsAsync(new InvalidOperationException("handler exploded"));
-
+            // Act
             Func<Task> act = () => _dispatcher.DispatchAsync(message, CancellationToken.None);
 
+            // Assert
             await act.Should().NotThrowAsync();
             message.Status.Should().Be(OutboxStatus.Pending);
             message.RetryCount.Should().Be(1);
@@ -103,15 +121,15 @@ namespace ECommerceApp.UnitTests.Messaging
         [Fact]
         public async Task DispatchAsync_ExceedsMaxRetries_MarksDeadLetter()
         {
+            // Arrange
             var key = TestMessageKey;
             var message = OutboxMessage.Create(key, JsonSerializer.Serialize(new TestMessage { Value = 9 }), maxRetries: 0);
+            SetupPublishFailure("boom");
 
-            _moduleClient
-                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
-                .ThrowsAsync(new InvalidOperationException("boom"));
-
+            // Act
             await _dispatcher.DispatchAsync(message, CancellationToken.None);
 
+            // Assert
             message.Status.Should().Be(OutboxStatus.DeadLetter);
             _outboxRepository.Verify(r => r.UpdateAsync(message, It.IsAny<CancellationToken>()), Times.Once);
         }

@@ -44,12 +44,15 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task RequestGuestAccountLinkAsync_DelegatesWithGuestAccountLinkPurpose()
         {
+            // Arrange
             SetupAccountLinkCodeGeneration();
 
+            // Act
             var result = await CreateAdapter().RequestGuestAccountLinkAsync(
                 "guest@test.com",
                 TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be("generated-code");
             _verificationCodes.Verify(service => service.GenerateAsync(
                 VerificationPurpose.GuestAccountLink,
@@ -61,15 +64,18 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task RedeemGuestAccountLinkAsync_ValidCode_ReassignsAllUnclaimedProfilesToCaller()
         {
+            // Arrange
             var first = CreateProfile("gst_1");
             var second = CreateProfile("gst_2");
             SetupAccountLinkRedemption(new List<UserProfile> { first, second });
 
+            // Act
             var result = await CreateAdapter().RedeemGuestAccountLinkAsync(
                 "code",
                 "registered-user",
                 TestContext.Current.CancellationToken);
 
+            // Assert
             result.Success.Should().BeTrue();
             result.ProfilesLinked.Should().Be(2);
             first.UserId.Should().Be("registered-user");

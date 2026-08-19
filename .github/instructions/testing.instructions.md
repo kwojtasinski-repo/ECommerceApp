@@ -61,6 +61,7 @@ Unit tests
 
 ### Scenario boundaries across test levels
 - The one-observable-behavior rule applies to unit tests, service/API integration tests, backend E2E tests, and browser E2E tests.
+- AAA markers follow observable scenario phases, not a one-block-per-test rule. Integration and E2E tests may contain multiple `Arrange`/`Act`/`Assert` sections, including several `Act`/`Assert` pairs after the main action when each pair verifies a separate persisted, rendered, or side-effect state.
 - Do not split a test merely because it has several technical steps. Multiple mock calls, HTTP requests, page interactions, or state transitions may remain in one test when they are required parts of one business scenario and the final assertion describes that scenario.
 - Split the test when it combines independent outcomes, unrelated failure branches, or separate business behaviors. A test with several requests is not automatically too broad; a test that verifies several unrelated responses is.
 - Integration and backend E2E tests may use named helpers for repeated mock setup, request construction, authentication, database state, and response assertions. Keep the helper named for the business scenario rather than the technical endpoint or method.

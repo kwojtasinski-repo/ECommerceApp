@@ -15,14 +15,31 @@ namespace ECommerceApp.UnitTests.Messaging
     {
         private readonly Mock<IInboxCleanupRepository> _inbox = new();
 
+        private InboxCleanupTask CreateTask(bool cleanupEnabled = true)
+            => new(_inbox.Object, new MessagingOptions { CleanupEnabled = cleanupEnabled });
+
+        private void SetupDeletionResult(int deletedCount)
+        {
+            _inbox.Setup(r => r.DeleteProcessedOlderThanAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(deletedCount);
+        }
+
+        private void SetupDeletionFailure(string message)
+        {
+            _inbox.Setup(r => r.DeleteProcessedOlderThanAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception(message));
+        }
+
         [Fact]
         public async Task ExecuteAsync_CleanupDisabled_ReportsSuccessSkippedNoDeletion()
         {
+            // Arrange
             var context = new JobExecutionContext(null, "inbox-disabled");
 
-            await new InboxCleanupTask(_inbox.Object, new MessagingOptions { CleanupEnabled = false })
-                .ExecuteAsync(context, CancellationToken.None);
+            // Act
+            await CreateTask(cleanupEnabled: false).ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>().Which.Message.Should().Contain("disabled");
             _inbox.Verify(r => r.DeleteProcessedOlderThanAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -30,12 +47,14 @@ namespace ECommerceApp.UnitTests.Messaging
         [Fact]
         public async Task ExecuteAsync_DeletesProcessedOlderThanRetention()
         {
-            _inbox.Setup(r => r.DeleteProcessedOlderThanAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(2);
+            // Arrange
+            SetupDeletionResult(2);
             var context = new JobExecutionContext(null, "inbox-delete");
 
-            await new InboxCleanupTask(_inbox.Object, new MessagingOptions()).ExecuteAsync(context, CancellationToken.None);
+            // Act
+            await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>().Which.Message.Should().Contain("2");
             _inbox.Verify(r => r.DeleteProcessedOlderThanAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -43,12 +62,14 @@ namespace ECommerceApp.UnitTests.Messaging
         [Fact]
         public async Task ExecuteAsync_RepositoryThrows_ReportsFailureNotException()
         {
-            _inbox.Setup(r => r.DeleteProcessedOlderThanAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new Exception("DB connection failed"));
+            // Arrange
+            SetupDeletionFailure("DB connection failed");
             var context = new JobExecutionContext(null, "inbox-error");
 
-            await new InboxCleanupTask(_inbox.Object, new MessagingOptions()).ExecuteAsync(context, CancellationToken.None);
+            // Act
+            await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Failure>().Which.Error.Should().Contain("DB connection failed");
         }
     }

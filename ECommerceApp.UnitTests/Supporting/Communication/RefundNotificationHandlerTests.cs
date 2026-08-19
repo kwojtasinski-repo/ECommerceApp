@@ -30,14 +30,30 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private static RefundApproved Message(int refundId = 1, int orderId = 10)
             => new(refundId, orderId, new List<RefundApprovedItem>(), DateTime.UtcNow);
 
+        private void SetupUserResolution(int orderId, string userId)
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(userId);
+        }
+
+        private void SetupUserNotResolved()
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string)null);
+        }
+
         [Fact]
         public async Task HandleAsync_WhenUserResolved_PushesNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
+            // Arrange
+            SetupUserResolution(10, "user-10");
+            var handler = CreateHandler();
+            var message = Message(refundId: 3, orderId: 10);
 
-            await CreateHandler().HandleAsync(Message(refundId: 3, orderId: 10), 1, TestContext.Current.CancellationToken);
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 "user-10",
                 "RefundApproved",
@@ -48,11 +64,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            // Arrange
+            SetupUserNotResolved();
+            var handler = CreateHandler();
+            var message = Message();
 
-            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -76,14 +96,30 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private static RefundRejected Message(int refundId = 1, int orderId = 10)
             => new(refundId, orderId, DateTime.UtcNow);
 
+        private void SetupUserResolution(int orderId, string userId)
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(userId);
+        }
+
+        private void SetupUserNotResolved()
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string)null);
+        }
+
         [Fact]
         public async Task HandleAsync_WhenUserResolved_PushesNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
+            // Arrange
+            SetupUserResolution(10, "user-10");
+            var handler = CreateHandler();
+            var message = Message(refundId: 5, orderId: 10);
 
-            await CreateHandler().HandleAsync(Message(refundId: 5, orderId: 10), 1, TestContext.Current.CancellationToken);
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 "user-10",
                 "RefundRejected",
@@ -94,11 +130,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            // Arrange
+            SetupUserNotResolved();
+            var handler = CreateHandler();
+            var message = Message();
 
-            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
+            // Act
+            await handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
