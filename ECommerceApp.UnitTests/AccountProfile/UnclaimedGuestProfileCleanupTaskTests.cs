@@ -38,8 +38,18 @@ namespace ECommerceApp.UnitTests.AccountProfile
         private static UserProfile NewProfile(string userId, int id = 1)
         {
             var profile = UserProfile.Create(userId, "Jan", "Kowalski", false, null, null, "jan@example.com", "500600700");
-            typeof(UserProfile).GetProperty(nameof(UserProfile.Id))!.SetValue(profile, new UserProfileId(id));
+            EntityIdSetter.Set(profile, new UserProfileId(id));
             return profile;
+        }
+
+        private void SetupUnclaimedProfilesWithOrders(UserProfile profile, IReadOnlySet<int> profileIdsWithOrders)
+        {
+            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
+                .ReturnsAsync(new List<UserProfile> { profile });
+            _accountProvisioner.Setup(a => a.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync(new HashSet<string>());
+            _moduleClient.Setup(m => m.SendAsync(It.IsAny<CustomersWithOrdersQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(profileIdsWithOrders);
         }
 
         [Fact]
@@ -52,12 +62,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task ExecuteAsync_UnclaimedProfileWithAnOrder_DoesNotDeleteIt()
         {
             var profile = NewProfile("gst_1");
-            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
-                .ReturnsAsync(new List<UserProfile> { profile });
-            _accountProvisioner.Setup(a => a.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
-                .ReturnsAsync(new HashSet<string>());
-            _moduleClient.Setup(m => m.SendAsync(It.IsAny<CustomersWithOrdersQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((IReadOnlySet<int>)new HashSet<int> { profile.Id.Value });
+            SetupUnclaimedProfilesWithOrders(profile, new HashSet<int> { profile.Id.Value });
             var context = new JobExecutionContext(null, "exec-1");
 
             await CreateTask().ExecuteAsync(context, CancellationToken.None);
@@ -70,12 +75,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task ExecuteAsync_UnclaimedProfileOlderThanThreshold_DeletesIt()
         {
             var profile = NewProfile("gst_2");
-            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
-                .ReturnsAsync(new List<UserProfile> { profile });
-            _accountProvisioner.Setup(a => a.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
-                .ReturnsAsync(new HashSet<string>());
-            _moduleClient.Setup(m => m.SendAsync(It.IsAny<CustomersWithOrdersQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((IReadOnlySet<int>)new HashSet<int>());
+            SetupUnclaimedProfilesWithOrders(profile, new HashSet<int>());
             _profiles.Setup(r => r.DeleteAsync(profile.Id)).ReturnsAsync(true);
             var context = new JobExecutionContext(null, "exec-2");
 

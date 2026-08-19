@@ -16,6 +16,25 @@ namespace ECommerceApp.UnitTests.AccountProfile
 
         private GuestPromotionService CreateService() => new(_profiles.Object, _users.Object);
 
+            private void SetupGuestIsNotRegistered(string userId)
+            {
+                _users.Setup(u => u.IsRegisteredAsync(userId)).ReturnsAsync(false);
+            }
+
+            private void SetupSuccessfulGuestRegistration(string userId)
+            {
+                SetupGuestIsNotRegistered(userId);
+                _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
+                    .ReturnsAsync(new GuestAccountProvisioningResult("registered-1", new List<string>()));
+            }
+
+            private void SetupFailedGuestRegistration(string userId)
+            {
+                SetupGuestIsNotRegistered(userId);
+                _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
+                    .ReturnsAsync(new GuestAccountProvisioningResult(null, new List<string> { "weak password" }));
+            }
+
         [Fact]
         public async Task PromoteAsync_RequestingUserIdDoesNotMatchProfileOwner_ReturnsNotOwner()
         {
@@ -43,9 +62,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var profile = CreateProfile("gst_owner");
             SetupProfile(profile, 5);
-            _users.Setup(u => u.IsRegisteredAsync("gst_owner")).ReturnsAsync(false);
-            _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
-                .ReturnsAsync(new GuestAccountProvisioningResult("registered-1", new List<string>()));
+            SetupSuccessfulGuestRegistration("gst_owner");
 
             var result = await CreateService().PromoteAsync(5, "gst_owner", "Password1!");
 
@@ -59,9 +76,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var profile = CreateProfile("gst_owner");
             SetupProfile(profile, 5);
-            _users.Setup(u => u.IsRegisteredAsync("gst_owner")).ReturnsAsync(false);
-            _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
-                .ReturnsAsync(new GuestAccountProvisioningResult(null, new List<string> { "weak password" }));
+            SetupFailedGuestRegistration("gst_owner");
 
             var result = await CreateService().PromoteAsync(5, "gst_owner", "Password1!");
 
@@ -85,7 +100,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
 
         private void SetupProfile(UserProfile profile, int id)
         {
-            typeof(UserProfile).GetProperty(nameof(UserProfile.Id))!.SetValue(profile, new UserProfileId(id));
+            EntityIdSetter.Set(profile, new UserProfileId(id));
             _profiles.Setup(r => r.GetByIdAsync(new UserProfileId(id), true)).ReturnsAsync(profile);
         }
 

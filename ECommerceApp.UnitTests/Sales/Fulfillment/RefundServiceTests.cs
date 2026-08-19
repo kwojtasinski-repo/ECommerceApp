@@ -38,13 +38,17 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             return new RefundService(_refunds.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object);
         }
 
+        private void SetupRefundExists(int refundId, Refund refund)
+            => _refunds.Setup(x => x.GetByIdAsync(refundId, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+
+        private void SetupRefundMissing(int refundId)
+            => _refunds.Setup(x => x.GetByIdAsync(refundId, It.IsAny<CancellationToken>())).ReturnsAsync((Refund)null);
+
         private static Refund CreateRequestedRefund(int id = 1, int orderId = 99)
         {
             var items = new[] { RefundItem.Create(10, 2), RefundItem.Create(20, 1) };
             var refund = Refund.Create(orderId, "Defective", true, items, "user-1");
-            typeof(Refund).GetProperty(nameof(Refund.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(refund, new object[] { new RefundId(id) });
+            EntityIdSetter.Set(refund, new RefundId(id));
             return refund;
         }
 
@@ -102,7 +106,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task ApproveRefundAsync_RefundNotFound_ShouldReturnRefundNotFound()
         {
-            _refunds.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Refund)null);
+            SetupRefundMissing(1);
 
             var result = await CreateService().ApproveRefundAsync(1, TestContext.Current.CancellationToken);
 
@@ -115,7 +119,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         {
             var refund = CreateRequestedRefund();
             refund.Approve();
-            _refunds.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+            SetupRefundExists(1, refund);
 
             var result = await CreateService().ApproveRefundAsync(1, TestContext.Current.CancellationToken);
 
@@ -128,7 +132,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         public async Task ApproveRefundAsync_HappyPath_ShouldApproveUpdateAndPublishRefundApproved()
         {
             var refund = CreateRequestedRefund(id: 5, orderId: 99);
-            _refunds.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+            SetupRefundExists(5, refund);
 
             var txMock = new Mock<IOutboxTransaction>();
             var result = await CreateService(txMock).ApproveRefundAsync(5, TestContext.Current.CancellationToken);
@@ -155,7 +159,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task RejectRefundAsync_RefundNotFound_ShouldReturnRefundNotFound()
         {
-            _refunds.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Refund)null);
+            SetupRefundMissing(1);
 
             var result = await CreateService().RejectRefundAsync(1, TestContext.Current.CancellationToken);
 
@@ -168,7 +172,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         {
             var refund = CreateRequestedRefund();
             refund.Reject();
-            _refunds.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+            SetupRefundExists(1, refund);
 
             var result = await CreateService().RejectRefundAsync(1, TestContext.Current.CancellationToken);
 
@@ -182,7 +186,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         {
             var refund = CreateRequestedRefund();
             refund.Approve();
-            _refunds.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+            SetupRefundExists(1, refund);
 
             var result = await CreateService().RejectRefundAsync(1, TestContext.Current.CancellationToken);
 
@@ -195,7 +199,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         public async Task RejectRefundAsync_HappyPath_ShouldRejectUpdateAndPublishRefundRejected()
         {
             var refund = CreateRequestedRefund(id: 5, orderId: 99);
-            _refunds.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+            SetupRefundExists(5, refund);
 
             var txMock = new Mock<IOutboxTransaction>();
             var result = await CreateService(txMock).RejectRefundAsync(5, TestContext.Current.CancellationToken);
@@ -217,7 +221,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task GetRefundAsync_NotFound_ShouldReturnNull()
         {
-            _refunds.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Refund)null);
+            SetupRefundMissing(1);
 
             var result = await CreateService().GetRefundAsync(1, TestContext.Current.CancellationToken);
 
@@ -228,7 +232,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         public async Task GetRefundAsync_Found_ShouldReturnMappedVm()
         {
             var refund = CreateRequestedRefund(id: 5, orderId: 99);
-            _refunds.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+            SetupRefundExists(5, refund);
 
             var result = await CreateService().GetRefundAsync(5, TestContext.Current.CancellationToken);
 

@@ -36,10 +36,31 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         private static Payment CreatePendingPayment(int paymentId = 1, int orderId = 10)
         {
             var payment = Payment.Create(new PaymentOrderId(orderId), 99m, 1, DateTime.UtcNow.AddDays(3), "user-1");
-            typeof(Payment).GetProperty(nameof(Payment.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(payment, new object[] { new PaymentId(paymentId) });
+            EntityIdSetter.Set(payment, new PaymentId(paymentId));
             return payment;
+        }
+
+        private void SetupPaymentLookup(int paymentId, Payment payment)
+        {
+            _paymentRepo.Setup(r => r.GetByIdAsync(paymentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(payment);
+        }
+
+        private void SetupTransactionAndPaymentExpiredOutbox(Action<PaymentExpired> observe = null)
+        {
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+            _outboxWriter
+                .Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<IMessage, IOutboxTransaction, CancellationToken>((msg, _, _) =>
+                {
+                    if (msg is PaymentExpired paymentExpired)
+                    {
+                        observe?.Invoke(paymentExpired);
+                    }
+                })
+                .Returns(Task.CompletedTask);
         }
 
         // ── CorrelationId stamped on publish ──────────────────────────────────
@@ -48,18 +69,8 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         public async Task ExecuteAsync_PendingPayment_ShouldPublishWithNonEmptyCorrelationId()
         {
             PaymentExpired captured = null;
-            _paymentRepo
-                .Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreatePendingPayment(paymentId: 1, orderId: 10));
-
-            var txMock = new Mock<IOutboxTransaction>();
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-
-            _outboxWriter
-                .Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
-                .Callback<IMessage, IOutboxTransaction, CancellationToken>((msg, tx, ct) => captured = msg as PaymentExpired)
-                .Returns(Task.CompletedTask);
+            SetupPaymentLookup(1, CreatePendingPayment(paymentId: 1, orderId: 10));
+            SetupTransactionAndPaymentExpiredOutbox(paymentExpired => captured = paymentExpired);
 
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
 
@@ -73,22 +84,11 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             var payment1 = CreatePendingPayment(paymentId: 1, orderId: 10);
             var payment2 = CreatePendingPayment(paymentId: 2, orderId: 20);
 
-            _paymentRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(payment1);
-            _paymentRepo.Setup(r => r.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(payment2);
+            SetupPaymentLookup(1, payment1);
+            SetupPaymentLookup(2, payment2);
 
             var correlationIds = new System.Collections.Generic.List<Guid>();
-            var txMock = new Mock<IOutboxTransaction>();
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-
-            _outboxWriter
-                .Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
-                .Callback<IMessage, IOutboxTransaction, CancellationToken>((msg, tx, ct) =>
-                {
-                    if (msg is PaymentExpired pe)
-                        correlationIds.Add(pe.CorrelationId);
-                })
-                .Returns(Task.CompletedTask);
+            SetupTransactionAndPaymentExpiredOutbox(paymentExpired => correlationIds.Add(paymentExpired.CorrelationId));
 
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
             await CreateJob().ExecuteAsync(Context("2"), CancellationToken.None);
@@ -103,17 +103,8 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         public async Task ExecuteAsync_PendingPayment_PublishedMessageShouldCarryCorrectPaymentAndOrderIds()
         {
             PaymentExpired captured = null;
-            _paymentRepo
-                .Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreatePendingPayment(paymentId: 5, orderId: 42));
-            var txMock = new Mock<IOutboxTransaction>();
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-
-            _outboxWriter
-                .Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
-                .Callback<IMessage, IOutboxTransaction, CancellationToken>((msg, tx, ct) => captured = msg as PaymentExpired)
-                .Returns(Task.CompletedTask);
+            SetupPaymentLookup(5, CreatePendingPayment(paymentId: 5, orderId: 42));
+            SetupTransactionAndPaymentExpiredOutbox(paymentExpired => captured = paymentExpired);
 
             await CreateJob().ExecuteAsync(Context("5"), CancellationToken.None);
 
@@ -129,9 +120,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         {
             var payment = CreatePendingPayment(paymentId: 1, orderId: 10);
             payment.Confirm();
-            _paymentRepo
-                .Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(payment);
+            SetupPaymentLookup(1, payment);
 
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
 

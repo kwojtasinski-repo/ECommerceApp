@@ -57,15 +57,34 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _outboxWriter.Object,
             _auditRepo.Object);
 
+        private StockItem SetupAvailableStock(int productId, int quantity)
+        {
+            var (stock, _) = StockItem.Create(new StockProductId(productId), new StockQuantity(quantity));
+            _stockItemRepo.Setup(r => r.GetByProductIdAsync(productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stock);
+            return stock;
+        }
+
+        private StockHold SetupReservedStockHold(
+            int orderId, int productId, int holdQuantity, int reservedQuantity)
+        {
+            var hold = StockHold.Create(new StockProductId(productId), new ReservationOrderId(orderId), holdQuantity, DateTime.UtcNow.AddHours(1));
+            var stock = SetupAvailableStock(productId, 10);
+            stock.Reserve(reservedQuantity);
+
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(orderId, productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(hold);
+
+            return hold;
+        }
+
         // ── GetByProductIdAsync
 
         [Fact]
         public async Task GetByProductIdAsync_StockExists_ShouldReturnDto()
         {
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
+            SetupAvailableStock(1, 10);
             var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
 
             var result = await CreateService().GetByProductIdAsync(1, TestContext.Current.CancellationToken);
 
@@ -142,9 +161,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task InitializeStockAsync_AlreadyInitialized_ShouldReturnFalse()
         {
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(5));
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
+            SetupAvailableStock(1, 5);
 
             var result = await CreateService().InitializeStockAsync(1, 10, TestContext.Current.CancellationToken);
 
@@ -157,13 +174,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         public async Task ReserveAsync_PhysicalProduct_ShouldReserveStockAndCreateReservation()
         {
             var snapshot = ProductSnapshot.Create(1, "Widget", isDigital: false, CatalogProductStatus.Orderable);
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
+            SetupAvailableStock(1, 10);
             var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
 
             _productSnapshotRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshot);
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
 
             var result = await CreateService().ReserveAsync(dto, TestContext.Current.CancellationToken);
 
@@ -228,14 +243,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReleaseAsync_GuaranteedReservation_ShouldReleaseStockAndDeleteReservation()
         {
-            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
-            stock.Reserve(3);
-
-            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stockHold);
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
+            var stockHold = SetupReservedStockHold(42, 1, 3, 3);
 
             var result = await CreateService().ReleaseAsync(42, 1, 3, TestContext.Current.CancellationToken);
 
@@ -264,14 +272,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReleaseAsync_QuantityExceedsReserved_ShouldSkipStockUpdateButDeleteReservation()
         {
-            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
-            stock.Reserve(2);
-
-            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stockHold);
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
+            var stockHold = SetupReservedStockHold(42, 1, 5, 2);
 
             var result = await CreateService().ReleaseAsync(42, 1, 5, TestContext.Current.CancellationToken);
 
@@ -354,14 +355,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task FulfillAsync_ValidStock_ShouldFulfillAndDeleteReservation()
         {
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
-            stock.Reserve(5);
-            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
-
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
-            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stockHold);
+            var stockHold = SetupReservedStockHold(42, 1, 5, 5);
 
             var result = await CreateService().FulfillAsync(42, 1, 5, TestContext.Current.CancellationToken);
 
@@ -389,11 +383,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task FulfillAsync_QuantityExceedsReserved_ShouldReturnFalse()
         {
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
+            var stock = SetupAvailableStock(1, 10);
             stock.Reserve(3);
-
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
 
             var result = await CreateService().FulfillAsync(42, 1, 5, TestContext.Current.CancellationToken);
 
@@ -406,11 +397,9 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReturnAsync_ValidStock_ShouldReturnQuantityAndUpdateStock()
         {
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
+            var stock = SetupAvailableStock(1, 10);
             stock.Reserve(5);
             stock.Fulfill(5);
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
 
             var result = await CreateService().ReturnAsync(1, 3, TestContext.Current.CancellationToken);
 
@@ -440,14 +429,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task WithdrawHoldAsync_GuaranteedHold_ShouldReleaseStockEnqueueAndMarkWithdrawn()
         {
-            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
-            stock.Reserve(3);
-
-            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stockHold);
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
+            var stockHold = SetupReservedStockHold(42, 1, 3, 3);
 
             var result = await CreateService().WithdrawHoldAsync(42, 1, TestContext.Current.CancellationToken);
 
@@ -478,14 +460,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task WithdrawHoldAsync_QuantityExceedsReserved_ShouldSkipStockReleaseButMarkWithdrawn()
         {
-            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
-            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
-            stock.Reserve(2);
-
-            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stockHold);
-            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stock);
+            var stockHold = SetupReservedStockHold(42, 1, 5, 2);
 
             var result = await CreateService().WithdrawHoldAsync(42, 1, TestContext.Current.CancellationToken);
 
@@ -515,7 +490,9 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                     private static async IAsyncEnumerable<StockItem> AsAsyncEnumerable(params StockItem[] items)
                     {
                         foreach (var item in items)
+                        {
                             yield return item;
+                        }
                         await Task.CompletedTask;
                     }
                 }

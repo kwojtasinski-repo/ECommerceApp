@@ -45,7 +45,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         private static SoftReservation MakeReservation(int productId, decimal unitPrice)
         {
             var r = SoftReservation.Create(productId, "user-1", 1, unitPrice, DateTime.UtcNow.AddMinutes(15));
-            typeof(SoftReservation).GetProperty("Id")!.SetValue(r, new SoftReservationId(productId));
+            EntityIdSetter.Set(r, new SoftReservationId(productId));
             return r;
         }
 

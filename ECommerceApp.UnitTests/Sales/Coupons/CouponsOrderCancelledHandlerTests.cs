@@ -33,18 +33,14 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private static CouponUsed CreateCouponUsed(int id = 1, int couponId = 5, int orderId = 99)
         {
             var cu = CouponUsed.Create(new CouponId(couponId), orderId);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(id) });
+            EntityIdSetter.Set(cu, new CouponUsedId(id));
             return cu;
         }
 
         private static Coupon CreateUsedCoupon(int id = 5)
         {
             var coupon = Coupon.Create("SAVE10", "desc");
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(id) });
+            EntityIdSetter.Set(coupon, new CouponId(id));
             coupon.MarkAsUsed();
             return coupon;
         }

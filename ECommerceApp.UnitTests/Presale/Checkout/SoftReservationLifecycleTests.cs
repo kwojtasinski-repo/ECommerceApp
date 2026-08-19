@@ -54,6 +54,92 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
         public void Dispose() => _cache.Dispose();
 
+        private void SetupAvailableProductForReservation(int productId, int availableQuantity, decimal unitPrice)
+        {
+            _snapshotRepo.Setup(r => r.FindByProductIdAsync(
+                    It.Is<PresaleProductId>(product => product.Value == productId),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StockSnapshot.Create(productId, availableQuantity, DateTime.UtcNow));
+            _reservationRepo.Setup(r => r.GetByProductIdAsync(
+                    It.Is<PresaleProductId>(product => product.Value == productId),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation>());
+            _catalogClient.Setup(c => c.GetUnitPriceAsync(productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(unitPrice);
+        }
+
+        private void SetupReservationPersistence(int reservationId, Action<SoftReservation> onAdded = null)
+        {
+            _reservationRepo.Setup(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
+                .Callback<SoftReservation, CancellationToken>((reservation, _) =>
+                {
+                    EntityIdSetter.Set(reservation, new SoftReservationId(reservationId));
+                    onAdded?.Invoke(reservation);
+                })
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupSchedule()
+        {
+            _deferredScheduler.Setup(d => d.ScheduleAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupScheduleCapture(Action<string> onScheduled)
+        {
+            _deferredScheduler.Setup(d => d.ScheduleAsync(
+                SoftReservationExpiredJob.JobTaskName,
+                It.IsAny<string>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, DateTime, CancellationToken>((_, entityId, _, _) => onScheduled(entityId))
+            .Returns(Task.CompletedTask);
+        }
+
+        private void SetupCancellation()
+        {
+            _deferredScheduler.Setup(d => d.CancelAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupReservationLookup(int productId, string userId, SoftReservation reservation)
+        {
+            _reservationRepo.Setup(r => r.FindAsync(
+                    It.Is<PresaleProductId>(product => product.Value == productId),
+                    It.Is<PresaleUserId>(user => user.Value == userId),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(reservation);
+        }
+
+        private void SetupReservationCapture(int reservationId, Action<SoftReservation> onAdded)
+        {
+            SetupReservationPersistence(reservationId, onAdded);
+        }
+
+        private void SetupReservationById(int reservationId, SoftReservation reservation)
+        {
+            _reservationRepo.Setup(r => r.GetByIdAsync(
+                    new SoftReservationId(reservationId),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(reservation);
+        }
+
+        private void SetupAnyReservationDeletion()
+        {
+            _reservationRepo.Setup(r => r.DeleteAsync(
+                    It.IsAny<SoftReservation>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupReservationDeletion(SoftReservation reservation)
+        {
+            _reservationRepo.Setup(r => r.DeleteAsync(reservation, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
         // ── Hold → expire lifecycle ──────────────────────────────────────────
 
         [Fact]
@@ -63,31 +149,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             const string userId = "user-1";
             const int reservationId = 42;
 
-            var snapshot = StockSnapshot.Create(productId, 10, DateTime.UtcNow);
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshot);
-            _reservationRepo.Setup(r => r.GetByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _catalogClient.Setup(c => c.GetUnitPriceAsync(productId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(49.99m);
+            SetupAvailableProductForReservation(productId, 10, 49.99m);
 
-            // Capture the reservation created during HoldAsync and assign an Id
-            // (simulating what EF Core does after AddAsync in production).
             SoftReservation capturedReservation = null;
-            _reservationRepo.Setup(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
-                .Callback<SoftReservation, CancellationToken>((res, _) =>
-                {
-                    capturedReservation = res;
-                    typeof(SoftReservation).GetProperty(nameof(SoftReservation.Id))!
-                        .SetValue(res, new SoftReservationId(reservationId));
-                })
-                .Returns(Task.CompletedTask);
+            SetupReservationCapture(reservationId, reservation => capturedReservation = reservation);
 
             string scheduledEntityId = null;
-            _deferredScheduler.Setup(d => d.ScheduleAsync(
-                    SoftReservationExpiredJob.JobTaskName, It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, DateTime, CancellationToken>((_, entityId, _, _) => scheduledEntityId = entityId)
-                .Returns(Task.CompletedTask);
+            SetupScheduleCapture(entityId => scheduledEntityId = entityId);
 
             // Act — step 1: hold the reservation
             var held = await _service.HoldAsync(productId, userId, 2, TestContext.Current.CancellationToken);
@@ -100,8 +168,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             cachedBeforeExpiry.Should().NotBeNull();
 
             // Act — step 2: the deferred job fires after 15 minutes
-            _reservationRepo.Setup(r => r.GetByIdAsync(new SoftReservationId(reservationId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(capturedReservation!);
+            SetupReservationById(reservationId, capturedReservation!);
 
             var jobContext = new JobExecutionContext(scheduledEntityId, Guid.NewGuid().ToString());
             await _expiredJob.ExecuteAsync(jobContext, TestContext.Current.CancellationToken);
@@ -120,38 +187,23 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             const string userId = "user-2";
             const int reservationId = 7;
 
-            var snapshot = StockSnapshot.Create(productId, 5, DateTime.UtcNow);
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshot);
-            _reservationRepo.Setup(r => r.GetByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _catalogClient.Setup(c => c.GetUnitPriceAsync(productId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(20m);
-            _reservationRepo.Setup(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
-                .Callback<SoftReservation, CancellationToken>((res, _) =>
-                    typeof(SoftReservation).GetProperty(nameof(SoftReservation.Id))!
-                        .SetValue(res, new SoftReservationId(reservationId)))
-                .Returns(Task.CompletedTask);
-            _deferredScheduler.Setup(d => d.ScheduleAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _deferredScheduler.Setup(d => d.CancelAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            SetupAvailableProductForReservation(productId, 5, 20m);
+            SetupReservationPersistence(reservationId);
+            SetupSchedule();
+            SetupCancellation();
 
             // Hold the reservation
             await _service.HoldAsync(productId, userId, 1, TestContext.Current.CancellationToken);
 
             // Simulate user removing reservation before the TTL fires (e.g. item removed from cart)
             var reservation = SoftReservation.Create(productId, userId, 1, 20m, DateTime.UtcNow.AddMinutes(15));
-            _reservationRepo.Setup(r => r.FindAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.Is<PresaleUserId>(u => u.Value == userId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(reservation);
-            _reservationRepo.Setup(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            SetupReservationLookup(productId, userId, reservation);
+            SetupAnyReservationDeletion();
 
             await _service.RemoveAsync(productId, userId, TestContext.Current.CancellationToken);
 
             // When the deferred job fires late, the reservation is already gone → no-op
-            _reservationRepo.Setup(r => r.GetByIdAsync(new SoftReservationId(reservationId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((SoftReservation)null!);
+            SetupReservationById(reservationId, null!);
 
             var jobContext = new JobExecutionContext(reservationId.ToString(), Guid.NewGuid().ToString());
             await _expiredJob.ExecuteAsync(jobContext, TestContext.Current.CancellationToken);
@@ -161,27 +213,22 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         }
 
         [Fact]
-        public async Task Hold_SchedulesJobWithReservationIdAsEntityId()
+        public async Task Hold_StoresReservationAndSchedulesExpiry()
         {
             const int productId = 3;
             const string userId = "user-3";
             const int reservationId = 15;
 
-            var snapshot = StockSnapshot.Create(productId, 10, DateTime.UtcNow);
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshot);
-            _reservationRepo.Setup(r => r.GetByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _catalogClient.Setup(c => c.GetUnitPriceAsync(productId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(99m);
-            _reservationRepo.Setup(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
-                .Callback<SoftReservation, CancellationToken>((res, _) =>
-                    typeof(SoftReservation).GetProperty(nameof(SoftReservation.Id))!
-                        .SetValue(res, new SoftReservationId(reservationId)))
-                .Returns(Task.CompletedTask);
+            SetupAvailableProductForReservation(productId, 10, 99m);
+            SetupReservationPersistence(reservationId);
+            SetupSchedule();
 
-            await _service.HoldAsync(productId, userId, 1, TestContext.Current.CancellationToken);
+            var held = await _service.HoldAsync(productId, userId, 1, TestContext.Current.CancellationToken);
 
+            held.Should().BeTrue();
+            var cached = await _service.GetAsync(productId, userId, TestContext.Current.CancellationToken);
+            cached.Should().NotBeNull();
+            cached!.ProductId.Value.Should().Be(productId);
             _deferredScheduler.Verify(d => d.ScheduleAsync(
                 SoftReservationExpiredJob.JobTaskName,
                 reservationId.ToString(),
@@ -190,32 +237,49 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         }
 
         [Fact]
-        public async Task Hold_SchedulesJobWithTtlMatchingPresaleOptions()
+        public async Task Remove_CancelsExpiryDeletesReservationAndClearsCache()
         {
             const int productId = 4;
             const string userId = "user-4";
-            // Job fires at TTL + GracePeriod (15 min + 1 min = 16 min)
+            var reservation = SoftReservation.Create(productId, userId, 1, 10m, DateTime.UtcNow.AddMinutes(15));
+            EntityIdSetter.Set(reservation, new SoftReservationId(18));
+
+            SetupReservationLookup(productId, userId, reservation);
+            SetupReservationDeletion(reservation);
+            SetupCancellation();
+            _cache.Set($"sr:{productId}:{userId}", reservation);
+
+            await _service.RemoveAsync(productId, userId, TestContext.Current.CancellationToken);
+
+            _deferredScheduler.Verify(d => d.CancelAsync(
+                SoftReservationExpiredJob.JobTaskName,
+                reservation.Id!.Value.ToString(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            _reservationRepo.Verify(r => r.DeleteAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
+            _cache.TryGetValue<SoftReservation>($"sr:{productId}:{userId}", out _).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task Hold_SchedulesExpiryAfterReservationTtlAndGracePeriod()
+        {
+            const int productId = 5;
+            const string userId = "user-5";
+            const int reservationId = 18;
             var expectedJobDelay = TimeSpan.FromMinutes(15) + TimeSpan.FromMinutes(1);
             var before = DateTime.UtcNow;
 
-            var snapshot = StockSnapshot.Create(productId, 10, DateTime.UtcNow);
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshot);
-            _reservationRepo.Setup(r => r.GetByProductIdAsync(It.Is<PresaleProductId>(p => p.Value == productId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _catalogClient.Setup(c => c.GetUnitPriceAsync(productId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(10m);
-            _reservationRepo.Setup(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            SetupAvailableProductForReservation(productId, 10, 10m);
+            SetupReservationPersistence(reservationId);
+            SetupSchedule();
 
             await _service.HoldAsync(productId, userId, 1, TestContext.Current.CancellationToken);
 
             var after = DateTime.UtcNow;
 
             _deferredScheduler.Verify(d => d.ScheduleAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.Is<DateTime>(dt => dt >= before.Add(expectedJobDelay) && dt <= after.Add(expectedJobDelay)),
+                SoftReservationExpiredJob.JobTaskName,
+                reservationId.ToString(),
+                It.Is<DateTime>(scheduledAt => scheduledAt >= before.Add(expectedJobDelay) && scheduledAt <= after.Add(expectedJobDelay)),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
     }

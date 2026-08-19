@@ -88,6 +88,7 @@ Rules:
 - **Action**: Always create `.vscode/mcp.json` for VS Code MCP registration. Keep `.github/copilot/mcp.json` as a secondary copy for Codespaces compatibility only.
 - **Promote?**: After 2nd occurrence → add to `docs-index.instructions.md` or a tooling note.
 - **Status**: Resolved
+
 - All entries in **English** for AI parsability.
 
 ---
@@ -349,4 +350,13 @@ Rules:
 - **Rationale**: An empty result set is indistinguishable from a correct "nothing matches", so this failure class is invisible to review, to unit tests, and to a smoke check that only asks whether the server starts. Detail in [ADR-0031](../../docs/adr/0031/0031-structural-knowledge-graph.md) §Outcome.
 - **Action**: Any tool whose contract is "query X and return matches" needs at least one fixture asserting a **non-empty** expected result, and one asserting a **known-empty** case, before it is considered covered.
 - **Promote?**: After a 2nd occurrence of "green source-grep suite hid a wrong query" → promote into `pre-edit.instructions.md` testing guidance.
+- **Status**: Resolved
+
+## 2026-08-19 — Agent / C# control-flow braces
+
+- **Context**: The unit-test cleanup exposed one-line `if` and `for` statements mixed with braced blocks.
+- **Decision**: Every single-line `if`, `else`, `for`, and `foreach` must use braces, including test code.
+- **Rationale**: Consistent block boundaries reduce accidental behavior changes during future edits and give all agents one unambiguous style rule.
+- **Action**: Apply the rule through [agent-workflow.instructions.md](../instructions/agent-workflow.instructions.md) and enforce it in future cleanup batches.
+- **Promote?**: Already promoted to the repository workflow instruction.
 - **Status**: Resolved

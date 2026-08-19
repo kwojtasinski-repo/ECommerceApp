@@ -5,6 +5,7 @@ using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -41,29 +42,91 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private static CouponUsed CreateDbCouponUsed(int id, int couponId, int orderId, string userId = "user-1")
         {
             var cu = CouponUsed.CreateForDbCoupon(new CouponId(couponId), orderId, userId);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(id) });
+            EntityIdSetter.Set(cu, new CouponUsedId(id));
             return cu;
         }
 
         private static CouponUsed CreateRuntimeCouponUsed(int id, int orderId, string snapshot = "{}", string userId = "user-1")
         {
             var cu = CouponUsed.CreateForRuntimeCoupon(snapshot, orderId, userId);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(id) });
+            EntityIdSetter.Set(cu, new CouponUsedId(id));
             return cu;
         }
 
         private static Coupon CreateUsedCoupon(int id)
         {
             var coupon = Coupon.Create("SAVE10", "desc");
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(id) });
+            EntityIdSetter.Set(coupon, new CouponId(id));
             coupon.MarkAsUsed();
             return coupon;
+        }
+
+        private void SetupDbCoupons(params (CouponUsed Used, Coupon Coupon)[] entries)
+        {
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(entries.Select(entry => entry.Used).ToList());
+            foreach (var entry in entries)
+            {
+                _coupons.Setup(x => x.GetByIdAsync(entry.Used.CouponId!.Value, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(entry.Coupon);
+            }
+        }
+
+        private void SetupSingleCoupon(CouponUsed couponUsed, Coupon coupon)
+        {
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponUsed> { couponUsed });
+            if (couponUsed.CouponId is not null)
+            {
+                _coupons.Setup(x => x.GetByIdAsync(couponUsed.CouponId.Value, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(coupon);
+            }
+        }
+
+        private void SetupApplicationRecordLookup(int couponUsedId, CouponApplicationRecord record)
+        {
+            _applicationRecords.Setup(x => x.FindByCouponUsedIdAsync(couponUsedId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+        }
+
+        private void SetupOrderedApplicationRecordLookup(List<string> callOrder, CouponApplicationRecord record)
+        {
+            _applicationRecords.Setup(x => x.FindByCouponUsedIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback(() => callOrder.Add("find-record"))
+                .ReturnsAsync(record);
+        }
+
+        private void SetupOrderedApplicationRecordUpdate(List<string> callOrder)
+        {
+            _applicationRecords.Setup(x => x.UpdateAsync(It.IsAny<CouponApplicationRecord>(), It.IsAny<CancellationToken>()))
+                .Callback(() => callOrder.Add("mark-reversed"))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupOrderedCouponUsedDeletion(List<string> callOrder)
+        {
+            _couponUsed.Setup(x => x.DeleteAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
+                .Callback(() => callOrder.Add("delete-coupon-used"))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupNoCouponsForOrder()
+        {
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponUsed>());
+        }
+
+        private void SetupMixedCouponTypes(CouponUsed dbCoupon, CouponUsed runtimeCoupon, Coupon coupon)
+        {
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponUsed> { dbCoupon, runtimeCoupon });
+            _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(coupon);
+        }
+
+        private void SetupSlice1Coupon(CouponUsed couponUsed, Coupon coupon)
+        {
+            SetupSingleCoupon(couponUsed, coupon);
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -78,10 +141,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var coupon5 = CreateUsedCoupon(5);
             var coupon6 = CreateUsedCoupon(6);
 
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed> { cu1, cu2 });
-            _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon5);
-            _coupons.Setup(x => x.GetByIdAsync(6, It.IsAny<CancellationToken>())).ReturnsAsync(coupon6);
+            SetupDbCoupons((cu1, coupon5), (cu2, coupon6));
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
@@ -103,14 +163,9 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var record1 = CouponApplicationRecord.Create(1, "SAVE15", "percentage-off", 15m, 200m, 30m);
             var record2 = CouponApplicationRecord.Create(2, "FLAT50", "fixed-amount-off", 50m, 200m, 50m);
 
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed> { cu1, cu2 });
-            _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon5);
-            _coupons.Setup(x => x.GetByIdAsync(6, It.IsAny<CancellationToken>())).ReturnsAsync(coupon6);
-            _applicationRecords.Setup(x => x.FindByCouponUsedIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(record1);
-            _applicationRecords.Setup(x => x.FindByCouponUsedIdAsync(2, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(record2);
+            SetupDbCoupons((cu1, coupon5), (cu2, coupon6));
+            SetupApplicationRecordLookup(1, record1);
+            SetupApplicationRecordLookup(2, record2);
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
@@ -133,21 +188,12 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var coupon = CreateUsedCoupon(5);
             var callOrder = new List<string>();
 
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed> { cu });
-            _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
-
-            _applicationRecords.Setup(x => x.FindByCouponUsedIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback(() => callOrder.Add("find-record"))
-                .ReturnsAsync(CouponApplicationRecord.Create(1, "CODE", "pct", 10m, 100m, 10m));
-
-            _applicationRecords.Setup(x => x.UpdateAsync(It.IsAny<CouponApplicationRecord>(), It.IsAny<CancellationToken>()))
-                .Callback(() => callOrder.Add("mark-reversed"))
-                .Returns(Task.CompletedTask);
-
-            _couponUsed.Setup(x => x.DeleteAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
-                .Callback(() => callOrder.Add("delete-coupon-used"))
-                .Returns(Task.CompletedTask);
+            SetupSingleCoupon(cu, coupon);
+            SetupOrderedApplicationRecordLookup(
+                callOrder,
+                CouponApplicationRecord.Create(1, "CODE", "pct", 10m, 100m, 10m));
+            SetupOrderedApplicationRecordUpdate(callOrder);
+            SetupOrderedCouponUsedDeletion(callOrder);
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
@@ -159,28 +205,35 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         // ══════════════════════════════════════════════════════════════════════
 
         [Fact]
-        public void HandleAsync_DbCoupon_ShouldReleaseCouponViaCouponId()
+        public async Task HandleAsync_DbCoupon_ShouldReleaseCouponViaCouponId()
         {
-            // Spec: for DB coupons (CouponId is set), release the Coupon aggregate
             var cu = CreateDbCouponUsed(id: 1, couponId: 5, orderId: 99);
+            var coupon = CreateUsedCoupon(5);
+            SetupSingleCoupon(cu, coupon);
 
-            cu.CouponId.Should().NotBeNull();
-            cu.RuntimeCouponSnapshot.Should().BeNull();
+            await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
-            // Handler should: load Coupon by CouponId, call coupon.Release(), persist
+            coupon.Status.Should().Be(CouponStatus.Available);
+            _coupons.Verify(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()), Times.Once);
+            _coupons.Verify(r => r.UpdateAsync(coupon, It.IsAny<CancellationToken>()), Times.Once);
+            _couponUsed.Verify(r => r.DeleteAsync(cu, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public void HandleAsync_RuntimeCoupon_ShouldNotAttemptCouponRelease()
+        public async Task HandleAsync_RuntimeCoupon_ShouldNotAttemptCouponRelease()
         {
-            // Spec: for runtime coupons (CouponId is null, RuntimeCouponSnapshot is set),
-            // there is no Coupon aggregate to release. Only delete CouponUsed + mark ApplicationRecord.
             var cu = CreateRuntimeCouponUsed(id: 2, orderId: 99, snapshot: "{\"code\":\"ML10\"}");
+            var record = CouponApplicationRecord.Create(2, "ML10", "percentage-off", 10m, 100m, 10m);
+            SetupSingleCoupon(cu, null);
+            SetupApplicationRecordLookup(2, record);
 
-            cu.CouponId.Should().BeNull();
-            cu.RuntimeCouponSnapshot.Should().NotBeNull();
+            await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
-            // Handler should: skip coupon.Release() for runtime coupons
+            record.WasReversed.Should().BeTrue();
+            _coupons.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+            _coupons.Verify(r => r.UpdateAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Never);
+            _applicationRecords.Verify(r => r.UpdateAsync(record, It.IsAny<CancellationToken>()), Times.Once);
+            _couponUsed.Verify(r => r.DeleteAsync(cu, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -190,9 +243,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var runtimeCoupon = CreateRuntimeCouponUsed(id: 2, orderId: 99);
             var coupon = CreateUsedCoupon(5);
 
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed> { dbCoupon, runtimeCoupon });
-            _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            SetupMixedCouponTypes(dbCoupon, runtimeCoupon, coupon);
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
@@ -210,8 +261,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public async Task HandleAsync_NoCouponsOnOrder_ShouldBeNoOp()
         {
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed>());
+            SetupNoCouponsForOrder();
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
@@ -226,19 +276,21 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public async Task HandleAsync_ShouldNotPublishCouponRemovedFromOrder()
         {
-            var cu = CouponUsed.Create(new CouponId(5), 99);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(1) });
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed> { cu });
+            var cu = CreateDbCouponUsed(id: 1, couponId: 5, orderId: 99);
             var coupon = CreateUsedCoupon(5);
-            _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            SetupSingleCoupon(cu, coupon);
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
-            // No message broker interaction
-            // Handler has no IMessageBroker dependency — confirmed by constructor
+            coupon.Status.Should().Be(CouponStatus.Available);
+            _couponUsed.Verify(r => r.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()), Times.Once);
+            _coupons.Verify(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()), Times.Once);
+            _coupons.Verify(r => r.UpdateAsync(coupon, It.IsAny<CancellationToken>()), Times.Once);
+            _couponUsed.Verify(r => r.DeleteAsync(cu, It.IsAny<CancellationToken>()), Times.Once);
+            _applicationRecords.Verify(r => r.FindByCouponUsedIdAsync(1, It.IsAny<CancellationToken>()), Times.Once);
+            _couponUsed.VerifyNoOtherCalls();
+            _coupons.VerifyNoOtherCalls();
+            _applicationRecords.VerifyNoOtherCalls();
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -248,8 +300,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public async Task HandleAsync_Slice1_NoCouponUsed_ShouldBeNoOp()
         {
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed>());
+            SetupNoCouponsForOrder();
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
@@ -261,13 +312,10 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         public async Task HandleAsync_Slice1_CouponExists_ShouldReleaseAndDelete()
         {
             var cu = CouponUsed.Create(new CouponId(5), 99);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(1) });
+            EntityIdSetter.Set(cu, new CouponUsedId(1));
             var coupon = CreateUsedCoupon(5);
 
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed> { cu });
-            _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            SetupSlice1Coupon(cu, coupon);
 
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 

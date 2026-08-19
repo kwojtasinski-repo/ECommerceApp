@@ -34,20 +34,24 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private static CouponUsed CreateCouponUsed(int id = 1, int couponId = 5, int orderId = 99)
         {
             var cu = CouponUsed.Create(new CouponId(couponId), orderId);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(id) });
+            EntityIdSetter.Set(cu, new CouponUsedId(id));
             return cu;
         }
 
         private static Coupon CreateUsedCoupon(int id = 5)
         {
             var coupon = Coupon.Create("SAVE10", "desc");
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(id) });
+            EntityIdSetter.Set(coupon, new CouponId(id));
             coupon.MarkAsUsed();
             return coupon;
+        }
+
+        private void SetupCouponUsedForExpiredOrder(CouponUsed couponUsed, Coupon coupon)
+        {
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponUsed> { couponUsed });
+            _coupons.Setup(x => x.GetByIdAsync(couponUsed.CouponId!.Value, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(coupon);
         }
 
         // ── HandleAsync ───────────────────────────────────────────────────────
@@ -71,12 +75,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         {
             var couponUsed = CreateCouponUsed(couponId: 5, orderId: 99);
             var coupon = CreateUsedCoupon(id: 5);
-            _couponUsed
-                .Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CouponUsed> { couponUsed });
-            _coupons
-                .Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(coupon);
+            SetupCouponUsedForExpiredOrder(couponUsed, coupon);
 
             await CreateHandler().HandleAsync(CreateMessage(orderId: 99), TestContext.Current.CancellationToken);
 

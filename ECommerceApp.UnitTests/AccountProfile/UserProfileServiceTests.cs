@@ -55,7 +55,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task GetOrCreateForGuestAsync_ExistingProfileForUserId_ReturnsExistingIdWithoutDuplicating()
         {
             var existing = CreateProfile();
-            typeof(UserProfile).GetProperty(nameof(UserProfile.Id))!.SetValue(existing, new UserProfileId(9));
+            EntityIdSetter.Set(existing, new UserProfileId(9));
             _repository.Setup(r => r.GetByUserIdAsync("user-1", false)).ReturnsAsync(existing);
 
             var result = await CreateService().GetOrCreateForGuestAsync("user-1", "Anna", "Nowak", false, null, null, "anna@test.com", "987654321");

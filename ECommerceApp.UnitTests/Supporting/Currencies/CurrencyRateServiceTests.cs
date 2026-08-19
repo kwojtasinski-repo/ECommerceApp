@@ -192,8 +192,31 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         private static Currency CurrencyWithId(int id, string code, string description)
         {
             var currency = Currency.Create(code, description);
-            typeof(Currency).GetProperty(nameof(Currency.Id))!.SetValue(currency, new CurrencyId(id));
+            EntityIdSetter.Set(currency, new CurrencyId(id));
             return currency;
+        }
+
+        private void SetupCurrencies(params Currency[] currencies)
+        {
+            _currencyRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Currency>(currencies));
+        }
+
+        private void SetupNbpTable(string response)
+        {
+            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(response);
+        }
+
+        private void SetupNoRateForDate()
+        {
+            _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
+                .ReturnsAsync((CurrencyRate)null);
+        }
+
+        private void SetupRatePersistence()
+        {
+            _currencyRateRepository.Setup(r => r.AddAsync(It.IsAny<CurrencyRate>()))
+                .ReturnsAsync(new CurrencyRateId(1));
         }
 
         // ── SyncAllRatesAsync ─────────────────────────────────────────────────
@@ -201,8 +224,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_TableNotAvailable_ShouldReturnZero()
         {
-            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
-                .ReturnsAsync((string)null);
+            SetupNbpTable(null);
 
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
@@ -213,8 +235,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_EmptyTableResponse_ShouldReturnZero()
         {
-            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("[]");
+            SetupNbpTable("[]");
 
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
@@ -226,10 +247,9 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public async Task SyncAllRatesAsync_PlnOnlyCurrencies_ShouldSkipAllAndReturnZero()
         {
             var pln = Currency.Create("PLN", "Polish zloty");
-            pln.GetType().GetProperty("Id")!.SetValue(pln, new CurrencyId(1));
-            _currencyRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Currency> { pln });
-            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(GetDefaultTableResponse("EUR", 4.5m));
+            EntityIdSetter.Set(pln, new CurrencyId(1));
+            SetupCurrencies(pln);
+            SetupNbpTable(GetDefaultTableResponse("EUR", 4.5m));
 
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
@@ -240,9 +260,8 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public async Task SyncAllRatesAsync_CurrencyNotInTable_ShouldSkipAndReturnZero()
         {
             var usd = CurrencyWithId(3, "USD", "US Dollar");
-            _currencyRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Currency> { usd });
-            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(GetDefaultTableResponse("EUR", 4.5m)); // table has EUR, not USD
+            SetupCurrencies(usd);
+            SetupNbpTable(GetDefaultTableResponse("EUR", 4.5m)); // table has EUR, not USD
 
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
@@ -255,9 +274,8 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         {
             var eur = CurrencyWithId(2, "EUR", "Euro");
             var existingRate = CurrencyRate.Create(new CurrencyId(2), 4.5m, DateTime.UtcNow.Date);
-            _currencyRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Currency> { eur });
-            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(GetDefaultTableResponse("EUR", 4.5m));
+            SetupCurrencies(eur);
+            SetupNbpTable(GetDefaultTableResponse("EUR", 4.5m));
             _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(existingRate);
 
@@ -271,13 +289,10 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public async Task SyncAllRatesAsync_NewRateInTable_ShouldPersistAndReturnOne()
         {
             var eur = CurrencyWithId(2, "EUR", "Euro");
-            _currencyRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Currency> { eur });
-            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(GetDefaultTableResponse("EUR", 4.25m));
-            _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
-                .ReturnsAsync((CurrencyRate)null);
-            _currencyRateRepository.Setup(r => r.AddAsync(It.IsAny<CurrencyRate>()))
-                .ReturnsAsync(new CurrencyRateId(1));
+            SetupCurrencies(eur);
+            SetupNbpTable(GetDefaultTableResponse("EUR", 4.25m));
+            SetupNoRateForDate();
+            SetupRatePersistence();
 
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
@@ -295,13 +310,10 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
                 CurrencyWithId(3, "USD", "US Dollar"),
                 CurrencyWithId(4, "GBP", "British Pound")
             };
-            _currencyRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(currencies);
-            _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("[{\"table\":\"A\",\"no\":\"001\",\"effectiveDate\":\"2024-01-02\",\"rates\":[{\"currency\":\"euro\",\"code\":\"EUR\",\"mid\":4.25},{\"currency\":\"dollar\",\"code\":\"USD\",\"mid\":3.95},{\"currency\":\"pound\",\"code\":\"GBP\",\"mid\":5.10}]}]");
-            _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
-                .ReturnsAsync((CurrencyRate)null);
-            _currencyRateRepository.Setup(r => r.AddAsync(It.IsAny<CurrencyRate>()))
-                .ReturnsAsync(new CurrencyRateId(1));
+            SetupCurrencies(currencies.ToArray());
+            SetupNbpTable("[{\"table\":\"A\",\"no\":\"001\",\"effectiveDate\":\"2024-01-02\",\"rates\":[{\"currency\":\"euro\",\"code\":\"EUR\",\"mid\":4.25},{\"currency\":\"dollar\",\"code\":\"USD\",\"mid\":3.95},{\"currency\":\"pound\",\"code\":\"GBP\",\"mid\":5.10}]}]");
+            SetupNoRateForDate();
+            SetupRatePersistence();
 
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 

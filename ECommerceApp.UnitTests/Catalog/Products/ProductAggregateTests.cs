@@ -160,12 +160,19 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         public void AddImage_MoreThanFive_ShouldThrowDomainException()
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
-            for (int i = 0; i < 5; i++)
-                product.AddImage($"img{i}.jpg", "items/1", "Local");
+            AddImages(product, 5);
 
             var act = () => product.AddImage("extra.jpg", "items/1", "Local");
 
             act.Should().Throw<DomainException>().WithMessage("*at most 5*");
+        }
+
+        private static void AddImages(Product product, int count, string path = "items/1", string storage = "Local")
+        {
+            for (var index = 0; index < count; index++)
+            {
+                product.AddImage($"img{index}.jpg", path, storage);
+            }
         }
 
         [Fact]
@@ -258,7 +265,9 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
             for (int i = 1; i <= 5; i++)
+            {
                 product.AddImage($"img{i}.jpg", "items/1", "Local", i);
+            }
             product.RemoveImage(1);
 
             product.AddImage("new.jpg", "items/1", "Local");

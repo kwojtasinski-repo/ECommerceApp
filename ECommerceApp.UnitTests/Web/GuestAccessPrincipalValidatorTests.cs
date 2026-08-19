@@ -97,7 +97,9 @@ namespace ECommerceApp.UnitTests.Web
                 new(GuestAccessDefaults.ValidatedAtClaim, validatedAt.ToString("O", CultureInfo.InvariantCulture))
             };
             if (includeOrderIdClaim)
+            {
                 claims.Add(new Claim(GuestAccessDefaults.OrderIdClaim, OrderId.ToString()));
+            }
 
             var identity = new ClaimsIdentity(claims, GuestAccessDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);

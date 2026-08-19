@@ -10,6 +10,7 @@ using ECommerceApp.Domain.Sales.Coupons;
 using AwesomeAssertions;
 using Moq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,19 +66,25 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                 new CouponRuleDefinition("order-total", CouponRuleCategory.Scope, new Dictionary<string, string>()),
                 new CouponRuleDefinition("percentage-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["percent"] = "15" }));
             var coupon = Coupon.CreateWithRules(code, "15% off", rulesJson, new List<CouponScopeTarget>());
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(id) });
+            EntityIdSetter.Set(coupon, new CouponId(id));
             return coupon;
         }
 
         private static CouponUsed CreateCouponUsedForDb(int id = 1, int couponId = 1, int orderId = 99, string userId = "user-1")
         {
             var cu = CouponUsed.CreateForDbCoupon(new CouponId(couponId), orderId, userId);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(id) });
+            EntityIdSetter.Set(cu, new CouponUsedId(id));
             return cu;
+        }
+
+        private void SetupPerProductCouponPersistence(int assignedId = 99)
+        {
+            _coupons.Setup(x => x.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((Coupon)null);
+            _coupons.Setup(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()))
+                .Callback<Coupon, CancellationToken>((coupon, _) => EntityIdSetter.Set(coupon, new CouponId(assignedId)))
+                .Returns(Task.CompletedTask);
+            _scopeTargets.Setup(x => x.AddRangeAsync(It.IsAny<IReadOnlyList<CouponScopeTarget>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -121,15 +128,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                     new() { ScopeType = "per-product", TargetId = 42, TargetName = "Widget" }
                 }
             };
-            _coupons.Setup(x => x.GetByCodeAsync("PROD15", It.IsAny<CancellationToken>())).ReturnsAsync((Coupon)null);
-            _coupons.Setup(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()))
-                .Callback<Coupon, CancellationToken>((c, _) =>
-                    typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                        .GetSetMethod(nonPublic: true)!
-                        .Invoke(c, new object[] { new CouponId(99) }))
-                .Returns(Task.CompletedTask);
-            _scopeTargets.Setup(x => x.AddRangeAsync(It.IsAny<IReadOnlyList<CouponScopeTarget>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            SetupPerProductCouponPersistence();
             var service = CreateSlice1Service();
 
             var result = await service.CreateCouponAsync(dto, TestContext.Current.CancellationToken);
@@ -189,9 +188,9 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         public async Task ApplyCouponAsync_OrderAlreadyAtMaxCoupons_ShouldRejectNewCoupon()
         {
             // Spec: if order already has MaxCouponsPerOrder coupons, reject
-            var existingCoupons = new List<CouponUsed>();
-            for (int i = 0; i < 5; i++)
-                existingCoupons.Add(CreateCouponUsedForDb(id: i + 1, couponId: i + 1, orderId: 99));
+            var existingCoupons = Enumerable.Range(1, 5)
+                .Select(index => CreateCouponUsedForDb(index, index, 99))
+                .ToList();
 
             _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existingCoupons);
@@ -319,9 +318,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         public async Task ApplyCouponAsync_Slice1CouponWithNoRules_ShouldReturnNoDiscountProduced()
         {
             var coupon = Coupon.Create("SAVE10", "desc");
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(5) });
+            EntityIdSetter.Set(coupon, new CouponId(5));
 
             _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _coupons.Setup(x => x.GetByCodeAsync("SAVE10", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
@@ -342,9 +339,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed>());
             _couponUsed.Setup(x => x.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
                 .Callback<CouponUsed, CancellationToken>((cu, _) =>
-                    typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                        .GetSetMethod(nonPublic: true)!
-                        .Invoke(cu, new object[] { new CouponUsedId(7) }))
+                    EntityIdSetter.Set(cu, new CouponUsedId(7)))
                 .Returns(Task.CompletedTask);
             _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CouponRulePipelineResult.Success(30m));
@@ -379,13 +374,9 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         public async Task RemoveCouponAsync_Slice1HappyPath_ShouldStillWork()
         {
             var couponUsed = CouponUsed.Create(new CouponId(5), 99);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(couponUsed, new object[] { new CouponUsedId(3) });
+            EntityIdSetter.Set(couponUsed, new CouponUsedId(3));
             var coupon = Coupon.Create("SAVE10", "desc");
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(5) });
+            EntityIdSetter.Set(coupon, new CouponId(5));
             coupon.MarkAsUsed();
 
             _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(couponUsed);
@@ -523,9 +514,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                 .ReturnsAsync(new List<CouponApplicationRecord> { previousRecord });
             _couponUsed.Setup(x => x.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
                 .Callback<CouponUsed, CancellationToken>((cu, _) =>
-                    typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                        .GetSetMethod(nonPublic: true)!
-                        .Invoke(cu, new object[] { new CouponUsedId(7) }))
+                    EntityIdSetter.Set(cu, new CouponUsedId(7)))
                 .Returns(Task.CompletedTask);
             _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CouponRulePipelineResult.Success(75m));
@@ -547,9 +536,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                 new CouponRuleDefinition("order-total", CouponRuleCategory.Scope, new Dictionary<string, string>()),
                 new CouponRuleDefinition("fixed-amount-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["amount"] = "100" }));
             var coupon = Coupon.CreateWithRules("FIXED100", "100 off", rulesJson, new List<CouponScopeTarget>());
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(5) });
+            EntityIdSetter.Set(coupon, new CouponId(5));
 
             var context = new CouponEvaluationContext(99, "user-1", 99m, new List<CouponEvaluationItem>());
             _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);

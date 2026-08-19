@@ -247,7 +247,9 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         {
             var product = Product.Create("Test Product", 10m, "Description", 1);
             for (int i = 0; i < imageCount; i++)
+            {
                 product.AddImage($"image{i}.jpg", "/upload", "Local");
+            }
             return product;
         }
 

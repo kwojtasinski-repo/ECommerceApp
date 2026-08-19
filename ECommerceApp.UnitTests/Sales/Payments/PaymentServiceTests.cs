@@ -27,7 +27,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         private static Payment CreatePendingPayment(int id, int orderId)
         {
             var payment = Payment.Create(new PaymentOrderId(orderId), 100m, 1, DateTime.UtcNow.AddHours(24), "user-1");
-            typeof(Payment).GetProperty("Id")!.SetValue(payment, new PaymentId(id));
+            EntityIdSetter.Set(payment, new PaymentId(id));
             return payment;
         }
 

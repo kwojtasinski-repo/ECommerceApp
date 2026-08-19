@@ -51,18 +51,14 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private static Coupon CreateAvailableCoupon(int id = 1, string code = "SAVE10")
         {
             var coupon = Coupon.Create(code, "desc");
-            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(coupon, new object[] { new CouponId(id) });
+            EntityIdSetter.Set(coupon, new CouponId(id));
             return coupon;
         }
 
         private static CouponUsed CreateCouponUsed(int id = 1, int couponId = 1, int orderId = 99)
         {
             var cu = CouponUsed.Create(new CouponId(couponId), orderId);
-            typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                .GetSetMethod(nonPublic: true)!
-                .Invoke(cu, new object[] { new CouponUsedId(id) });
+            EntityIdSetter.Set(cu, new CouponUsedId(id));
             return cu;
         }
 
@@ -78,6 +74,23 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
         private void SetupNoCouponsUsed(int orderId = 99)
             => _couponUsed.Setup(x => x.FindAllByOrderIdAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed>());
+
+        private List<CouponUsed> CreateExistingCoupons(int count, int orderId = 99)
+        {
+            var existingCoupons = new List<CouponUsed>();
+            for (var index = 0; index < count; index++)
+            {
+                existingCoupons.Add(CreateCouponUsed(id: index + 1, couponId: index + 1, orderId));
+            }
+
+            return existingCoupons;
+        }
+
+        private void SetupExistingCouponsForOrder(IReadOnlyList<CouponUsed> existingCoupons, int orderId = 99)
+        {
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existingCoupons);
+        }
 
         // ── ApplyCouponAsync ──────────────────────────────────────────────────
 
@@ -121,11 +134,9 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         public async Task ApplyCouponAsync_OrderAlreadyHasCoupon_ShouldReturnOrderAlreadyHasCoupon()
         {
             var coupon = SetupAvailableCoupon();
-            var existingCoupons = new List<CouponUsed>();
-            for (int i = 0; i < 5; i++)
-                existingCoupons.Add(CreateCouponUsed(id: i + 1, couponId: i + 1, orderId: 99));
+            var existingCoupons = CreateExistingCoupons(5);
             SetupOrderExists();
-            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(existingCoupons);
+            SetupExistingCouponsForOrder(existingCoupons);
 
             var result = await CreateService().ApplyCouponAsync("SAVE10", new CouponEvaluationContext(99, "user-1", 0m, new List<CouponEvaluationItem>()), TestContext.Current.CancellationToken);
 

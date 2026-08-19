@@ -33,3 +33,7 @@ applyTo: "**"
 
 - If the task touches docs, `.github/`, or workflow meaning, keep the hub and the canonical detail files aligned in the same change.
 - If the task needs code changes, continue from the routing decision above instead of re-reading the whole tree.
+
+## Code style
+
+- Always use braces for every single-line `if`, `else`, `for`, and `foreach` statement. This rule applies to all agents and all repository code, including tests.

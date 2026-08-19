@@ -31,10 +31,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_MergesStockAvailability()
         {
-            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductPageWith(new CatalogProductItem(5, "Bag", 49.99m, 2, null)));
-            _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
-                .Returns(AsAsyncEnumerable(StockSnapshot.Create(5, 7, DateTime.UtcNow)));
+            SetupPublishedProducts(ProductPageWith(new CatalogProductItem(5, "Bag", 49.99m, 2, null)));
+            SetupStockSnapshots(StockSnapshot.Create(5, 7, DateTime.UtcNow));
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
@@ -49,10 +47,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_NoStockEntry_ReturnsAvailableZeroAndInStockFalse()
         {
-            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductPageWith(new CatalogProductItem(3, "Hat", 20m, 1, null)));
-            _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
-                .Returns(AsAsyncEnumerable());
+            SetupPublishedProducts(ProductPageWith(new CatalogProductItem(3, "Hat", 20m, 1, null)));
+            SetupStockSnapshots();
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
@@ -65,10 +61,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_EmptyProductList_ReturnsEmptyItems()
         {
-            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CatalogProductPage(new List<CatalogProductItem>(), 0, 10, 1, ""));
-            _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
-                .Returns(AsAsyncEnumerable());
+            SetupPublishedProducts(new CatalogProductPage(new List<CatalogProductItem>(), 0, 10, 1, ""));
+            SetupStockSnapshots();
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
@@ -82,10 +76,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_PaginationMetadataPassedThrough()
         {
-            _catalog.Setup(p => p.GetPublishedProductsAsync(5, 2, "coat", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CatalogProductPage(new List<CatalogProductItem>(), 42, 5, 2, "coat"));
-            _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
-                .Returns(AsAsyncEnumerable());
+            SetupPublishedProducts(new CatalogProductPage(new List<CatalogProductItem>(), 42, 5, 2, "coat"), 5, 2, "coat");
+            SetupStockSnapshots();
 
             var result = await _service.GetPublishedProductsAsync(5, 2, "coat", null, TestContext.Current.CancellationToken);
 
@@ -100,12 +92,10 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var p1 = new CatalogProductItem(1, "A", 10m, 1, null);
             var p2 = new CatalogProductItem(2, "B", 20m, 1, null);
-            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductPageWith(p1, p2));
-            _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
-                .Returns(AsAsyncEnumerable(
-                    StockSnapshot.Create(1, 5, DateTime.UtcNow),
-                    StockSnapshot.Create(2, 2, DateTime.UtcNow)));
+            SetupPublishedProducts(ProductPageWith(p1, p2));
+            SetupStockSnapshots(
+                StockSnapshot.Create(1, 5, DateTime.UtcNow),
+                StockSnapshot.Create(2, 2, DateTime.UtcNow));
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
@@ -123,11 +113,25 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             params StockSnapshot[] items)
         {
             foreach (var item in items)
+            {
                 yield return item;
+            }
         }
 
         private static IAsyncEnumerable<StockSnapshot> AsAsyncEnumerable(params StockSnapshot[] items)
             => AsAsyncEnumerable(default, items);
+
+        private void SetupPublishedProducts(CatalogProductPage page, int pageSize = 10, int currentPage = 1, string search = "")
+        {
+            _catalog.Setup(p => p.GetPublishedProductsAsync(pageSize, currentPage, search, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(page);
+        }
+
+        private void SetupStockSnapshots(params StockSnapshot[] snapshots)
+        {
+            _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+                .Returns(AsAsyncEnumerable(snapshots));
+        }
 
         private static CatalogProductPage ProductPageWith(params CatalogProductItem[] items) =>
             new CatalogProductPage(
