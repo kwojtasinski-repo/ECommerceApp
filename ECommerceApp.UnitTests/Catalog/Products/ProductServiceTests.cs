@@ -61,6 +61,11 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             _productRepo.Setup(r => r.GetByIdAsync(It.IsAny<ProductId>())).ReturnsAsync(product);
         }
 
+        private void SetupCategoryAvailable()
+        {
+            _categoryRepo.Setup(r => r.ExistsByIdAsync(It.IsAny<CategoryId>())).ReturnsAsync(true);
+        }
+
         [Fact]
         public async Task UpdateProduct_EnqueuesAndCommits()
         {
@@ -68,7 +73,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             var product = Product.Create("OriginalName", 1m, "d", 1);
             EntityIdSetter.Set(product, new ProductId(1));
             SetupProductLookup(product);
-            _categoryRepo.Setup(r => r.ExistsByIdAsync(It.IsAny<CategoryId>())).ReturnsAsync(true);
+            SetupCategoryAvailable();
 
             var txMock = SetupProductPublishing();
 

@@ -38,6 +38,17 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _currencyRepository.Setup(r => r.DeleteAsync(It.IsAny<CurrencyId>())).ReturnsAsync(deleted);
         }
 
+        private void SetupPaginatedCurrencies(
+            int pageSize,
+            int pageNumber,
+            string searchString,
+            List<Currency> currencies,
+            int count)
+        {
+            _currencyRepository.Setup(r => r.GetAllAsync(pageSize, pageNumber, searchString)).ReturnsAsync(currencies);
+            _currencyRepository.Setup(r => r.CountBySearchStringAsync(searchString)).ReturnsAsync(count);
+        }
+
         [Fact]
         public async Task AddAsync_ValidDto_ShouldAddCurrency()
         {
@@ -141,8 +152,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public async Task GetAllAsync_Paginated_ShouldReturnCurrencyListVm()
         {
             var currencies = new List<Currency> { Currency.Create("PLN", "Polish zloty") };
-            _currencyRepository.Setup(r => r.GetAllAsync(10, 1, "P")).ReturnsAsync(currencies);
-            _currencyRepository.Setup(r => r.CountBySearchStringAsync("P")).ReturnsAsync(1);
+            SetupPaginatedCurrencies(10, 1, "P", currencies, 1);
 
             var result = await _sut.GetAllAsync(10, 1, "P");
 

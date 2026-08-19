@@ -54,6 +54,23 @@ namespace ECommerceApp.UnitTests.Identity.IAM
                 .ReturnsAsync(refreshToken);
         }
 
+        private void SetupTokenIssuance(
+            ApplicationUser user,
+            List<string> roles,
+            string accessToken,
+            string jti)
+        {
+            _userManager.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(roles);
+            _userManager.Setup(u => u.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _jwtManager.Setup(j => j.IssueToken(user.Id, user.Email, roles, It.IsAny<IEnumerable<Claim>>()))
+                .Returns(new IssuedJwt(accessToken, jti));
+        }
+
+        private void SetupUserById(string userId, ApplicationUser user)
+        {
+            _userManager.Setup(u => u.FindByIdAsync(userId)).ReturnsAsync(user);
+        }
+
         [Fact]
         public async Task SignInAsync_InvalidCredentials_ShouldThrowBusinessException()
         {
@@ -92,12 +109,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
 
             SetupSignInResult(dto.Email, dto.Password, SignInResult.Success);
             SetupUserLookup(dto.Email, user);
-            _userManager.Setup(u => u.GetRolesAsync(user))
-                        .ReturnsAsync(roles);
-            _userManager.Setup(u => u.GetClaimsAsync(user))
-                        .ReturnsAsync(new List<Claim>());
-            _jwtManager.Setup(j => j.IssueToken(user.Id, user.Email, roles, It.IsAny<IEnumerable<Claim>>()))
-                       .Returns(new IssuedJwt(expectedToken, expectedJti));
+            SetupTokenIssuance(user, roles, expectedToken, expectedJti);
 
             var service = CreateService();
             var result = await service.SignInAsync(dto);
@@ -120,11 +132,8 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             const string newJti = "new-jti";
 
             SetupRefreshTokenLookup("old-refresh-token", oldToken);
-            _userManager.Setup(u => u.FindByIdAsync(user.Id)).ReturnsAsync(user);
-            _userManager.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(roles);
-            _userManager.Setup(u => u.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
-            _jwtManager.Setup(j => j.IssueToken(user.Id, user.Email, roles, It.IsAny<IEnumerable<Claim>>()))
-                       .Returns(new IssuedJwt(newAccessToken, newJti));
+            SetupUserById(user.Id, user);
+            SetupTokenIssuance(user, roles, newAccessToken, newJti);
 
             var service = CreateService();
             var result = await service.RefreshAsync("old-refresh-token");

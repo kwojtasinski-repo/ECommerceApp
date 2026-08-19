@@ -112,16 +112,13 @@ namespace ECommerceApp.UnitTests.Backoffice
             // Arrange
             var now = DateTime.UtcNow;
             SetupJobs(new JobStatusSummary
-                {
-                    new JobStatusSummary
-                    {
-                        JobName = "TargetJob",
-                        Schedule = "0 0 * * *",
-                        IsEnabled = true,
-                        LastRunAt = now.AddDays(-1),
-                        NextRunAt = now.AddDays(1)
-                    }
-                });
+            {
+                JobName = "TargetJob",
+                Schedule = "0 0 * * *",
+                IsEnabled = true,
+                LastRunAt = now.AddDays(-1),
+                NextRunAt = now.AddDays(1)
+            });
 
             // Act
             var result = await CreateSut().GetJobDetailAsync("TargetJob", TestContext.Current.CancellationToken);

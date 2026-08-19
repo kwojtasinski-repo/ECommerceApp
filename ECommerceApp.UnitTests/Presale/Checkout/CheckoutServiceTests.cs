@@ -79,17 +79,78 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OrderPlacementResult.Failed(reason));
 
+        private void SetupReservations(params SoftReservation[] reservations)
+            => _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(reservations.ToList());
+
+        private void SetupNoReservations()
+            => SetupReservations();
+
+        private void SetupCart(CartVm cart)
+            => _cartService.Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(cart);
+
+        private void SetupHoldResult(bool result)
+            => _softReservationService
+                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(result);
+
+        private void SetupHoldResult(int productId, bool result)
+            => _softReservationService
+                .Setup(s => s.HoldAsync(productId, UserId.Value, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(result);
+
+        private void SetupCartRemoval(Action<IReadOnlyList<PresaleProductId>> capture)
+            => _cartService
+                .Setup(c => c.RemoveRangeAsync(UserId, It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
+                .Callback<PresaleUserId, IReadOnlyList<PresaleProductId>, CancellationToken>((_, ids, _) => capture(ids))
+                .Returns(Task.CompletedTask);
+
+        private void SetupOrderClientThrows(Exception exception)
+            => _orderClient
+                .Setup(o => o.PlaceOrderAsync(
+                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
+                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(exception);
+
+        private void SetupOrderClientCapturingLines(Action<IReadOnlyList<CheckoutLine>> capture)
+            => _orderClient
+                .Setup(o => o.PlaceOrderAsync(
+                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
+                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback<int, int, string, CheckoutCustomer, IReadOnlyList<CheckoutLine>, CancellationToken>(
+                    (_, _, _, _, lines, _) => capture(lines))
+                .ReturnsAsync(OrderPlacementResult.Succeeded(42));
+
+        private void SetupOrderClientCapturingContext(Action<int, int, string> capture)
+            => _orderClient
+                .Setup(o => o.PlaceOrderAsync(
+                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
+                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback<int, int, string, CheckoutCustomer, IReadOnlyList<CheckoutLine>, CancellationToken>(
+                    (customerId, currencyId, userId, _, _, _) => capture(customerId, currencyId, userId))
+                .ReturnsAsync(OrderPlacementResult.Succeeded(1));
+
+        private void SetupRevertThrows(Exception exception)
+            => _softReservationService
+                .Setup(s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(exception);
+
         // �� AC: NoSoftReservations when no active reservations ���������������
 
         [Fact]
         public async Task PlaceOrderAsync_NoActiveReservations_ReturnsNoSoftReservations()
         {
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
+            // Arrange
+            SetupNoReservations();
 
+            // Act
             var result = await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<CheckoutResult.NoSoftReservations>();
         }
 
@@ -98,14 +159,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_OrderFailed_SoftReservationsNotRemoved()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
             SetupOrderClientFailure();
 
+            // Act
             await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             _softReservationService.Verify(
                 s => s.RemoveAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -114,14 +176,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_OrderFailed_CartNotCleared()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
             SetupOrderClientFailure();
 
+            // Act
             await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             _cartService.Verify(
                 c => c.ClearAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -130,14 +193,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_OrderFailed_ReturnsOrderFailedWithReason()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
             SetupOrderClientFailure("None of the provided cart items were found.");
 
+            // Act
             var result = await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<CheckoutResult.OrderFailed>()
                 .Which.Reason.Should().NotBeNullOrEmpty();
         }
@@ -147,24 +211,18 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_Success_UnitPriceFromReservationNotFromCatalog()
         {
+            // Arrange
             const decimal lockedPrice = 99.50m;
             var reservation = MakeReservation(productId: 7, qty: 3, unitPrice: lockedPrice);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
 
             IReadOnlyList<CheckoutLine> capturedLines = null;
-            _orderClient
-                .Setup(o => o.PlaceOrderAsync(
-                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
-                    It.IsAny<CancellationToken>()))
-                .Callback<int, int, string, CheckoutCustomer, IReadOnlyList<CheckoutLine>, CancellationToken>(
-                    (_, _, _, _, lines, _) => capturedLines = lines)
-                .ReturnsAsync(OrderPlacementResult.Succeeded(42));
+            SetupOrderClientCapturingLines(lines => capturedLines = lines);
 
+            // Act
             await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             capturedLines.Should().NotBeNull();
             capturedLines!.Should().ContainSingle()
                 .Which.UnitPrice.Should().Be(lockedPrice);
@@ -173,29 +231,23 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_Success_DtoContainsCorrectCustomerAndCurrency()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 3, qty: 1, unitPrice: 10m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
 
             int capturedCustomerId = 0, capturedCurrencyId = 0;
             string capturedUserId = null;
-            _orderClient
-                .Setup(o => o.PlaceOrderAsync(
-                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
-                    It.IsAny<CancellationToken>()))
-                .Callback<int, int, string, CheckoutCustomer, IReadOnlyList<CheckoutLine>, CancellationToken>(
-                    (cId, currId, uId, _, _, _) =>
-                    {
-                        capturedCustomerId = cId;
-                        capturedCurrencyId = currId;
-                        capturedUserId = uId;
-                    })
-                .ReturnsAsync(OrderPlacementResult.Succeeded(1));
+            SetupOrderClientCapturingContext((customerId, currencyId, userId) =>
+            {
+                capturedCustomerId = customerId;
+                capturedCurrencyId = currencyId;
+                capturedUserId = userId;
+            });
 
+            // Act
             await _sut.PlaceOrderAsync(UserId, customerId: 7, currencyId: 3, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             capturedCustomerId.Should().Be(7);
             capturedCurrencyId.Should().Be(3);
             capturedUserId.Should().Be("user-1");
@@ -206,14 +258,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_Success_ReturnsSuccessWithOrderId()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 3, qty: 1, unitPrice: 10m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
             SetupOrderClientSuccess(orderId: 99);
 
+            // Act
             var result = await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<CheckoutResult.Success>()
                 .Which.OrderId.Should().Be(99);
         }
@@ -223,15 +276,16 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_Success_CommitsAllReservations()
         {
+            // Arrange
             var r1 = MakeReservation(productId: 1, qty: 1, unitPrice: 10m);
             var r2 = MakeReservation(productId: 2, qty: 2, unitPrice: 20m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { r1, r2 });
+            SetupReservations(r1, r2);
             SetupOrderClientSuccess();
 
+            // Act
             await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             _softReservationService.Verify(
                 s => s.CommitAllForUserAsync(UserId, It.IsAny<CancellationToken>()),
                 Times.Once);
@@ -240,14 +294,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_Success_DoesNotRemoveReservationsOrClearCart()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 4, qty: 1, unitPrice: 15m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
             SetupOrderClientSuccess();
 
+            // Act
             await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             _softReservationService.Verify(
                 s => s.RemoveAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -261,14 +316,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_OrderFailed_RevertsAllReservations()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
+            SetupReservations(reservation);
             SetupOrderClientFailure();
 
+            // Act
             await _sut.PlaceOrderAsync(UserId, customerId: 1, currencyId: 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             _softReservationService.Verify(
                 s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()),
                 Times.Once);
@@ -277,20 +333,16 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_OrderClientThrows_RevertsReservationsAndPropagatesException()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
             var expected = new InvalidOperationException("order client failed");
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
-            _orderClient
-                .Setup(o => o.PlaceOrderAsync(
-                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
-                    It.IsAny<CancellationToken>()))
-                .ThrowsAsync(expected);
+            SetupReservations(reservation);
+            SetupOrderClientThrows(expected);
 
+            // Act
             var action = () => _sut.PlaceOrderAsync(UserId, 1, 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("order client failed");
             _softReservationService.Verify(s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(o => o.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -299,23 +351,17 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task PlaceOrderAsync_OrderClientAndRevertThrow_SchedulesRetryAndPropagatesOriginalException()
         {
+            // Arrange
             var reservation = MakeReservation(productId: 5, qty: 1, unitPrice: 50m);
             var expected = new InvalidOperationException("order client failed");
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
-            _softReservationService
-                .Setup(s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new InvalidOperationException("revert failed"));
-            _orderClient
-                .Setup(o => o.PlaceOrderAsync(
-                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<CheckoutCustomer>(), It.IsAny<IReadOnlyList<CheckoutLine>>(),
-                    It.IsAny<CancellationToken>()))
-                .ThrowsAsync(expected);
+            SetupReservations(reservation);
+            SetupRevertThrows(new InvalidOperationException("revert failed"));
+            SetupOrderClientThrows(expected);
 
+            // Act
             var action = () => _sut.PlaceOrderAsync(UserId, 1, 1, DefaultCustomer, TestContext.Current.CancellationToken);
 
+            // Assert
             await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("order client failed");
             _outboxWriter.Verify(o => o.EnqueueAsync(
                 It.Is<CheckoutReservationRevertRequested>(m => m.UserId == UserId.Value),
@@ -327,24 +373,26 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InitiateAsync_EmptyCart_ReturnsCartEmpty()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((CartVm)null);
+            // Arrange
+            SetupCart(null);
 
+            // Act
             var result = await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<InitiateCheckoutResult.CartEmpty>();
         }
 
         [Fact]
         public async Task InitiateAsync_EmptyCart_DoesNotRemoveFromCart()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((CartVm)null);
+            // Arrange
+            SetupCart(null);
 
+            // Act
             await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             _cartService.Verify(
                 c => c.RemoveRangeAsync(It.IsAny<PresaleUserId>(), It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -355,32 +403,30 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InitiateAsync_ActiveReservationExists_ReturnsAlreadyInProgress()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
+            // Arrange
+            SetupCart(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
             var active = MakeReservation(productId: 1, qty: 1, unitPrice: 10m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { active });
+            SetupReservations(active);
 
+            // Act
             var result = await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<InitiateCheckoutResult.AlreadyInProgress>();
         }
 
         [Fact]
         public async Task InitiateAsync_ActiveReservationExists_DoesNotCallHold()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
+            // Arrange
+            SetupCart(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
             var active = MakeReservation(productId: 1, qty: 1, unitPrice: 10m);
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { active });
+            SetupReservations(active);
 
+            // Act
             await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             _softReservationService.Verify(
                 s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -391,36 +437,30 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InitiateAsync_AllProductsUnavailable_ReturnsNothingReserved()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _softReservationService
-                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
+            // Arrange
+            SetupCart(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
+            SetupNoReservations();
+            SetupHoldResult(false);
 
+            // Act
             var result = await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<InitiateCheckoutResult.NothingReserved>();
         }
 
         [Fact]
         public async Task InitiateAsync_AllProductsUnavailable_DoesNotRemoveFromCart()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _softReservationService
-                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
+            // Arrange
+            SetupCart(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
+            SetupNoReservations();
+            SetupHoldResult(false);
 
+            // Act
             await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             _cartService.Verify(
                 c => c.RemoveRangeAsync(It.IsAny<PresaleUserId>(), It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -431,18 +471,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InitiateAsync_AllProductsReserved_ReturnsCompleted()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null), new(2, 2, null) }));
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _softReservationService
-                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+            // Arrange
+            SetupCart(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null), new(2, 2, null) }));
+            SetupNoReservations();
+            SetupHoldResult(true);
 
+            // Act
             var result = await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<InitiateCheckoutResult.Completed>()
                 .Which.ReservedCount.Should().Be(2);
         }
@@ -450,24 +487,18 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InitiateAsync_AllProductsReserved_RemovesAllReservedFromCart()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null), new(2, 2, null) }));
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _softReservationService
-                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+            // Arrange
+            SetupCart(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null), new(2, 2, null) }));
+            SetupNoReservations();
+            SetupHoldResult(true);
 
             IReadOnlyList<PresaleProductId> capturedIds = null;
-            _cartService
-                .Setup(c => c.RemoveRangeAsync(UserId, It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
-                .Callback<PresaleUserId, IReadOnlyList<PresaleProductId>, CancellationToken>((_, ids, _) => capturedIds = ids)
-                .Returns(Task.CompletedTask);
+            SetupCartRemoval(ids => capturedIds = ids);
 
+            // Act
             await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             capturedIds.Should().NotBeNull();
             capturedIds!.Select(p => p.Value).Should().BeEquivalentTo(new[] { 1, 2 });
         }
@@ -477,27 +508,19 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task InitiateAsync_PartialReservation_DoesNotRemoveFromCart()
         {
-            _cartService
-                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(10, 1, null), new(20, 1, null) }));
-            _softReservationService
-                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
-            _softReservationService
-                .Setup(s => s.HoldAsync(10, UserId.Value, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
-            _softReservationService
-                .Setup(s => s.HoldAsync(20, UserId.Value, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
+            // Arrange
+            SetupCart(new CartVm(UserId.Value, new List<CartLineVm> { new(10, 1, null), new(20, 1, null) }));
+            SetupNoReservations();
+            SetupHoldResult(10, true);
+            SetupHoldResult(20, false);
 
             IReadOnlyList<PresaleProductId> capturedIds = null;
-            _cartService
-                .Setup(c => c.RemoveRangeAsync(UserId, It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
-                .Callback<PresaleUserId, IReadOnlyList<PresaleProductId>, CancellationToken>((_, ids, _) => capturedIds = ids)
-                .Returns(Task.CompletedTask);
+            SetupCartRemoval(ids => capturedIds = ids);
 
+            // Act
             await _sut.InitiateAsync(UserId, TestContext.Current.CancellationToken);
 
+            // Assert
             capturedIds.Should().ContainSingle()
                 .Which.Value.Should().Be(10);
         }

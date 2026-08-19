@@ -159,7 +159,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var profile = CreateProfile();
             profile.AddAddress("Testowa", "5", null, "12-345", "Warszawa", "PL");
-            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", true)).ReturnsAsync(profile);
+            SetupProfileLookupForUser(1, "user-1", true, profile);
 
             var act = async () => await CreateService().RemoveAddressAsync(1, 0, "user-1");
 

@@ -61,6 +61,19 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Returns(Task.CompletedTask);
         }
 
+        private void SetupCartRangeDeletion()
+        {
+            _cartRepo.Setup(r => r.DeleteRangeAsync(
+                    It.IsAny<PresaleUserId>(), It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupCartClear(string userId)
+        {
+            _cartRepo.Setup(r => r.DeleteAllForUserAsync(userId, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
         // ── SetCartItemAsync ──────────────────────────────────────────────────
 
         [Fact]
@@ -82,8 +95,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var lines = new List<CartLine> { CartLine.Create("user-1", 1, 2) };
             SetupCartUpsert();
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.Is<PresaleUserId>(p => p.Value == "user-1"), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(lines);
+            SetupCartLines("user-1", lines);
 
             await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2), TestContext.Current.CancellationToken);
 
@@ -208,11 +220,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task RemoveRangeAsync_MultipleProducts_ShouldDeleteAllInOneCallAndRefreshCache()
         {
             var productIds = new List<PresaleProductId> { new(10), new(20) };
-            _cartRepo.Setup(r => r.DeleteRangeAsync(
-                    It.IsAny<PresaleUserId>(), It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CartLine>());
+            SetupCartRangeDeletion();
+            SetupCartLines(new List<CartLine>());
 
             await _service.RemoveRangeAsync("user-1", productIds, TestContext.Current.CancellationToken);
 
@@ -229,8 +238,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task ClearAsync_WithLines_ShouldDeleteAllAndEvictCache()
         {
-            _cartRepo.Setup(r => r.DeleteAllForUserAsync("user-1", It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            SetupCartClear("user-1");
             _cache.Set("cart:user-1", new CartVm("user-1", new List<CartLineVm>()));
 
             await _service.ClearAsync("user-1", TestContext.Current.CancellationToken);

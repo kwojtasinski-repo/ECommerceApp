@@ -129,6 +129,11 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             SetupSingleCoupon(couponUsed, coupon);
         }
 
+        private void SetupCouponUsedWithoutApplicationRecord(CouponUsed couponUsed, Coupon coupon)
+        {
+            SetupSingleCoupon(couponUsed, coupon);
+        }
+
         // ══════════════════════════════════════════════════════════════════════
         // Multi-coupon cancellation — find all, iterate, mark, delete
         // ══════════════════════════════════════════════════════════════════════
@@ -222,13 +227,16 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public async Task HandleAsync_RuntimeCoupon_ShouldNotAttemptCouponRelease()
         {
+            // Arrange
             var cu = CreateRuntimeCouponUsed(id: 2, orderId: 99, snapshot: "{\"code\":\"ML10\"}");
             var record = CouponApplicationRecord.Create(2, "ML10", "percentage-off", 10m, 100m, 10m);
-            SetupSingleCoupon(cu, null);
+            SetupCouponUsedWithoutApplicationRecord(cu, null);
             SetupApplicationRecordLookup(2, record);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(99), TestContext.Current.CancellationToken);
 
+            // Assert
             record.WasReversed.Should().BeTrue();
             _coupons.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _coupons.Verify(r => r.UpdateAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Never);

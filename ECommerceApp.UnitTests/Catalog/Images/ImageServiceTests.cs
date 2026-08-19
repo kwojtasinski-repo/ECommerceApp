@@ -30,49 +30,73 @@ namespace ECommerceApp.UnitTests.Catalog.Images
             _productRepository = new Mock<IProductRepository>();
         }
 
-        [Fact]
-        public async Task given_valid_image_should_add()
+        private void SetupValidImagePersistence(Product product)
         {
-            var image = CreateImageVm();
-            image.Id = 0;
-            var product = CreateProductWithImages(0);
             _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
             _fileStoreProvider.Setup(p => p.WriteFileAsync(It.IsAny<IFormFile>(), It.IsAny<string>()))
                 .ReturnsAsync(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/Name" });
             _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product);
             _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
+        }
+
+        private void SetupImageExtension(string extension)
+            => _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(extension);
+
+        private void SetupProductWithImageLimit(Product product)
+        {
+            SetupImageExtension(".jpg");
+            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+        }
+
+        [Fact]
+        public async Task given_valid_image_should_add()
+        {
+            // Arrange
+            var image = CreateImageVm();
+            image.Id = 0;
+            var product = CreateProductWithImages(0);
+            SetupValidImagePersistence(product);
             var imageService = CreateService();
 
+            // Act
             await imageService.Add(image);
 
+            // Assert
             _productRepository.Verify(p => p.UpdateAsync(It.IsAny<Product>()), Times.Once);
         }
 
         [Fact]
         public async Task given_invalid_image_extension_should_throw_an_exception()
         {
+            // Arrange
             var image = CreateImageVm();
             image.Id = 0;
-            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".bin");
+            SetupImageExtension(".bin");
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.Add(image);
 
+            // Assert
             await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
         public async Task given_too_big_image_extension_should_throw_an_exception()
         {
+            // Arrange
             var image = CreateImageVm();
             image.Images = new List<IFormFile>() { AddFileToIFormFile("abcsa2", 41943041) };
             image.Id = 0;
-            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
+            SetupImageExtension(".jpg");
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.Add(image);
 
+            // Assert
             await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
@@ -119,64 +143,67 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         [Fact]
         public async Task given_file_when_limit_exceeded_should_throw_an_exception()
         {
+            // Arrange
             var image = CreateImageVm();
             image.Id = 0;
             var product = CreateProductWithImages(5);
-            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
-            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(product);
+            SetupProductWithImageLimit(product);
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.Add(image);
 
+            // Assert
             await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
         public async Task given_valid_images_should_add()
         {
+            // Arrange
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
             var product = CreateProductWithImages(0);
-            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
-            _fileStoreProvider.Setup(p => p.WriteFileAsync(It.IsAny<IFormFile>(), It.IsAny<string>()))
-                .ReturnsAsync(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/Name" });
-            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(product);
-            _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
+            SetupValidImagePersistence(product);
             var imageService = CreateService();
 
+            // Act
             await imageService.AddImages(images);
 
+            // Assert
             _productRepository.Verify(p => p.UpdateAsync(It.IsAny<Product>()), Times.Once);
         }
 
         [Fact]
         public async Task given_images_when_limit_exceeded_should_throw_an_exception()
         {
+            // Arrange
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
             var product = CreateProductWithImages(5);
-            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
-            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(product);
+            SetupProductWithImageLimit(product);
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.AddImages(images);
 
+            // Assert
             await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
         public async Task given_valid_images_with_too_large_file_should_throw_an_exception()
         {
+            // Arrange
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2", 41943041) }, ItemId = itemId };
-            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
+            SetupImageExtension(".jpg");
             var imageService = CreateService();
 
+            // Act
             Func<Task> action = () => imageService.AddImages(images);
 
+            // Assert
             await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 

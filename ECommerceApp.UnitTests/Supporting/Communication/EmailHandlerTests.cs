@@ -118,6 +118,9 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private void SetupUserNotResolved()
             => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((string)null);
 
+        private void SetupAnyUserEmail(string email)
+            => _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(email);
+
         private PaymentConfirmedEmailHandler CreateHandler()
         {
             SetupMessageAccepted();
@@ -464,10 +467,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_IncludesActionLinkingToOrder()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user@test.com");
+            SetupUserEmail("user-1", "user@test.com");
 
             await CreateHandler().HandleAsync(Message(refundId: 1, orderId: 20), 1, TestContext.Current.CancellationToken);
 

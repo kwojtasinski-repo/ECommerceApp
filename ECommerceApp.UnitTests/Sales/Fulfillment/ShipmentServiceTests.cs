@@ -43,6 +43,12 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         private void SetupShipmentMissing(int shipmentId)
             => _shipments.Setup(x => x.GetByIdAsync(shipmentId, It.IsAny<CancellationToken>())).ReturnsAsync((Shipment)null);
 
+        private void SetupOrderExists(bool exists)
+            => _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(exists);
+
+        private void SetupShipmentsByOrder(int orderId, IReadOnlyList<Shipment> shipments)
+            => _shipments.Setup(x => x.GetByOrderIdAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(shipments);
+
         private static Shipment CreateShipment(
             int id = 1,
             int orderId = 99,
@@ -83,10 +89,13 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task CreateShipmentAsync_OrderNotFound_ShouldReturnOrderNotFound()
         {
-            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            // Arrange
+            SetupOrderExists(false);
 
+            // Act
             var result = await CreateService().CreateShipmentAsync(CreateDto(), TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.OrderNotFound);
             _shipments.Verify(r => r.AddAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -94,21 +103,27 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task CreateShipmentAsync_ValidRequest_WithSingleLine_ShouldReturnSuccess()
         {
-            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            // Arrange
+            SetupOrderExists(true);
 
+            // Act
             var result = await CreateService().CreateShipmentAsync(CreateDto(
                 lines: new List<CreateShipmentLineDto> { new(10, 1) }), TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
         }
 
         [Fact]
         public async Task CreateShipmentAsync_ValidRequest_ShouldPersistShipmentWithCorrectData()
         {
-            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            // Arrange
+            SetupOrderExists(true);
 
+            // Act
             var result = await CreateService().CreateShipmentAsync(CreateDto(), TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
             _shipments.Verify(r => r.AddAsync(
                 It.Is<Shipment>(s =>
@@ -123,10 +138,13 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task CreateShipmentAsync_ValidRequest_ShouldNotPublishAnyMessage()
         {
-            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            // Arrange
+            SetupOrderExists(true);
 
+            // Act
             await CreateService().CreateShipmentAsync(CreateDto(), TestContext.Current.CancellationToken);
 
+            // Assert
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -135,10 +153,13 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsInTransitAsync_ShipmentNotFound_ShouldReturnNotFound()
         {
+            // Arrange
             SetupShipmentMissing(1);
 
+            // Act
             var result = await CreateService().MarkAsInTransitAsync(1, "TRACK-XYZ", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.NotFound);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -147,23 +168,29 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsInTransitAsync_PendingShipment_ShouldReturnSuccess()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Pending);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsInTransitAsync(1, "TRACK-XYZ", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
         }
 
         [Fact]
         public async Task MarkAsInTransitAsync_PendingShipment_ShouldUpdateAndPublishShipmentDispatched()
         {
+            // Arrange
             var shipment = CreateShipment(id: 5, orderId: 99, status: ShipmentStatus.Pending);
             SetupShipmentExists(5, shipment);
 
             var txMock = new Mock<IOutboxTransaction>();
+            // Act
             var result = await CreateService(txMock).MarkAsInTransitAsync(5, "TRACK-XYZ", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.InTransit);
             shipment.TrackingNumber.Should().Be("TRACK-XYZ");
@@ -181,11 +208,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsInTransitAsync_AlreadyInTransit_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.InTransit);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsInTransitAsync(1, "TRACK-NEW", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -194,11 +224,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsInTransitAsync_AlreadyDelivered_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Delivered);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsInTransitAsync(1, "TRACK-NEW", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -207,11 +240,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsInTransitAsync_AlreadyFailed_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Failed);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsInTransitAsync(1, "TRACK-NEW", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -222,10 +258,13 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsDeliveredAsync_ShipmentNotFound_ShouldReturnNotFound()
         {
+            // Arrange
             SetupShipmentMissing(1);
 
+            // Act
             var result = await CreateService().MarkAsDeliveredAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.NotFound);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -234,23 +273,29 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsDeliveredAsync_InTransitShipment_ShouldReturnSuccess()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.InTransit);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsDeliveredAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
         }
 
         [Fact]
         public async Task MarkAsDeliveredAsync_InTransitShipment_ShouldUpdateAndPublishShipmentDelivered()
         {
+            // Arrange
             var shipment = CreateShipment(id: 7, orderId: 99, status: ShipmentStatus.InTransit);
-            _shipments.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(7, shipment);
 
             var txMock = new Mock<IOutboxTransaction>();
+            // Act
             var result = await CreateService(txMock).MarkAsDeliveredAsync(7, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.Delivered);
             shipment.DeliveredAt.Should().NotBeNull();
@@ -267,11 +312,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsDeliveredAsync_PendingShipment_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Pending);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsDeliveredAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -280,11 +328,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsDeliveredAsync_AlreadyDelivered_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Delivered);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsDeliveredAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -293,11 +344,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsDeliveredAsync_FailedShipment_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Failed);
-            _shipments.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsDeliveredAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -308,10 +362,13 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsFailedAsync_ShipmentNotFound_ShouldReturnNotFound()
         {
+            // Arrange
             SetupShipmentMissing(1);
 
+            // Act
             var result = await CreateService().MarkAsFailedAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.NotFound);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -320,23 +377,29 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsFailedAsync_PendingShipment_ShouldReturnSuccess()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Pending);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsFailedAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
         }
 
         [Fact]
         public async Task MarkAsFailedAsync_PendingShipment_ShouldUpdateAndPublishShipmentFailed()
         {
+            // Arrange
             var shipment = CreateShipment(id: 3, orderId: 99, status: ShipmentStatus.Pending);
-            _shipments.Setup(x => x.GetByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(3, shipment);
 
             var txMock = new Mock<IOutboxTransaction>();
+            // Act
             var result = await CreateService(txMock).MarkAsFailedAsync(3, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.Failed);
             _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
@@ -352,23 +415,29 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsFailedAsync_InTransitShipment_ShouldReturnSuccess()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.InTransit);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsFailedAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
         }
 
         [Fact]
         public async Task MarkAsFailedAsync_InTransitShipment_ShouldUpdateAndPublishShipmentFailed()
         {
+            // Arrange
             var shipment = CreateShipment(id: 4, orderId: 99, status: ShipmentStatus.InTransit);
-            _shipments.Setup(x => x.GetByIdAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(4, shipment);
 
             var txMock = new Mock<IOutboxTransaction>();
+            // Act
             var result = await CreateService(txMock).MarkAsFailedAsync(4, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.Failed);
             _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
@@ -384,11 +453,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsFailedAsync_DeliveredShipment_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Delivered);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsFailedAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -397,11 +469,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsFailedAsync_AlreadyFailed_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Failed);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsFailedAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -412,10 +487,13 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsPartiallyDeliveredAsync_ShipmentNotFound_ShouldReturnNotFound()
         {
+            // Arrange
             SetupShipmentMissing(1);
 
+            // Act
             var result = await CreateService().MarkAsPartiallyDeliveredAsync(1, new List<int> { 10 }, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.NotFound);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -424,11 +502,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsPartiallyDeliveredAsync_PendingShipment_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.Pending);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsPartiallyDeliveredAsync(1, new List<int> { 10 }, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -437,12 +518,15 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsPartiallyDeliveredAsync_InTransitShipment_ShouldUpdateAndPublishShipmentPartiallyDeliveredWithSplitItems()
         {
+            // Arrange
             var shipment = CreateShipment(id: 7, orderId: 99, status: ShipmentStatus.InTransit);
             SetupShipmentExists(7, shipment);
 
             var txMock = new Mock<IOutboxTransaction>();
+            // Act
             var result = await CreateService(txMock).MarkAsPartiallyDeliveredAsync(7, new List<int> { 10 }, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.PartiallyDelivered);
             _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
@@ -460,11 +544,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsPartiallyDeliveredAsync_NoDeliveredProductIds_ShouldReturnInvalidStatus()
         {
+            // Arrange
             var shipment = CreateShipment(status: ShipmentStatus.InTransit);
             SetupShipmentExists(1, shipment);
 
+            // Act
             var result = await CreateService().MarkAsPartiallyDeliveredAsync(1, new List<int>(), TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -475,21 +562,27 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentAsync_NotFound_ShouldReturnNull()
         {
-            _shipments.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Shipment)null);
+            // Arrange
+            SetupShipmentMissing(1);
 
+            // Act
             var result = await CreateService().GetShipmentAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeNull();
         }
 
         [Fact]
         public async Task GetShipmentAsync_PendingShipment_ShouldMapAllScalarFields()
         {
+            // Arrange
             var shipment = CreateShipment(id: 5, orderId: 99, status: ShipmentStatus.Pending);
             SetupShipmentExists(5, shipment);
 
+            // Act
             var vm = await CreateService().GetShipmentAsync(5, TestContext.Current.CancellationToken);
 
+            // Assert
             vm.Should().NotBeNull();
             vm!.Id.Should().Be(5);
             vm.OrderId.Should().Be(99);
@@ -502,11 +595,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentAsync_InTransitShipment_ShouldMapStatusAndTrackingNumber()
         {
+            // Arrange
             var shipment = CreateShipment(id: 5, status: ShipmentStatus.InTransit);
-            _shipments.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(5, shipment);
 
+            // Act
             var vm = await CreateService().GetShipmentAsync(5, TestContext.Current.CancellationToken);
 
+            // Assert
             vm!.Status.Should().Be("InTransit");
             vm.TrackingNumber.Should().Be("TRACK-001");
             vm.ShippedAt.Should().NotBeNull();
@@ -515,11 +611,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentAsync_DeliveredShipment_ShouldMapStatusAndDeliveredAt()
         {
+            // Arrange
             var shipment = CreateShipment(id: 5, status: ShipmentStatus.Delivered);
-            _shipments.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(5, shipment);
 
+            // Act
             var vm = await CreateService().GetShipmentAsync(5, TestContext.Current.CancellationToken);
 
+            // Assert
             vm!.Status.Should().Be("Delivered");
             vm.TrackingNumber.Should().Be("TRACK-001");
             vm.ShippedAt.Should().NotBeNull();
@@ -529,11 +628,14 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentAsync_FailedShipment_ShouldMapStatus()
         {
+            // Arrange
             var shipment = CreateShipment(id: 5, status: ShipmentStatus.Failed);
-            _shipments.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(5, shipment);
 
+            // Act
             var vm = await CreateService().GetShipmentAsync(5, TestContext.Current.CancellationToken);
 
+            // Assert
             vm!.Status.Should().Be("Failed");
             vm.TrackingNumber.Should().BeNull();
             vm.DeliveredAt.Should().BeNull();
@@ -542,6 +644,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentAsync_WithLines_ShouldMapAllLines()
         {
+            // Arrange
             var lines = new[]
             {
                 ShipmentLine.Create(10, 2),
@@ -550,10 +653,12 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             };
             var shipment = Shipment.Create(99, lines);
             EntityIdSetter.Set(shipment, new ShipmentId(1));
-            _shipments.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+            SetupShipmentExists(1, shipment);
 
+            // Act
             var vm = await CreateService().GetShipmentAsync(1, TestContext.Current.CancellationToken);
 
+            // Assert
             vm!.Lines.Should().HaveCount(3);
             vm.Lines.Should().Contain(l => l.ProductId == 10 && l.Quantity == 2);
             vm.Lines.Should().Contain(l => l.ProductId == 20 && l.Quantity == 1);
@@ -565,24 +670,28 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentsByOrderIdAsync_NoShipments_ShouldReturnEmptyList()
         {
-            _shipments.Setup(x => x.GetByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Shipment>());
+            // Arrange
+            SetupShipmentsByOrder(99, new List<Shipment>());
 
+            // Act
             var result = await CreateService().GetShipmentsByOrderIdAsync(99, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Shipments.Should().BeEmpty();
         }
 
         [Fact]
         public async Task GetShipmentsByOrderIdAsync_MultipleShipments_ShouldReturnAll()
         {
+            // Arrange
             var s1 = CreateShipment(id: 1, orderId: 99, status: ShipmentStatus.Delivered);
             var s2 = CreateShipment(id: 2, orderId: 99, status: ShipmentStatus.Pending);
-            _shipments.Setup(x => x.GetByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Shipment> { s1, s2 });
+            SetupShipmentsByOrder(99, new List<Shipment> { s1, s2 });
 
+            // Act
             var result = await CreateService().GetShipmentsByOrderIdAsync(99, TestContext.Current.CancellationToken);
 
+            // Assert
             result.Shipments.Should().HaveCount(2);
             result.Shipments.Should().Contain(s => s.Id == 1 && s.Status == "Delivered");
             result.Shipments.Should().Contain(s => s.Id == 2 && s.Status == "Pending");
