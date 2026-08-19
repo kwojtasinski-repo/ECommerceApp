@@ -4,6 +4,7 @@ using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.UnitTests.Shared.Setup;
 using Moq;
 using System;
 using System.Threading;
@@ -23,7 +24,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         public OrderPlacedHandlerTests()
         {
             _stockService = new Mock<IStockService>();
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_transaction.Object);
+            _unitOfWork.SetupInventoryTransaction(_transaction);
             _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
                 It.IsAny<long>(), It.IsAny<string>(), _transaction.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _handler = new OrderPlacedHandler(_stockService.Object, _unitOfWork.Object, _processedMessageGuard.Object);

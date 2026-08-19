@@ -4,6 +4,7 @@ using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.UnitTests.Shared.Setup;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
@@ -64,10 +65,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
         private void SetupTransactionDefaults()
         {
-            _txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_txMock.Object);
-            _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            _unitOfWork.SetupInventoryTransaction(_txMock);
+            _outboxWriter.SetupSuccessfulOutboxEnqueue();
         }
 
         private StockHold SetupReservedStockHold(

@@ -2,6 +2,7 @@ using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.UnitTests.Shared.Setup;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Inventory.Availability;
@@ -47,8 +48,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         private void SetupTransaction()
         {
             var txMock = new Mock<IOutboxTransaction>();
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+            _unitOfWork.SetupInventoryTransaction(txMock);
         }
 
         private void SetupPendingAdjustment(PendingStockAdjustment adjustment)

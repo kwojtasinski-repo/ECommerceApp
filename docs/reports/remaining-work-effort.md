@@ -1,7 +1,12 @@
 # Remaining Work Effort
 
-> **Rev 7 — Generated 2026-06-07**
-> Test suite: **1024 / 1024** ✅
+> **Rev 7 — Generated 2026-06-07 — SUPERSEDED, kept for historical record only**
+> This report is stale as of 2026-08-20: items #16 (Communication BC) and #17 (Backoffice BC) below
+> are marked "Not Started"/"Blocked" but both are long since done — see
+> `docs/architecture/bounded-context-map.md` for current bounded-context status, and
+> `docs/roadmap/README.md` for the live roadmap. Do not treat anything below as current state.
+>
+> Test suite: **1024 / 1024** ✅ (at time of writing, 2026-06-07)
 > Current session: `OrderProductSnapshot.ImageId` rename + migration; `KI-009` image deletion constraint documented; `roadmap/README.md` + `project-state.md` resynced; IAM Refresh Token confirmed ✅ complete.
 
 ---
@@ -159,15 +164,19 @@ See [ADR-0016](../adr/0016/0016-sales-coupons-bc-design.md) §9.
 
 ---
 
-## Priority 9 — Communication BC — **Not Started**
+## Priority 9 — Communication BC — ~~Not Started~~ **✅ Done (stale, see banner)**
 
-Unblocked (Fulfillment Slice 1 + Coupons Slice 1 both live). No ADR yet. Not critical path.
+Superseded — Communication BC shipped; see row 16 in the Summary table above and
+`docs/architecture/bounded-context-map.md` for current status. Left as written for historical
+record of what was still open at Rev 7 (2026-06-07).
 
 ---
 
-## Priority 10 — Backoffice BC — **Blocked**
+## Priority 10 — Backoffice BC — ~~Blocked~~ **✅ Done (stale, see banner)**
 
-Blocked by ADR-0013 (per-BC DbContext interfaces). Gate: ~80% BC implementations complete.
+Superseded — Backoffice BC shipped (9 services, 9 controllers, 21 views, 58 unit tests per
+`docs/architecture/bounded-context-map.md`), unblocking ADR-0013's gate. Left as written for
+historical record of what was still open at Rev 7 (2026-06-07).
 
 ---
 

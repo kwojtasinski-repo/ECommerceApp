@@ -3,6 +3,7 @@ using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.UnitTests.Shared.Setup;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         public InventoryRefundApprovedHandlerTests()
         {
             _stockService = new Mock<IStockService>();
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_transaction.Object);
+            _unitOfWork.SetupInventoryTransaction(_transaction);
             _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
                 It.IsAny<long>(), It.IsAny<string>(), _transaction.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _handler = new RefundApprovedHandler(
