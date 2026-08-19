@@ -24,6 +24,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task SuccessTransition_CreatesSagaAndCompletesStep()
         {
+            // Arrange
             SagaInstance? createdInstance = null;
             SagaStep? createdStep = null;
             SetupNoRunningSaga(_repository, "TestSaga", "order-123");
@@ -37,8 +38,10 @@ namespace ECommerceApp.UnitTests.Sagas
                     new TestStepSpec(typeof(TestMessage), "ReserveStock", SagaTransitionKind.Success, true),
                     null));
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             createdInstance.Should().NotBeNull();
             createdStep.Should().NotBeNull();
             createdStep!.Status.Should().Be(SagaStepStatus.Completed);
@@ -48,14 +51,17 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task Redelivery_WhenGuardRejects_IsNoOp()
         {
+            // Arrange
             SetupRejectedGuard();
             var handler = CreateHandler(
                 new TestSagaDefinition(
                     new TestStepSpec(typeof(TestMessage), "ReserveStock", SagaTransitionKind.Success, true),
                     null));
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             _repository.Verify(x => x.FindRunningAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
             _transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -64,6 +70,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task FailureTransition_MarksSagaCompensatingAndEnqueuesCompensation()
         {
+            // Arrange
             var transaction = _transaction;
             var unitOfWork = _unitOfWork;
             SetupTransaction(unitOfWork, transaction);
@@ -95,8 +102,10 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             saga.Status.Should().Be(SagaInstanceStatus.Compensating);
             createdStep!.Status.Should().Be(SagaStepStatus.Failed);
             outboxWriter.Verify(x => x.EnqueueAsync(compensation, transaction.Object, It.IsAny<CancellationToken>()), Times.Once);
@@ -106,6 +115,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task SuccessTransition_StepDoesNotStartNewInstance_WhenNoRunningSaga_IsSkipped()
         {
+            // Arrange
             var transaction = _transaction;
             var unitOfWork = _unitOfWork;
             SetupTransaction(unitOfWork, transaction);
@@ -123,11 +133,13 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
             // A non-starting step arriving with no running instance (e.g. out-of-order delivery)
             // must not spuriously create one - regardless of whether the step is Success or Failure
             // kind. See SagaTransitionHandler.cs's saga-is-null branch.
+            // Assert
             repository.Verify(x => x.AddAsync(It.IsAny<SagaInstance>(), It.IsAny<CancellationToken>()), Times.Never);
             repository.Verify(x => x.AddStepAsync(It.IsAny<SagaStep>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -135,6 +147,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task SuccessTransition_AllRequiredStepsComplete_MarksSagaCompleted()
         {
+            // Arrange
             var transaction = _transaction;
             var unitOfWork = _unitOfWork;
             SetupTransaction(unitOfWork, transaction);
@@ -161,8 +174,10 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             saga.Status.Should().Be(SagaInstanceStatus.Completed);
             repository.Verify(x => x.UpdateAsync(saga, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -170,6 +185,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task SuccessTransition_NotAllRequiredStepsComplete_LeavesSagaRunning()
         {
+            // Arrange
             var transaction = _transaction;
             var unitOfWork = _unitOfWork;
             SetupTransaction(unitOfWork, transaction);
@@ -202,8 +218,10 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             saga.Status.Should().Be(SagaInstanceStatus.Running);
             repository.Verify(x => x.UpdateAsync(It.IsAny<SagaInstance>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -211,6 +229,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task NotifyTransition_EnqueuesNotifyMessage_CompletesSaga()
         {
+            // Arrange
             var transaction = _transaction;
             var unitOfWork = _unitOfWork;
             SetupTransaction(unitOfWork, transaction);
@@ -243,8 +262,10 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             saga.Status.Should().Be(SagaInstanceStatus.Completed);
             createdStep!.Status.Should().Be(SagaStepStatus.Completed);
             outboxWriter.Verify(
@@ -256,6 +277,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task NotifyTransition_SecondDeliveryAfterCompletion_CreatesNewInstanceAndNotifiesAgain()
         {
+            // Arrange
             var transaction = _transaction;
             var unitOfWork = _unitOfWork;
             SetupTransaction(unitOfWork, transaction);
@@ -292,9 +314,11 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             firstSaga.Status.Should().Be(SagaInstanceStatus.Completed);
             secondSaga.Should().NotBeNull();
             secondSaga!.Status.Should().Be(SagaInstanceStatus.Completed);
@@ -306,6 +330,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task NotifyTransition_ReadsExistingStepsBeforePersistingCurrentStep_NoDuplicateInContext()
         {
+            // Arrange
             // Regression test: SagaRepository.AddStepAsync calls SaveChangesAsync immediately, so
             // within the same transaction a GetStepsAsync call issued *after* AddStepAsync would see
             // the just-added step, and appending it again would give SagaTransitionContext two
@@ -344,8 +369,10 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             Func<Task> act = () => handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             await act.Should().NotThrowAsync();
             createdStep!.Status.Should().Be(SagaStepStatus.Completed);
             outboxWriter.Verify(
@@ -356,6 +383,7 @@ namespace ECommerceApp.UnitTests.Sagas
         [Fact]
         public async Task NotifyTransition_WithoutNotifyFactory_RecordsStepButEnqueuesNothing()
         {
+            // Arrange
             var transaction = _transaction;
             var unitOfWork = _unitOfWork;
             SetupTransaction(unitOfWork, transaction);
@@ -381,8 +409,10 @@ namespace ECommerceApp.UnitTests.Sagas
                 guard,
                 new TestPayloadSerializer());
 
+            // Act
             await handler.HandleAsync(new TestMessage("order-123"), 10);
 
+            // Assert
             saga.Status.Should().Be(SagaInstanceStatus.Running);
             createdStep!.Status.Should().Be(SagaStepStatus.Completed);
             outboxWriter.Verify(
