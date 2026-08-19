@@ -28,6 +28,24 @@ namespace ECommerceApp.UnitTests.Backoffice
         private IBackofficeOrderService CreateSut()
             => new BackofficeOrderService(_orderService.Object, _orderAccessService.Object);
 
+        private void SetupOrderList(int pageSize, int pageNumber, string searchString, OrderListVm source)
+        {
+            _orderService.Setup(s => s.GetAllOrdersAsync(pageSize, pageNumber, searchString, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(source);
+        }
+
+        private void SetupOrderDetails(int orderId, OrderDetailsVm details)
+        {
+            _orderService.Setup(s => s.GetOrderDetailsAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(details);
+        }
+
+        private void SetupCustomerOrders(int customerId, IReadOnlyList<OrderForListVm> orders)
+        {
+            _orderService.Setup(s => s.GetOrdersByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(orders);
+        }
+
         // ── GetOrdersAsync ────────────────────────────────────────────────────
 
         [Fact]
@@ -46,9 +64,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 TotalCount = 2,
                 SearchString = "ORD"
             };
-            _orderService
-                .Setup(s => s.GetAllOrdersAsync(10, 1, "ORD", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(source);
+            SetupOrderList(10, 1, "ORD", source);
 
             // Act
             var result = await CreateSut().GetOrdersAsync(10, 1, "ORD", TestContext.Current.CancellationToken);
@@ -75,9 +91,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetOrdersAsync_CustomerNameIsEmptyForAllItems()
         {
             // Arrange
-            _orderService
-                .Setup(s => s.GetAllOrdersAsync(10, 1, null, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OrderListVm
+            SetupOrderList(10, 1, null, new OrderListVm
                 {
                     Orders = new List<OrderForListVm>
                     {
@@ -96,9 +110,11 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetOrdersAsync_EmptyList_ReturnsEmptyVm()
         {
             // Arrange
-            _orderService
-                .Setup(s => s.GetAllOrdersAsync(10, 1, null, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OrderListVm { Orders = new List<OrderForListVm>(), TotalCount = 0 });
+            SetupOrderList(10, 1, null, new OrderListVm
+            {
+                Orders = new List<OrderForListVm>(),
+                TotalCount = 0
+            });
 
             // Act
             var result = await CreateSut().GetOrdersAsync(10, 1, null, TestContext.Current.CancellationToken);
@@ -122,9 +138,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 Status = OrderStatus.Fulfilled,
                 CustomerId = 42
             };
-            _orderService
-                .Setup(s => s.GetOrderDetailsAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(detail);
+            SetupOrderDetails(5, detail);
 
             // Act
             var result = await CreateSut().GetOrderDetailAsync(5, TestContext.Current.CancellationToken);
@@ -144,9 +158,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetOrderDetailAsync_NotFound_ReturnsNull()
         {
             // Arrange
-            _orderService
-                .Setup(s => s.GetOrderDetailsAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((OrderDetailsVm)null);
+            SetupOrderDetails(99, null);
 
             // Act
             var result = await CreateSut().GetOrderDetailAsync(99, TestContext.Current.CancellationToken);
@@ -166,9 +178,7 @@ namespace ECommerceApp.UnitTests.Backoffice
             OrderStatus status, bool expectedIsPaid, bool expectedIsDelivered)
         {
             // Arrange
-            _orderService
-                .Setup(s => s.GetOrderDetailsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OrderDetailsVm { Id = 1, Number = "X", Status = status });
+            SetupOrderDetails(1, new OrderDetailsVm { Id = 1, Number = "X", Status = status });
 
             // Act
             var result = await CreateSut().GetOrderDetailAsync(1, TestContext.Current.CancellationToken);
@@ -192,9 +202,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 new() { Id = 4, Number = "O4", Status = OrderStatus.Placed },
                 new() { Id = 5, Number = "O5", Status = OrderStatus.Placed }
             };
-            _orderService
-                .Setup(s => s.GetOrdersByCustomerIdAsync(10, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(all);
+            SetupCustomerOrders(10, all);
 
             // Act
             var result = await CreateSut().GetOrdersByCustomerAsync(10, pageSize: 2, pageNo: 2, TestContext.Current.CancellationToken);
@@ -212,9 +220,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetOrdersByCustomerAsync_EmptyList_ReturnsEmptyVm()
         {
             // Arrange
-            _orderService
-                .Setup(s => s.GetOrdersByCustomerIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OrderForListVm>());
+            SetupCustomerOrders(99, new List<OrderForListVm>());
 
             // Act
             var result = await CreateSut().GetOrdersByCustomerAsync(99, pageSize: 10, pageNo: 1, TestContext.Current.CancellationToken);

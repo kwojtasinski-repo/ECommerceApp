@@ -17,8 +17,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         private readonly Mock<IVerificationCodeService> _verificationCodes = new();
         private readonly Mock<IOrderService> _orders = new();
 
-        [Fact]
-        public async Task RequestOrderAccessRecoveryAsync_UsesOrderPurposeAndSubject()
+        private void SetupOrderAccessCodeGeneration()
         {
             _verificationCodes.Setup(service => service.GenerateAsync(
                     VerificationPurpose.GuestOrderAccess,
@@ -26,6 +25,23 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     It.IsAny<System.TimeSpan>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync("code");
+        }
+
+        private void SetupOrderAccessRedemption()
+        {
+            _verificationCodes.Setup(service => service.TryConsumeAsync(
+                    "code",
+                    VerificationPurpose.GuestOrderAccess,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync("42");
+            _orders.Setup(service => service.GetOrderDetailsAsync(42, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OrderDetailsVm { Id = 42, CustomerId = 7 });
+        }
+
+        [Fact]
+        public async Task RequestOrderAccessRecoveryAsync_UsesOrderPurposeAndSubject()
+        {
+            SetupOrderAccessCodeGeneration();
 
             var result = await CreateAdapter().RequestOrderAccessRecoveryAsync(42);
 
@@ -40,13 +56,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RedeemOrderAccessRecoveryAsync_ResolvesOnlyTheSubjectOrder()
         {
-            _verificationCodes.Setup(service => service.TryConsumeAsync(
-                    "code",
-                    VerificationPurpose.GuestOrderAccess,
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync("42");
-            _orders.Setup(service => service.GetOrderDetailsAsync(42, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OrderDetailsVm { Id = 42, CustomerId = 7 });
+            SetupOrderAccessRedemption();
 
             var result = await CreateAdapter().RedeemOrderAccessRecoveryAsync("code");
 

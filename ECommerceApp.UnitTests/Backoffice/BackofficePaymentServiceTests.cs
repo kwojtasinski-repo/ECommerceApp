@@ -27,6 +27,30 @@ namespace ECommerceApp.UnitTests.Backoffice
         private IBackofficePaymentService CreateSut()
             => new BackofficePaymentService(_paymentService.Object, _orderService.Object);
 
+        private void SetupPaymentList(PaymentListVm list)
+        {
+            _paymentService.Setup(s => s.GetAllAsync(10, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(list);
+        }
+
+        private void SetupPaymentDetails(int paymentId, PaymentDetailsVm details)
+        {
+            _paymentService.Setup(s => s.GetByIdAsync(paymentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(details);
+        }
+
+        private void SetupCustomerId(int orderId, int? customerId)
+        {
+            _orderService.Setup(s => s.GetCustomerIdAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(customerId);
+        }
+
+        private void SetupUnpaidPaymentList(PaymentListVm list)
+        {
+            _paymentService.Setup(s => s.GetAllUnpaidAsync(10, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(list);
+        }
+
         private static PaymentListVm MakeList(params PaymentVm[] items)
             => new(items, 1, items.Length == 0 ? 10 : items.Length, items.Length);
 
@@ -43,9 +67,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                     new(2, 20, 49.50m, 1, "Confirmed", DateTime.UtcNow.AddDays(2), DateTime.UtcNow)
                 },
                 CurrentPage: 1, PageSize: 10, TotalCount: 2);
-            _paymentService
-                .Setup(s => s.GetAllAsync(10, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(list);
+            SetupPaymentList(list);
 
             // Act
             var result = await CreateSut().GetPaymentsAsync(10, 1, TestContext.Current.CancellationToken);
@@ -66,9 +88,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetPaymentsAsync_EmptyList_ReturnsEmptyVm()
         {
             // Arrange
-            _paymentService
-                .Setup(s => s.GetAllAsync(10, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new PaymentListVm(new List<PaymentVm>(), 1, 10, 0));
+            SetupPaymentList(new PaymentListVm(new List<PaymentVm>(), 1, 10, 0));
 
             // Act
             var result = await CreateSut().GetPaymentsAsync(10, 1, TestContext.Current.CancellationToken);
@@ -87,12 +107,8 @@ namespace ECommerceApp.UnitTests.Backoffice
             var paymentGuid = Guid.NewGuid();
             var detail = new PaymentDetailsVm(5, paymentGuid, 42, 200m, 1, "Confirmed",
                 DateTime.UtcNow.AddDays(1), DateTime.UtcNow, "TXN-001", "user-1");
-            _paymentService
-                .Setup(s => s.GetByIdAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(detail);
-            _orderService
-                .Setup(s => s.GetCustomerIdAsync(42, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(77);
+            SetupPaymentDetails(5, detail);
+            SetupCustomerId(42, 77);
 
             // Act
             var result = await CreateSut().GetPaymentDetailAsync(5, TestContext.Current.CancellationToken);
@@ -111,9 +127,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetPaymentDetailAsync_NotFound_ReturnsNull()
         {
             // Arrange
-            _paymentService
-                .Setup(s => s.GetByIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((PaymentDetailsVm)null);
+            SetupPaymentDetails(99, null);
 
             // Act
             var result = await CreateSut().GetPaymentDetailAsync(99, TestContext.Current.CancellationToken);
@@ -134,9 +148,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                     new(3, 30, 150m, 1, "Pending", DateTime.UtcNow.AddDays(1), null)
                 },
                 CurrentPage: 1, PageSize: 10, TotalCount: 1);
-            _paymentService
-                .Setup(s => s.GetAllUnpaidAsync(10, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(list);
+            SetupUnpaidPaymentList(list);
 
             // Act
             var result = await CreateSut().GetUnpaidOrderPaymentsAsync(10, 1, TestContext.Current.CancellationToken);

@@ -43,11 +43,30 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
             int orderId, ShipmentLineItem[] delivered, ShipmentLineItem[] failed)
             => new(ShipmentId: 100, OrderId: orderId, DeliveredItems: delivered, FailedItems: failed, OccurredAt: DateTime.UtcNow);
 
+        private void SetupFulfillment(int orderId, int productId, int quantity, bool succeeded)
+        {
+            _stockService.Setup(s => s.FulfillAsync(orderId, productId, quantity, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(succeeded);
+        }
+
+        private void SetupRelease(int orderId, int productId, int quantity, bool succeeded)
+        {
+            _stockService.Setup(s => s.ReleaseAsync(orderId, productId, quantity, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(succeeded);
+        }
+
+        private void SetupAlreadyProcessed()
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                1, It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+        }
+
         [Fact]
         public async Task HandleAsync_AllOperationsSucceed_ShouldNotEnqueueReconciliation()
         {
-            _stockService.Setup(s => s.FulfillAsync(42, 1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _stockService.Setup(s => s.ReleaseAsync(42, 2, 3, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupFulfillment(42, 1, 2, true);
+            SetupRelease(42, 2, 3, true);
             var message = CreateMessage(42,
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });
@@ -61,8 +80,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_FulfillAndReleaseBothFail_ShouldEnqueueBothFailuresAndCommit()
         {
-            _stockService.Setup(s => s.FulfillAsync(42, 1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-            _stockService.Setup(s => s.ReleaseAsync(42, 2, 3, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            SetupFulfillment(42, 1, 2, false);
+            SetupRelease(42, 2, 3, false);
             var message = CreateMessage(42,
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });
@@ -82,8 +101,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AlreadyProcessed_ShouldSkipAndNotCommit()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
-                1, It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            SetupAlreadyProcessed();
             var message = CreateMessage(42,
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });

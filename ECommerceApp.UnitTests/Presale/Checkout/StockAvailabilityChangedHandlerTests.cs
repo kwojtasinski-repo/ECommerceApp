@@ -22,11 +22,16 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _handler = new StockAvailabilityChangedHandler(_snapshotRepo.Object, new Mock<IMemoryCache>().Object);
         }
 
+        private void SetupSnapshotLookup(int productId, StockSnapshot snapshot)
+        {
+            _snapshotRepo.Setup(r => r.FindByProductIdAsync(productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(snapshot);
+        }
+
         [Fact]
         public async Task HandleAsync_SnapshotNotExists_ShouldCreateNewSnapshot()
         {
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((StockSnapshot)null!);
+            SetupSnapshotLookup(1, null!);
             var message = new StockAvailabilityChanged(1, 50, DateTime.UtcNow);
 
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
@@ -41,8 +46,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task HandleAsync_SnapshotExists_ShouldUpdateExistingSnapshotAndNotCreate()
         {
             var snapshot = StockSnapshot.Create(1, 100, DateTime.UtcNow.AddMinutes(-5));
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshot);
+            SetupSnapshotLookup(1, snapshot);
             var message = new StockAvailabilityChanged(1, 80, DateTime.UtcNow);
 
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
@@ -57,8 +61,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var originalSyncedAt = DateTime.UtcNow.AddMinutes(-10);
             var snapshot = StockSnapshot.Create(1, 100, originalSyncedAt);
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshot);
+            SetupSnapshotLookup(1, snapshot);
             var newOccurredAt = DateTime.UtcNow;
             var message = new StockAvailabilityChanged(1, 60, newOccurredAt);
 
@@ -70,8 +73,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task HandleAsync_ZeroAvailableQuantity_ShouldBeStoredCorrectly()
         {
-            _snapshotRepo.Setup(r => r.FindByProductIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((StockSnapshot)null!);
+            SetupSnapshotLookup(1, null!);
             var message = new StockAvailabilityChanged(1, 0, DateTime.UtcNow);
 
             await _handler.HandleAsync(message, TestContext.Current.CancellationToken);

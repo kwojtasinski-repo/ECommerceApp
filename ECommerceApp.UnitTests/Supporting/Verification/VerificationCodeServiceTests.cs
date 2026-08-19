@@ -20,13 +20,25 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
             _sut = new VerificationCodeService(_repository.Object);
         }
 
+        private void SetupCodePersistence()
+        {
+            _repository
+                .Setup(repository => repository.AddAsync(It.IsAny<VerificationCode>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupCodeLookup(VerificationCode code, VerificationPurpose purpose)
+        {
+            _repository
+                .Setup(repository => repository.GetByCodeAsync("code", purpose, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(code);
+        }
+
         [Fact]
         public async Task GenerateAsync_ReturnsHighEntropyUniqueCode()
         {
             var codes = new string[10];
-            _repository
-                .Setup(repository => repository.AddAsync(It.IsAny<VerificationCode>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            SetupCodePersistence();
 
             for (var index = 0; index < codes.Length; index++)
             {
@@ -53,12 +65,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
                 "subject",
                 "code",
                 DateTime.UtcNow.AddMinutes(5));
-            _repository
-                .Setup(repository => repository.GetByCodeAsync(
-                    "code",
-                    VerificationPurpose.GuestAccountLink,
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(verificationCode);
+            SetupCodeLookup(verificationCode, VerificationPurpose.GuestAccountLink);
 
             var result = await _sut.TryConsumeAsync(
                 "code",
@@ -80,12 +87,7 @@ namespace ECommerceApp.UnitTests.Supporting.Verification
                 "subject",
                 "code",
                 DateTime.UtcNow.AddMinutes(5));
-            _repository
-                .Setup(repository => repository.GetByCodeAsync(
-                    "code",
-                    VerificationPurpose.GuestOrderAccess,
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync((VerificationCode)null);
+            SetupCodeLookup(null, VerificationPurpose.GuestOrderAccess);
 
             var result = await _sut.TryConsumeAsync(
                 "code",

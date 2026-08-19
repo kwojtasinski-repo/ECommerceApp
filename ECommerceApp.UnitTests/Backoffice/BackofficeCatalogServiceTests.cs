@@ -22,6 +22,23 @@ namespace ECommerceApp.UnitTests.Backoffice
 
         private IBackofficeCatalogService CreateSut() => new BackofficeCatalogService(_productService.Object);
 
+        private void SetupProductList(int pageSize, int pageNumber, string searchString, ProductListVm source)
+        {
+            _productService.Setup(s => s.GetAllProducts(pageSize, pageNumber, searchString))
+                .ReturnsAsync(source);
+        }
+
+        private void SetupProductExists(int productId, bool exists)
+        {
+            _productService.Setup(s => s.ProductExists(productId)).ReturnsAsync(exists);
+        }
+
+        private void SetupProductDetails(int productId, ProductDetailsVm details)
+        {
+            _productService.Setup(s => s.GetProductDetails(productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(details);
+        }
+
         // ── GetProductsAsync ──────────────────────────────────────────────────
 
         [Fact]
@@ -40,9 +57,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 Count = 2,
                 SearchString = "get"
             };
-            _productService
-                .Setup(s => s.GetAllProducts(10, 1, "get"))
-                .ReturnsAsync(source);
+            SetupProductList(10, 1, "get", source);
 
             // Act
             var result = await CreateSut().GetProductsAsync(10, 1, "get", TestContext.Current.CancellationToken);
@@ -69,9 +84,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetProductsAsync_CategoryNameIsEmptyForAllItems()
         {
             // Arrange
-            _productService
-                .Setup(s => s.GetAllProducts(5, 1, string.Empty))
-                .ReturnsAsync(new ProductListVm
+            SetupProductList(5, 1, string.Empty, new ProductListVm
                 {
                     Products = new List<ProductForListVm>
                     {
@@ -93,9 +106,11 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetProductsAsync_EmptyList_ReturnsEmptyVm()
         {
             // Arrange
-            _productService
-                .Setup(s => s.GetAllProducts(10, 1, string.Empty))
-                .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>(), Count = 0 });
+            SetupProductList(10, 1, string.Empty, new ProductListVm
+            {
+                Products = new List<ProductForListVm>(),
+                Count = 0
+            });
 
             // Act
             var result = await CreateSut().GetProductsAsync(10, 1, null, TestContext.Current.CancellationToken);
@@ -109,9 +124,10 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetProductsAsync_NullSearchString_PassesEmptyStringToService()
         {
             // Arrange
-            _productService
-                .Setup(s => s.GetAllProducts(10, 1, string.Empty))
-                .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>() });
+            SetupProductList(10, 1, string.Empty, new ProductListVm
+            {
+                Products = new List<ProductForListVm>()
+            });
 
             // Act
             await CreateSut().GetProductsAsync(10, 1, null, TestContext.Current.CancellationToken);
@@ -135,8 +151,8 @@ namespace ECommerceApp.UnitTests.Backoffice
                 CategoryId = 10,
                 CategoryName = "Electronics"
             };
-            _productService.Setup(s => s.ProductExists(7)).ReturnsAsync(true);
-            _productService.Setup(s => s.GetProductDetails(7, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
+            SetupProductExists(7, true);
+            SetupProductDetails(7, detail);
 
             // Act
             var result = await CreateSut().GetProductDetailAsync(7, TestContext.Current.CancellationToken);
@@ -155,7 +171,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetProductDetailAsync_NotFound_ReturnsNull()
         {
             // Arrange
-            _productService.Setup(s => s.ProductExists(99)).ReturnsAsync(false);
+            SetupProductExists(99, false);
 
             // Act
             var result = await CreateSut().GetProductDetailAsync(99, TestContext.Current.CancellationToken);

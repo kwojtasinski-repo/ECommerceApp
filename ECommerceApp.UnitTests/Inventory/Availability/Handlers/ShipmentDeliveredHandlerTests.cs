@@ -43,10 +43,23 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         private static ShipmentDelivered CreateMessage(int orderId, params ShipmentLineItem[] items)
             => new(ShipmentId: 100, OrderId: orderId, Items: items, OccurredAt: DateTime.UtcNow);
 
+        private void SetupFulfillment(int orderId, int productId, int quantity, bool succeeded)
+        {
+            _stockService.Setup(s => s.FulfillAsync(orderId, productId, quantity, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(succeeded);
+        }
+
+        private void SetupAlreadyProcessed()
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                1, It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+        }
+
         [Fact]
         public async Task HandleAsync_AllItemsFulfillSuccessfully_ShouldNotEnqueueReconciliation()
         {
-            _stockService.Setup(s => s.FulfillAsync(42, 1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupFulfillment(42, 1, 2, true);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
@@ -58,8 +71,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_SomeItemsFailToFulfill_ShouldEnqueueStockReconciliationRequiredAndCommit()
         {
-            _stockService.Setup(s => s.FulfillAsync(42, 1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _stockService.Setup(s => s.FulfillAsync(42, 2, 5, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            SetupFulfillment(42, 1, 2, true);
+            SetupFulfillment(42, 2, 5, false);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2), new ShipmentLineItem(2, 5));
 
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
@@ -78,8 +91,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AlreadyProcessed_ShouldSkipAndNotCommit()
         {
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
-                1, It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            SetupAlreadyProcessed();
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);

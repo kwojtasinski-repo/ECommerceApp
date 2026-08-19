@@ -18,8 +18,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         private readonly Mock<IUserProfileRepository> _profiles = new();
         private readonly Mock<IGuestAccountProvisioner> _users = new();
 
-        [Fact]
-        public async Task RequestGuestAccountLinkAsync_DelegatesWithGuestAccountLinkPurpose()
+        private void SetupAccountLinkCodeGeneration()
         {
             _verificationCodes.Setup(service => service.GenerateAsync(
                     VerificationPurpose.GuestAccountLink,
@@ -27,6 +26,25 @@ namespace ECommerceApp.UnitTests.AccountProfile
                     It.IsAny<System.TimeSpan>(),
                     It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync("generated-code");
+        }
+
+        private void SetupAccountLinkRedemption(List<UserProfile> profiles)
+        {
+            _verificationCodes.Setup(service => service.TryConsumeAsync(
+                    "code",
+                    VerificationPurpose.GuestAccountLink,
+                    It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync("guest@test.com");
+            _profiles.Setup(repository => repository.GetByEmailAsync("guest@test.com", true))
+                .ReturnsAsync(profiles);
+            _users.Setup(users => users.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync(new HashSet<string>());
+        }
+
+        [Fact]
+        public async Task RequestGuestAccountLinkAsync_DelegatesWithGuestAccountLinkPurpose()
+        {
+            SetupAccountLinkCodeGeneration();
 
             var result = await CreateAdapter().RequestGuestAccountLinkAsync(
                 "guest@test.com",
@@ -45,15 +63,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var first = CreateProfile("gst_1");
             var second = CreateProfile("gst_2");
-            _verificationCodes.Setup(service => service.TryConsumeAsync(
-                    "code",
-                    VerificationPurpose.GuestAccountLink,
-                    It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync("guest@test.com");
-            _profiles.Setup(repository => repository.GetByEmailAsync("guest@test.com", true))
-                .ReturnsAsync(new List<UserProfile> { first, second });
-            _users.Setup(users => users.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
-                .ReturnsAsync(new HashSet<string>());
+            SetupAccountLinkRedemption(new List<UserProfile> { first, second });
 
             var result = await CreateAdapter().RedeemGuestAccountLinkAsync(
                 "code",

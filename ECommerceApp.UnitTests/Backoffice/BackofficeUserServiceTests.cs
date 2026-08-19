@@ -23,6 +23,27 @@ namespace ECommerceApp.UnitTests.Backoffice
 
         private IBackofficeUserService CreateSut() => new BackofficeUserService(_userManagement.Object);
 
+        private void SetupUserList(int pageSize, int pageNumber, string searchString, UserListVm source)
+        {
+            _userManagement.Setup(s => s.GetUsersAsync(pageSize, pageNumber, searchString))
+                .ReturnsAsync(source);
+        }
+
+        private void SetupUserRole(string userId, string role)
+        {
+            _userManagement.Setup(s => s.GetUserRoleAsync(userId)).ReturnsAsync(role);
+        }
+
+        private void SetupUserDetails(string userId, UserDetailsVm details)
+        {
+            _userManagement.Setup(s => s.GetUserByIdAsync(userId)).ReturnsAsync(details);
+        }
+
+        private void SetupUserDetailsFailure(string userId)
+        {
+            _userManagement.Setup(s => s.GetUserByIdAsync(userId)).ThrowsAsync(new BusinessException());
+        }
+
         // ── GetUsersAsync ─────────────────────────────────────────────────────
 
         [Fact]
@@ -41,11 +62,9 @@ namespace ECommerceApp.UnitTests.Backoffice
                 Count = 2,
                 SearchString = "test"
             };
-            _userManagement
-                .Setup(s => s.GetUsersAsync(10, 1, "test"))
-                .ReturnsAsync(source);
-            _userManagement.Setup(s => s.GetUserRoleAsync("u1")).ReturnsAsync("Administrator");
-            _userManagement.Setup(s => s.GetUserRoleAsync("u2")).ReturnsAsync("User");
+            SetupUserList(10, 1, "test", source);
+            SetupUserRole("u1", "Administrator");
+            SetupUserRole("u2", "User");
 
             // Act
             var result = await CreateSut().GetUsersAsync(10, 1, "test", TestContext.Current.CancellationToken);
@@ -69,9 +88,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetUsersAsync_NullSearch_DelegatesToEmptyString()
         {
             // Arrange
-            _userManagement
-                .Setup(s => s.GetUsersAsync(10, 1, string.Empty))
-                .ReturnsAsync(new UserListVm { Users = new List<UserForListVm>() });
+            SetupUserList(10, 1, string.Empty, new UserListVm { Users = new List<UserForListVm>() });
 
             // Act
             var result = await CreateSut().GetUsersAsync(10, 1, null, TestContext.Current.CancellationToken);
@@ -85,13 +102,11 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetUsersAsync_EmptyRoleString_RolesListIsEmpty()
         {
             // Arrange
-            _userManagement
-                .Setup(s => s.GetUsersAsync(10, 1, string.Empty))
-                .ReturnsAsync(new UserListVm
+            SetupUserList(10, 1, string.Empty, new UserListVm
                 {
                     Users = new List<UserForListVm> { new() { Id = "u1", UserName = "x", Email = "x" } }
                 });
-            _userManagement.Setup(s => s.GetUserRoleAsync("u1")).ReturnsAsync(string.Empty);
+            SetupUserRole("u1", string.Empty);
 
             // Act
             var result = await CreateSut().GetUsersAsync(10, 1, null, TestContext.Current.CancellationToken);
@@ -106,10 +121,8 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetUserDetailAsync_ExistingUser_ReturnsMappedVm()
         {
             // Arrange
-            _userManagement
-                .Setup(s => s.GetUserByIdAsync("u1"))
-                .ReturnsAsync(new UserDetailsVm { Id = "u1", UserName = "alice@test.com", Email = "alice@test.com" });
-            _userManagement.Setup(s => s.GetUserRoleAsync("u1")).ReturnsAsync("Manager");
+            SetupUserDetails("u1", new UserDetailsVm { Id = "u1", UserName = "alice@test.com", Email = "alice@test.com" });
+            SetupUserRole("u1", "Manager");
 
             // Act
             var result = await CreateSut().GetUserDetailAsync("u1", TestContext.Current.CancellationToken);
@@ -126,9 +139,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetUserDetailAsync_UserNotFound_ReturnsNull()
         {
             // Arrange
-            _userManagement
-                .Setup(s => s.GetUserByIdAsync("missing"))
-                .ThrowsAsync(new BusinessException());
+            SetupUserDetailsFailure("missing");
 
             // Act
             var result = await CreateSut().GetUserDetailAsync("missing", TestContext.Current.CancellationToken);
