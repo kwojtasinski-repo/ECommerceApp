@@ -58,11 +58,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AllItemsReleaseSuccessfully_ShouldNotEnqueueReconciliation()
         {
+            // Arrange
             SetupRelease(42, 1, 2, true);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
             _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -71,11 +74,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_SomeItemsFailToRelease_ShouldEnqueueStockReconciliationRequiredAndCommit()
         {
+            // Arrange
             SetupRelease(42, 1, 2, false);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _outboxWriter.Verify(w => w.EnqueueAsync(
                 It.Is<StockReconciliationRequired>(m => m.OrderId == 42
                     && m.Failures.Count == 1
@@ -89,11 +95,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AlreadyProcessed_ShouldSkipAndNotCommit()
         {
+            // Arrange
             SetupAlreadyProcessed();
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.ReleaseAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -101,10 +110,13 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public void HandleAsync_WithoutOutboxMessageId_ShouldThrowNotSupported()
         {
+            // Arrange
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
+            // Act
             var act = () => CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             act.Should().ThrowAsync<NotSupportedException>();
         }
     }

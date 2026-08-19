@@ -26,9 +26,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         {
             _paymentRepo = new Mock<IPaymentRepository>();
             _scheduler = new Mock<IDeferredJobScheduler>();
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_transaction.Object);
-            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
-                It.IsAny<long>(), It.IsAny<string>(), _transaction.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            SetupProcessingDefaults();
         }
 
         private OrderPlacementFailedHandler CreateHandler()
@@ -40,21 +38,49 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         private static Payment CreatePendingPayment(int paymentId = 42, int orderId = 1)
             => Payment.Create(new PaymentId(paymentId), new PaymentOrderId(orderId), 99.99m, 1, DateTime.UtcNow.AddDays(3), "user-1");
 
+        private void SetupProcessingDefaults()
+        {
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_transaction.Object);
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                It.IsAny<long>(), It.IsAny<string>(), _transaction.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        }
+
+        private void SetupPayment(Payment payment)
+        {
+            _paymentRepo.Setup(r => r.GetByOrderIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(payment);
+        }
+
+        private void SetupPaymentUpdate(Action<Payment> onUpdated = null)
+        {
+            _paymentRepo
+                .Setup(r => r.UpdateAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
+                .Callback<Payment, CancellationToken>((payment, _) => onUpdated?.Invoke(payment))
+                .Returns(Task.CompletedTask);
+        }
+
+            private void SetupCancellation(Action<string, string> onCancelled = null)
+            {
+                _scheduler
+                .Setup(s => s.CancelAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Callback<string, string, CancellationToken>((job, id, _) => onCancelled?.Invoke(job, id))
+                .Returns(Task.CompletedTask);
+            }
+
         // ── payment found ─────────────────────────────────────────────────────
 
         [Fact]
         public async Task HandleAsync_PaymentFound_ShouldCancelPayment()
         {
+            // Arrange
             Payment updatedPayment = null;
             var payment = CreatePendingPayment();
-            _paymentRepo.Setup(r => r.GetByOrderIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(payment);
-            _paymentRepo
-                .Setup(r => r.UpdateAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
-                .Callback<Payment, CancellationToken>((p, _) => updatedPayment = p)
-                .Returns(Task.CompletedTask);
+            SetupPayment(payment);
+            SetupPaymentUpdate(p => updatedPayment = p);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             updatedPayment.Should().NotBeNull();
             updatedPayment!.Status.Should().Be(PaymentStatus.Cancelled);
         }
@@ -62,18 +88,18 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_PaymentFound_ShouldCancelScheduledJob()
         {
+            // Arrange
             string cancelledJobName = null;
             string cancelledEntityId = null;
             var payment = CreatePendingPayment(paymentId: 42);
-            _paymentRepo.Setup(r => r.GetByOrderIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(payment);
-            _paymentRepo.Setup(r => r.UpdateAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _scheduler
-                .Setup(s => s.CancelAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, CancellationToken>((job, id, _) => { cancelledJobName = job; cancelledEntityId = id; })
-                .Returns(Task.CompletedTask);
+            SetupPayment(payment);
+            SetupPaymentUpdate();
+            SetupCancellation((job, id) => { cancelledJobName = job; cancelledEntityId = id; });
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             cancelledJobName.Should().Be(PaymentWindowExpiredJob.JobTaskName);
             cancelledEntityId.Should().Be("42");
         }
@@ -83,10 +109,13 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_PaymentNotFound_ShouldNotCallUpdateOrCancel()
         {
-            _paymentRepo.Setup(r => r.GetByOrderIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Payment)null);
+            // Arrange
+            SetupPayment(null);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _paymentRepo.Verify(r => r.UpdateAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()), Times.Never);
             _scheduler.Verify(s => s.CancelAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }

@@ -41,15 +41,38 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             return payment;
         }
 
+        private void SetupPayment(Payment payment, int paymentId)
+        {
+            _paymentRepo
+                .Setup(r => r.GetByIdAsync(paymentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(payment);
+        }
+
+        private Mock<IOutboxTransaction> SetupExpirationTransaction()
+        {
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork
+                .Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(txMock.Object);
+            _outboxWriter
+                .Setup(w => w.EnqueueAsync(It.IsAny<PaymentExpired>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            return txMock;
+        }
+
         // ── EntityId guards ───────────────────────────────────────────────────
 
         [Fact]
         public async Task ExecuteAsync_NullEntityId_ShouldReportFailure()
         {
+            // Arrange
             var ctx = Context(null);
 
+            // Act
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
+            // Assert
             ctx.Outcome.Should().BeOfType<JobOutcome.Failure>();
             _paymentRepo.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -57,10 +80,13 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ExecuteAsync_NonIntegerEntityId_ShouldReportFailure()
         {
+            // Arrange
             var ctx = Context("not-a-number");
 
+            // Act
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
+            // Assert
             ctx.Outcome.Should().BeOfType<JobOutcome.Failure>();
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -70,13 +96,14 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ExecuteAsync_PaymentNotFound_ShouldReportSuccessAndSkip()
         {
-            _paymentRepo
-                .Setup(r => r.GetByIdAsync(42, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Payment)null);
+            // Arrange
+            SetupPayment(null, 42);
             var ctx = Context("42");
 
+            // Act
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
+            // Assert
             ctx.Outcome.Should().BeOfType<JobOutcome.Success>();
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -87,15 +114,16 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [InlineData(PaymentStatus.Refunded)]
         public async Task ExecuteAsync_NonPendingPayment_ShouldReportSuccessAndSkip(PaymentStatus status)
         {
+            // Arrange
             var payment = CreatePendingPayment();
             AdvanceToStatus(payment, status);
-            _paymentRepo
-                .Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(payment);
+            SetupPayment(payment, 1);
             var ctx = Context("1");
 
+            // Act
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
+            // Assert
             ctx.Outcome.Should().BeOfType<JobOutcome.Success>();
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -105,24 +133,17 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task ExecuteAsync_PendingPayment_ShouldExpireAndPublishPaymentExpired()
         {
+            // Arrange
             var payment = CreatePendingPayment(paymentId: 5, orderId: 10);
-            _paymentRepo
-                .Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(payment);
+            SetupPayment(payment, 5);
             var ctx = Context("5");
 
-            // Arrange transaction + outbox expectations
-            var txMock = new Mock<IOutboxTransaction>();
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(System.Threading.Tasks.Task.CompletedTask);
-            _unitOfWork
-                .Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(txMock.Object);
-            _outboxWriter
-                .Setup(w => w.EnqueueAsync(It.IsAny<PaymentExpired>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
-                .Returns(System.Threading.Tasks.Task.CompletedTask);
+            var txMock = SetupExpirationTransaction();
 
+            // Act
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
+            // Assert
             payment.Status.Should().Be(PaymentStatus.Expired);
             _paymentRepo.Verify(r => r.UpdateAsync(payment, It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.Is<PaymentExpired>(msg => msg.OrderId == 10), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Once);

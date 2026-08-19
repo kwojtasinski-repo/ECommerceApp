@@ -31,14 +31,19 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private static PaymentConfirmed Message(int paymentId = 1, int orderId = 10)
             => new(paymentId, orderId, new List<PaymentConfirmedItem>(), DateTime.UtcNow);
 
+        private void SetupUserResolution(string userId)
+            => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+
         [Fact]
         public async Task HandleAsync_WhenUserResolved_PushesNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
+            // Arrange
+            SetupUserResolution("user-10");
 
+            // Act
             await CreateHandler().HandleAsync(Message(orderId: 10), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 "user-10",
                 "PaymentConfirmed",
@@ -49,11 +54,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            // Arrange
+            SetupUserResolution(null);
 
+            // Act
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -77,14 +84,19 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private static PaymentExpired Message(int paymentId = 1, int orderId = 10)
             => new(paymentId, orderId, DateTime.UtcNow);
 
+        private void SetupUserResolution(string userId)
+            => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+
         [Fact]
         public async Task HandleAsync_WhenUserResolved_PushesNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
+            // Arrange
+            SetupUserResolution("user-10");
 
+            // Act
             await CreateHandler().HandleAsync(Message(orderId: 10), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 "user-10",
                 "PaymentExpired",
@@ -95,11 +107,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            // Arrange
+            SetupUserResolution(null);
 
+            // Act
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }

@@ -59,11 +59,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AllItemsFulfillSuccessfully_ShouldNotEnqueueReconciliation()
         {
+            // Arrange
             SetupFulfillment(42, 1, 2, true);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -71,12 +74,15 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_SomeItemsFailToFulfill_ShouldEnqueueStockReconciliationRequiredAndCommit()
         {
+            // Arrange
             SetupFulfillment(42, 1, 2, true);
             SetupFulfillment(42, 2, 5, false);
             var message = CreateMessage(42, new ShipmentLineItem(1, 2), new ShipmentLineItem(2, 5));
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _outboxWriter.Verify(w => w.EnqueueAsync(
                 It.Is<StockReconciliationRequired>(m => m.OrderId == 42
                     && m.Failures.Count == 1
@@ -91,11 +97,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AlreadyProcessed_ShouldSkipAndNotCommit()
         {
+            // Arrange
             SetupAlreadyProcessed();
             var message = CreateMessage(42, new ShipmentLineItem(1, 2));
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.FulfillAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }

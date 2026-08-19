@@ -65,14 +65,17 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AllOperationsSucceed_ShouldNotEnqueueReconciliation()
         {
+            // Arrange
             SetupFulfillment(42, 1, 2, true);
             SetupRelease(42, 2, 3, true);
             var message = CreateMessage(42,
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -80,14 +83,17 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_FulfillAndReleaseBothFail_ShouldEnqueueBothFailuresAndCommit()
         {
+            // Arrange
             SetupFulfillment(42, 1, 2, false);
             SetupRelease(42, 2, 3, false);
             var message = CreateMessage(42,
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _outboxWriter.Verify(w => w.EnqueueAsync(
                 It.Is<StockReconciliationRequired>(m => m.OrderId == 42
                     && m.Failures.Count == 2
@@ -101,13 +107,16 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         [Fact]
         public async Task HandleAsync_AlreadyProcessed_ShouldSkipAndNotCommit()
         {
+            // Arrange
             SetupAlreadyProcessed();
             var message = CreateMessage(42,
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });
 
+            // Act
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _stockService.Verify(s => s.FulfillAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _stockService.Verify(s => s.ReleaseAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);

@@ -52,6 +52,31 @@ namespace ECommerceApp.UnitTests.AccountProfile
                 .ReturnsAsync(profileIdsWithOrders);
         }
 
+        private void SetupProfileDeletion(UserProfile profile, bool deleted)
+        {
+            _profiles.Setup(r => r.DeleteAsync(profile.Id)).ReturnsAsync(deleted);
+        }
+
+        private void SetupClaimedProfile(UserProfile profile)
+        {
+            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
+                .ReturnsAsync(new List<UserProfile> { profile });
+            _accountProvisioner.Setup(a => a.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync(new HashSet<string> { profile.UserId });
+        }
+
+        private void SetupOlderProfiles()
+        {
+            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
+                .ReturnsAsync(new List<UserProfile>());
+        }
+
+        private void SetupProfileQueryFailure()
+        {
+            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
+                .ThrowsAsync(new System.Exception("DB connection failed"));
+        }
+
         [Fact]
         public void TaskName_ShouldBeUnclaimedGuestProfileCleanup()
         {
@@ -61,12 +86,15 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ExecuteAsync_UnclaimedProfileWithAnOrder_DoesNotDeleteIt()
         {
+            // Arrange
             var profile = NewProfile("gst_1");
             SetupUnclaimedProfilesWithOrders(profile, new HashSet<int> { profile.Id.Value });
             var context = new JobExecutionContext(null, "exec-1");
 
+            // Act
             await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>().Which.Message.Should().Contain("0");
             _profiles.Verify(r => r.DeleteAsync(It.IsAny<UserProfileId>()), Times.Never);
         }
@@ -74,13 +102,16 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ExecuteAsync_UnclaimedProfileOlderThanThreshold_DeletesIt()
         {
+            // Arrange
             var profile = NewProfile("gst_2");
             SetupUnclaimedProfilesWithOrders(profile, new HashSet<int>());
-            _profiles.Setup(r => r.DeleteAsync(profile.Id)).ReturnsAsync(true);
+            SetupProfileDeletion(profile, true);
             var context = new JobExecutionContext(null, "exec-2");
 
+            // Act
             await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>().Which.Message.Should().Contain("1");
             _profiles.Verify(r => r.DeleteAsync(profile.Id), Times.Once);
         }
@@ -88,15 +119,15 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ExecuteAsync_ClaimedProfile_DoesNotDeleteIt()
         {
+            // Arrange
             var profile = NewProfile("real-user-id");
-            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
-                .ReturnsAsync(new List<UserProfile> { profile });
-            _accountProvisioner.Setup(a => a.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()))
-                .ReturnsAsync(new HashSet<string> { "real-user-id" });
+            SetupClaimedProfile(profile);
             var context = new JobExecutionContext(null, "exec-3");
 
+            // Act
             await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>();
             _profiles.Verify(r => r.DeleteAsync(It.IsAny<UserProfileId>()), Times.Never);
             _moduleClient.Verify(m => m.SendAsync(It.IsAny<CustomersWithOrdersQuery>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -105,12 +136,14 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ExecuteAsync_ProfileNewerThanThreshold_DoesNotDeleteIt()
         {
-            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
-                .ReturnsAsync(new List<UserProfile>());
+            // Arrange
+            SetupOlderProfiles();
             var context = new JobExecutionContext(null, "exec-4");
 
+            // Act
             await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>();
             _profiles.Verify(r => r.DeleteAsync(It.IsAny<UserProfileId>()), Times.Never);
             _accountProvisioner.Verify(a => a.GetRegisteredUserIdsAsync(It.IsAny<IReadOnlyCollection<string>>()), Times.Never);
@@ -119,12 +152,14 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ExecuteAsync_RepositoryThrows_ReportsFailureNotException()
         {
-            _profiles.Setup(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()))
-                .ThrowsAsync(new System.Exception("DB connection failed"));
+            // Arrange
+            SetupProfileQueryFailure();
             var context = new JobExecutionContext(null, "exec-5");
 
+            // Act
             await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Failure>()
                 .Which.Error.Should().Contain("DB connection failed");
         }
@@ -132,11 +167,14 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task ExecuteAsync_Disabled_ReportsSuccessAndDeletesNothing()
         {
+            // Arrange
             _options = new GuestProfileCleanupOptions { Enabled = false, RetentionDays = 90 };
             var context = new JobExecutionContext(null, "exec-6");
 
+            // Act
             await CreateTask().ExecuteAsync(context, CancellationToken.None);
 
+            // Assert
             context.Outcome.Should().BeOfType<JobOutcome.Success>();
             _profiles.Verify(r => r.GetOlderThanAsync(It.IsAny<System.DateTime>()), Times.Never);
         }
