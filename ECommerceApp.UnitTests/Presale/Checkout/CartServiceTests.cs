@@ -38,16 +38,37 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
         public void Dispose() => _cache.Dispose();
 
+        private void SetupCartLines(string userId, IReadOnlyList<CartLine> lines)
+        {
+            _cartRepo.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(lines);
+        }
+
+        private void SetupCartLines(IReadOnlyList<CartLine> lines)
+        {
+            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(lines);
+        }
+
+        private void SetupCartUpsert()
+        {
+            _cartRepo.Setup(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupCartDelete(string userId, int productId)
+        {
+            _cartRepo.Setup(r => r.DeleteAsync(userId, productId, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
         // ── SetCartItemAsync ──────────────────────────────────────────────────
 
         [Fact]
         public async Task SetCartItemAsync_ValidDto_ShouldUpsertAndRefreshCache()
         {
             var lines = new List<CartLine> { CartLine.Create("user-1", 1, 2) };
-            _cartRepo.Setup(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(lines);
+            SetupCartUpsert();
+            SetupCartLines("user-1", lines);
 
             await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2), TestContext.Current.CancellationToken);
 
@@ -60,8 +81,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task SetCartItemAsync_ValidDto_ShouldPopulateCache()
         {
             var lines = new List<CartLine> { CartLine.Create("user-1", 1, 2) };
-            _cartRepo.Setup(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            SetupCartUpsert();
             _cartRepo.Setup(r => r.GetByUserIdAsync(It.Is<PresaleUserId>(p => p.Value == "user-1"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(lines);
 
@@ -83,10 +103,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 CartLine.Create("user-1", 2, 3)
             };
 
-            _cartRepo.Setup(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(lines);
+            SetupCartUpsert();
+            SetupCartLines(lines);
 
             await _service.RestoreAsync(
                 new PresaleUserId("user-1"),
@@ -111,12 +129,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var lines = new List<CartLine> { CartLine.Create("user-1", 7, 4) };
 
-            _cartRepo.Setup(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(lines);
-            _catalog.Setup(c => c.GetProductsByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CatalogProductSummary>());
+            SetupCartUpsert();
+            SetupCartLines(lines);
 
             await _service.RestoreAsync(
                 new PresaleUserId("user-1"),
@@ -136,10 +150,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task AddToCartAsync_NoExistingItem_ShouldSetQuantityToRequested()
         {
-            _cartRepo.Setup(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CartLine>());
+            SetupCartUpsert();
+            SetupCartLines(new List<CartLine>());
 
             var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3), TestContext.Current.CancellationToken);
 
@@ -153,10 +165,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task AddToCartAsync_ExistingItem_ShouldIncrementQuantity()
         {
             var existing = new List<CartLine> { CartLine.Create("user-1", 1, 4) };
-            _cartRepo.Setup(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
+            SetupCartUpsert();
+            SetupCartLines(existing);
 
             var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3), TestContext.Current.CancellationToken);
 
@@ -170,8 +180,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task AddToCartAsync_ExceedsLimit_ShouldReturnQuantityExceeded()
         {
             var existing = new List<CartLine> { CartLine.Create("user-1", 1, 8) };
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(existing);
+            SetupCartLines(existing);
 
             var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 5), TestContext.Current.CancellationToken);
 
@@ -185,10 +194,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RemoveAsync_ExistingLine_ShouldDeleteAndRefreshCache()
         {
-            _cartRepo.Setup(r => r.DeleteAsync("user-1", 1, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CartLine>());
+            SetupCartDelete("user-1", 1);
+            SetupCartLines("user-1", new List<CartLine>());
 
             await _service.RemoveAsync("user-1", 1, TestContext.Current.CancellationToken);
 
@@ -238,8 +245,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetCartAsync_CacheMiss_ShouldLoadFromDbAndReturnVm()
         {
             var lines = new List<CartLine> { CartLine.Create("user-1", 1, 3) };
-            _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(lines);
+            SetupCartLines("user-1", lines);
 
             var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
@@ -265,8 +271,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetCartAsync_EmptyCart_ShouldReturnNull()
         {
-            _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CartLine>());
+            SetupCartLines("user-1", new List<CartLine>());
 
             var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
@@ -276,8 +281,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetCartAsync_EmptyCart_ShouldEvictStaleCache()
         {
-            _cartRepo.Setup(r => r.GetByUserIdAsync(It.Is<PresaleUserId>(p => p.Value == "user-1"), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<CartLine>());
+            SetupCartLines(new List<CartLine>());
 
             await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken); // cache miss → DB → empty
 

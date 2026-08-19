@@ -26,11 +26,31 @@ namespace ECommerceApp.UnitTests.AccountProfile
             return profile;
         }
 
+        private void SetupProfileCreation(int profileId)
+        {
+            _repository.Setup(r => r.AddAsync(It.IsAny<UserProfile>())).ReturnsAsync(new UserProfileId(profileId));
+        }
+
+        private void SetupProfileLookupByUser(string userId, UserProfile profile)
+        {
+            _repository.Setup(r => r.GetByUserIdAsync(userId, false)).ReturnsAsync(profile);
+        }
+
+        private void SetupProfileLookup(int profileId, bool track, UserProfile profile)
+        {
+            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(profileId), track)).ReturnsAsync(profile);
+        }
+
+        private void SetupProfileLookupForUser(int profileId, string userId, bool track, UserProfile profile)
+        {
+            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(profileId), userId, track)).ReturnsAsync(profile);
+        }
+
         [Fact]
         public async Task CreateAsync_ValidDto_ShouldAddProfile()
         {
             var dto = new CreateUserProfileDto("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123456789");
-            _repository.Setup(r => r.AddAsync(It.IsAny<UserProfile>())).ReturnsAsync(new UserProfileId(1));
+            SetupProfileCreation(1);
 
             var result = await CreateService().CreateAsync(dto);
 
@@ -41,8 +61,8 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task GetOrCreateForGuestAsync_NoExistingProfile_CreatesNewProfile()
         {
-            _repository.Setup(r => r.GetByUserIdAsync("gst_1", false)).ReturnsAsync((UserProfile)null);
-            _repository.Setup(r => r.AddAsync(It.IsAny<UserProfile>())).ReturnsAsync(new UserProfileId(7));
+            SetupProfileLookupByUser("gst_1", null);
+            SetupProfileCreation(7);
 
             var result = await CreateService().GetOrCreateForGuestAsync("gst_1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123456789");
 
@@ -56,7 +76,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var existing = CreateProfile();
             EntityIdSetter.Set(existing, new UserProfileId(9));
-            _repository.Setup(r => r.GetByUserIdAsync("user-1", false)).ReturnsAsync(existing);
+            SetupProfileLookupByUser("user-1", existing);
 
             var result = await CreateService().GetOrCreateForGuestAsync("user-1", "Anna", "Nowak", false, null, null, "anna@test.com", "987654321");
 
@@ -68,7 +88,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task UpdatePersonalInfoAsync_ProfileNotFound_ShouldThrowBusinessException()
         {
             var dto = new UpdateUserProfileDto(99, "Jan", "Kowalski", false, null, null);
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99), It.IsAny<bool>())).ReturnsAsync((UserProfile)null);
+            SetupProfileLookup(99, false, null);
 
             var act = async () => await CreateService().UpdatePersonalInfoAsync(dto);
 
@@ -80,7 +100,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var profile = CreateProfile();
             var dto = new UpdateUserProfileDto(1, "Anna", "Nowak", false, null, null);
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(1), true)).ReturnsAsync(profile);
+            SetupProfileLookup(1, true, profile);
 
             var result = await CreateService().UpdatePersonalInfoAsync(dto);
 
@@ -92,7 +112,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task UpdateContactInfoAsync_ProfileNotFound_ShouldThrowBusinessException()
         {
             var dto = new UpdateContactInfoDto(99, "new@test.com", "999");
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99), It.IsAny<bool>())).ReturnsAsync((UserProfile)null);
+            SetupProfileLookup(99, false, null);
 
             var act = async () => await CreateService().UpdateContactInfoAsync(dto);
 
@@ -103,7 +123,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task AddAddressAsync_ProfileNotFound_ShouldThrowBusinessException()
         {
             var dto = new AddAddressDto(1, "Testowa", "5", null, "12-345", "Warszawa", "PL");
-            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", It.IsAny<bool>())).ReturnsAsync((UserProfile)null);
+            SetupProfileLookupForUser(1, "user-1", false, null);
 
             var act = async () => await CreateService().AddAddressAsync(1, "user-1", dto);
 
@@ -115,7 +135,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var profile = CreateProfile();
             var dto = new AddAddressDto(1, "Testowa", "5", null, "12-345", "Warszawa", "PL");
-            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", true)).ReturnsAsync(profile);
+            SetupProfileLookupForUser(1, "user-1", true, profile);
 
             var result = await CreateService().AddAddressAsync(1, "user-1", dto);
 
@@ -127,7 +147,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task RemoveAddressAsync_NonExistentAddress_ShouldThrowBusinessException()
         {
             var profile = CreateProfile();
-            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", true)).ReturnsAsync(profile);
+            SetupProfileLookupForUser(1, "user-1", true, profile);
 
             var act = async () => await CreateService().RemoveAddressAsync(1, 99, "user-1");
 
@@ -150,7 +170,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task GetDetailsAsync_ExistingProfile_ShouldReturnVm()
         {
             var profile = CreateProfile();
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(1), false)).ReturnsAsync(profile);
+            SetupProfileLookup(1, false, profile);
 
             var result = await CreateService().GetDetailsAsync(1);
 
@@ -162,7 +182,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task GetDetailsAsync_NonExistentProfile_ShouldReturnNull()
         {
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99), false)).ReturnsAsync((UserProfile)null);
+            SetupProfileLookup(99, false, null);
 
             var result = await CreateService().GetDetailsAsync(99);
 

@@ -37,12 +37,28 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             => new(_signInManager.Object, _jwtManager.Object, _userManager.Object,
                    _refreshTokenRepository.Object, _refreshTokenOptions.Object);
 
+        private void SetupSignInResult(string email, string password, SignInResult result)
+        {
+            _signInManager.Setup(s => s.PasswordSignInAsync(email, password, true, false))
+                .ReturnsAsync(result);
+        }
+
+        private void SetupUserLookup(string email, ApplicationUser user)
+        {
+            _userManager.Setup(u => u.FindByNameAsync(email)).ReturnsAsync(user);
+        }
+
+        private void SetupRefreshTokenLookup(string token, RefreshToken refreshToken)
+        {
+            _refreshTokenRepository.Setup(r => r.GetByTokenAsync(token, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(refreshToken);
+        }
+
         [Fact]
         public async Task SignInAsync_InvalidCredentials_ShouldThrowBusinessException()
         {
             var dto = new SignInDto("test@test.com", "wrongPassword");
-            _signInManager.Setup(s => s.PasswordSignInAsync(dto.Email, dto.Password, true, false))
-                          .ReturnsAsync(SignInResult.Failed);
+            SetupSignInResult(dto.Email, dto.Password, SignInResult.Failed);
 
             var service = CreateService();
             Func<Task> act = async () => await service.SignInAsync(dto);
@@ -55,10 +71,8 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         public async Task SignInAsync_UserNotFoundAfterSignIn_ShouldThrowBusinessException()
         {
             var dto = new SignInDto("ghost@test.com", "Password1!");
-            _signInManager.Setup(s => s.PasswordSignInAsync(dto.Email, dto.Password, true, false))
-                          .ReturnsAsync(SignInResult.Success);
-            _userManager.Setup(u => u.FindByNameAsync(dto.Email))
-                        .ReturnsAsync((ApplicationUser)null);
+            SetupSignInResult(dto.Email, dto.Password, SignInResult.Success);
+            SetupUserLookup(dto.Email, null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.SignInAsync(dto);
@@ -76,10 +90,8 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             const string expectedToken = "jwt-token-value";
             const string expectedJti = "test-jti-value";
 
-            _signInManager.Setup(s => s.PasswordSignInAsync(dto.Email, dto.Password, true, false))
-                          .ReturnsAsync(SignInResult.Success);
-            _userManager.Setup(u => u.FindByNameAsync(dto.Email))
-                        .ReturnsAsync(user);
+            SetupSignInResult(dto.Email, dto.Password, SignInResult.Success);
+            SetupUserLookup(dto.Email, user);
             _userManager.Setup(u => u.GetRolesAsync(user))
                         .ReturnsAsync(roles);
             _userManager.Setup(u => u.GetClaimsAsync(user))
@@ -107,8 +119,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             const string newAccessToken = "new-jwt";
             const string newJti = "new-jti";
 
-            _refreshTokenRepository.Setup(r => r.GetByTokenAsync("old-refresh-token", It.IsAny<CancellationToken>()))
-                                   .ReturnsAsync(oldToken);
+            SetupRefreshTokenLookup("old-refresh-token", oldToken);
             _userManager.Setup(u => u.FindByIdAsync(user.Id)).ReturnsAsync(user);
             _userManager.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(roles);
             _userManager.Setup(u => u.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
@@ -132,8 +143,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         {
             var expiredToken = RefreshToken.Create("user-1", "expired-token", "jti", DateTime.UtcNow.AddDays(-1));
 
-            _refreshTokenRepository.Setup(r => r.GetByTokenAsync("expired-token", It.IsAny<CancellationToken>()))
-                                   .ReturnsAsync(expiredToken);
+            SetupRefreshTokenLookup("expired-token", expiredToken);
 
             var service = CreateService();
             Func<Task> act = async () => await service.RefreshAsync("expired-token");
@@ -148,8 +158,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             var revokedToken = RefreshToken.Create("user-1", "revoked-token", "jti", DateTime.UtcNow.AddDays(7));
             revokedToken.Revoke();
 
-            _refreshTokenRepository.Setup(r => r.GetByTokenAsync("revoked-token", It.IsAny<CancellationToken>()))
-                                   .ReturnsAsync(revokedToken);
+            SetupRefreshTokenLookup("revoked-token", revokedToken);
 
             var service = CreateService();
             Func<Task> act = async () => await service.RefreshAsync("revoked-token");
@@ -162,8 +171,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RefreshAsync_InvalidToken_ShouldThrowBusinessException()
         {
-            _refreshTokenRepository.Setup(r => r.GetByTokenAsync("nonexistent", It.IsAny<CancellationToken>()))
-                                   .ReturnsAsync((RefreshToken)null);
+            SetupRefreshTokenLookup("nonexistent", null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.RefreshAsync("nonexistent");
@@ -177,8 +185,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         {
             var token = RefreshToken.Create("user-1", "active-token", "jti", DateTime.UtcNow.AddDays(7));
 
-            _refreshTokenRepository.Setup(r => r.GetByTokenAsync("active-token", It.IsAny<CancellationToken>()))
-                                   .ReturnsAsync(token);
+            SetupRefreshTokenLookup("active-token", token);
 
             var service = CreateService();
             await service.RevokeAsync("active-token");
@@ -190,8 +197,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RevokeAsync_InvalidToken_ShouldThrowBusinessException()
         {
-            _refreshTokenRepository.Setup(r => r.GetByTokenAsync("nonexistent", It.IsAny<CancellationToken>()))
-                                   .ReturnsAsync((RefreshToken)null);
+            SetupRefreshTokenLookup("nonexistent", null);
 
             var service = CreateService();
             Func<Task> act = async () => await service.RevokeAsync("nonexistent");

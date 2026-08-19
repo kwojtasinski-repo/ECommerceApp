@@ -25,6 +25,12 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private void SetupMessageAccepted()
             => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
+        private void SetupEmailRecipient(string userId, string email)
+            => _emailResolver.Setup(r => r.GetEmailForUserAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(email);
+
+        private void SetupAnyEmail(string email)
+            => _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(email);
+
         private OrderPlacedEmailHandler CreateHandler()
         {
             SetupMessageAccepted();
@@ -37,8 +43,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_SendsEmailToOrderOwner()
         {
-            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-5", It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user5@test.com");
+            SetupEmailRecipient("user-5", "user5@test.com");
 
             await CreateHandler().HandleAsync(Message(orderId: 5, userId: "user-5"), 1, TestContext.Current.CancellationToken);
 
@@ -50,8 +55,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenEmailNotResolved_SkipsEmail()
         {
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((string)null);
+            SetupAnyEmail(null);
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -61,8 +65,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_SubjectContainsOrderId()
         {
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user@test.com");
+            SetupAnyEmail("user@test.com");
 
             await CreateHandler().HandleAsync(Message(orderId: 42), 1, TestContext.Current.CancellationToken);
 
@@ -74,8 +77,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_BodyContainsTotalAmount()
         {
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user@test.com");
+            SetupAnyEmail("user@test.com");
 
             await CreateHandler().HandleAsync(Message(orderId: 1, total: 149.50m), 1, TestContext.Current.CancellationToken);
 
@@ -87,8 +89,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_IncludesActionWithOrderId()
         {
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user@test.com");
+            SetupAnyEmail("user@test.com");
 
             await CreateHandler().HandleAsync(Message(orderId: 7), 1, TestContext.Current.CancellationToken);
 
@@ -108,6 +109,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private void SetupMessageAccepted()
             => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
+        private void SetupUserEmail(string userId, string email)
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+            _emailResolver.Setup(r => r.GetEmailForUserAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(email);
+        }
+
+        private void SetupUserNotResolved()
+            => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((string)null);
+
         private PaymentConfirmedEmailHandler CreateHandler()
         {
             SetupMessageAccepted();
@@ -124,10 +134,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserResolved_SendsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user10@test.com");
+            SetupUserEmail("user-10", "user10@test.com");
 
             await CreateHandler().HandleAsync(Message(orderId: 10), 1, TestContext.Current.CancellationToken);
 
@@ -139,8 +146,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            SetupUserNotResolved();
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -150,10 +156,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenEmailNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((string)null);
+            SetupUserEmail("user-1", null);
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -163,10 +166,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_IncludesActionWithPaymentId()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user@test.com");
+            SetupUserEmail("user-1", "user@test.com");
 
             await CreateHandler().HandleAsync(Message(paymentId: 99), 1, TestContext.Current.CancellationToken);
 
@@ -187,6 +187,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private void SetupMessageAccepted()
             => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
+        private void SetupUserEmail(string userId, string email)
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+            _emailResolver.Setup(r => r.GetEmailForUserAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(email);
+        }
+
+        private void SetupUserNotResolved()
+            => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((string)null);
+
         private RefundApprovedEmailHandler CreateHandler()
         {
             SetupMessageAccepted();
@@ -204,10 +213,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserResolved_SendsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user10@test.com");
+            SetupUserEmail("user-10", "user10@test.com");
 
             await CreateHandler().HandleAsync(Message(refundId: 3, orderId: 10), 1, TestContext.Current.CancellationToken);
 
@@ -219,8 +225,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            SetupUserNotResolved();
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -230,10 +235,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenEmailNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((string)null);
+            SetupUserEmail("user-1", null);
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -243,10 +245,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_IncludesActionWithRefundId()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user@test.com");
+            SetupUserEmail("user-1", "user@test.com");
 
             await CreateHandler().HandleAsync(Message(refundId: 55), 1, TestContext.Current.CancellationToken);
 
@@ -258,10 +257,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenEmailSent_ShouldPublishCustomerNotified()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-1", It.IsAny<CancellationToken>()))
-                      .ReturnsAsync("user@test.com");
+            SetupUserEmail("user-1", "user@test.com");
 
             await CreateHandler().HandleAsync(Message(refundId: 55), 1, TestContext.Current.CancellationToken);
 
@@ -281,6 +277,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private void SetupMessageAccepted()
             => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
+        private void SetupUserEmail(string userId, string email)
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+            _emailResolver.Setup(r => r.GetEmailForUserAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(email);
+        }
+
+        private void SetupUserNotResolved()
+            => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((string)null);
+
         private OrderCancelledEmailHandler CreateHandler()
         {
             SetupMessageAccepted();
@@ -293,10 +298,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserResolved_SendsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(5, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-5");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-5", It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user5@test.com");
+            SetupUserEmail("user-5", "user5@test.com");
 
             await CreateHandler().HandleAsync(Message(orderId: 5), 1, TestContext.Current.CancellationToken);
 
@@ -308,8 +310,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            SetupUserNotResolved();
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -319,10 +320,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenEmailNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((string)null);
+            SetupUserEmail("user-1", null);
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -340,6 +338,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private void SetupMessageAccepted()
             => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
+        private void SetupUserEmail(string userId, string email)
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+            _emailResolver.Setup(r => r.GetEmailForUserAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(email);
+        }
+
+        private void SetupUserNotResolved()
+            => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((string)null);
+
         private PaymentExpiredEmailHandler CreateHandler()
         {
             SetupMessageAccepted();
@@ -352,10 +359,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserResolved_SendsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user10@test.com");
+            SetupUserEmail("user-10", "user10@test.com");
 
             await CreateHandler().HandleAsync(Message(paymentId: 3, orderId: 10), 1, TestContext.Current.CancellationToken);
 
@@ -367,8 +371,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            SetupUserNotResolved();
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -378,10 +381,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenEmailNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((string)null);
+            SetupUserEmail("user-1", null);
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -391,10 +391,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_BodyMentionsPaymentExpiry()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user@test.com");
+            SetupUserEmail("user-1", "user@test.com");
 
             await CreateHandler().HandleAsync(Message(paymentId: 7), 1, TestContext.Current.CancellationToken);
 
@@ -414,6 +411,15 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private void SetupMessageAccepted()
             => _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
+        private void SetupUserEmail(string userId, string email)
+        {
+            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+            _emailResolver.Setup(r => r.GetEmailForUserAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(email);
+        }
+
+        private void SetupUserNotResolved()
+            => _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((string)null);
+
         private RefundRejectedEmailHandler CreateHandler()
         {
             SetupMessageAccepted();
@@ -426,10 +432,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserResolved_SendsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-10");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
-                          .ReturnsAsync("user10@test.com");
+            SetupUserEmail("user-10", "user10@test.com");
 
             await CreateHandler().HandleAsync(Message(refundId: 4, orderId: 10), 1, TestContext.Current.CancellationToken);
 
@@ -441,8 +444,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenUserNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string)null);
+            SetupUserNotResolved();
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
@@ -452,10 +454,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_WhenEmailNotResolved_SkipsEmail()
         {
-            _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync("user-1");
-            _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((string)null);
+            SetupUserEmail("user-1", null);
 
             await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 

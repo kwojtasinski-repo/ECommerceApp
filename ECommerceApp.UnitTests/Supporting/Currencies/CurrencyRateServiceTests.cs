@@ -36,13 +36,29 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
                 Options.Create(new CacheOptions()));
         }
 
+        private void SetupCurrency(string code, Currency currency)
+        {
+            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
+        }
+
+        private void SetupRateLookup(CurrencyRate rate)
+        {
+            _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
+                .ReturnsAsync(rate);
+        }
+
+        private void SetupNbpRate(string code, DateTime date, string response)
+        {
+            _nbpClient.Setup(n => n.GetCurrencyRateOnDate(code, date.Date, CancellationToken.None)).ReturnsAsync(response);
+        }
+
         [Fact]
         public async Task GetRateForDayAsync_PlnCurrency_ShouldReturnRateOne()
         {
             int currencyId = 1;
             var date = DateTime.Now;
             var currency = Currency.Create("PLN", "Polish zloty");
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
+            SetupCurrency("PLN", currency);
             _currencyRateRepository.Setup(r => r.AddAsync(It.IsAny<CurrencyRate>()))
                 .ReturnsAsync(new CurrencyRateId(1));
 
@@ -61,9 +77,8 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             var date = DateTime.Now;
             var currency = Currency.Create("PLN", "Polish zloty");
             var existingRate = CurrencyRate.Create(new CurrencyId(currencyId), 1.0m, date);
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
-            _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
-                .ReturnsAsync(existingRate);
+            SetupCurrency("PLN", currency);
+            SetupRateLookup(existingRate);
 
             var result = await _sut.GetRateForDayAsync(currencyId, date);
 
@@ -78,9 +93,8 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             int currencyId = 2;
             var date = DateTime.Now;
             var currency = Currency.Create("EUR", "Euro");
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
-            _nbpClient.Setup(n => n.GetCurrencyRateOnDate("EUR", date.Date, CancellationToken.None))
-                .ReturnsAsync(GetDefaultNbpResponse());
+            SetupCurrency("EUR", currency);
+            SetupNbpRate("EUR", date, GetDefaultNbpResponse());
             _currencyRateRepository.Setup(r => r.AddAsync(It.IsAny<CurrencyRate>()))
                 .ReturnsAsync(new CurrencyRateId(1));
 
@@ -109,7 +123,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         {
             int currencyId = 999;
             var date = DateTime.Now;
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync((Currency)null);
+            SetupCurrency("", null);
 
             Func<Task> action = () => _sut.GetRateForDayAsync(currencyId, date);
 
@@ -123,7 +137,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             int currencyId = 10;
             var date = DateTime.Now;
             var currency = Currency.Create("XXX", "Unknown");
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
+            SetupCurrency("XXX", currency);
             _nbpClient.Setup(n => n.GetCurrencyRateOnDate(It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((string)null);
 
@@ -139,9 +153,8 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             int currencyId = 1;
             var currency = Currency.Create("PLN", "Polish zloty");
             var existingRate = CurrencyRate.Create(new CurrencyId(currencyId), 1.0m, DateTime.Now);
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
-            _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
-                .ReturnsAsync(existingRate);
+            SetupCurrency("PLN", currency);
+            SetupRateLookup(existingRate);
 
             var result = await _sut.GetLatestRateAsync(currencyId);
 
@@ -156,9 +169,8 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             int currencyId = 2;
             var currency = Currency.Create("EUR", "Euro");
             var existingRate = CurrencyRate.Create(new CurrencyId(currencyId), 4.5m, DateTime.Now);
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
-            _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
-                .ReturnsAsync(existingRate);
+            SetupCurrency("EUR", currency);
+            SetupRateLookup(existingRate);
 
             var result = await _sut.GetLatestRateAsync(currencyId);
 
@@ -171,7 +183,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public async Task GetLatestRateAsync_NonExistentCurrency_ShouldThrowBusinessException()
         {
             int currencyId = 999;
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync((Currency)null);
+            SetupCurrency("", null);
 
             Func<Task> action = () => _sut.GetLatestRateAsync(currencyId);
 

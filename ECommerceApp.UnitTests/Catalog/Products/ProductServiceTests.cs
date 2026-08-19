@@ -51,13 +51,23 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             return txMock;
         }
 
+        private void SetupProductLookup(Product product)
+        {
+            _productRepo.Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<ProductId>())).ReturnsAsync(product);
+        }
+
+        private void SetupPublishedProductLookup(Product product)
+        {
+            _productRepo.Setup(r => r.GetByIdAsync(It.IsAny<ProductId>())).ReturnsAsync(product);
+        }
+
         [Fact]
         public async Task UpdateProduct_EnqueuesAndCommits()
         {
             var dto = new UpdateProductDto(1, "UpdatedName", 1m, "d", 1, System.Array.Empty<int>());
             var product = Product.Create("OriginalName", 1m, "d", 1);
             EntityIdSetter.Set(product, new ProductId(1));
-            _productRepo.Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<ProductId>())).ReturnsAsync(product);
+            SetupProductLookup(product);
             _categoryRepo.Setup(r => r.ExistsByIdAsync(It.IsAny<CategoryId>())).ReturnsAsync(true);
 
             var txMock = SetupProductPublishing();
@@ -76,7 +86,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         {
             var product = Product.Create("ProdPublish", 1m, "d", 1);
             EntityIdSetter.Set(product, new ProductId(1));
-            _productRepo.Setup(r => r.GetByIdAsync(It.IsAny<ProductId>())).ReturnsAsync(product);
+            SetupPublishedProductLookup(product);
 
             var txMock = SetupProductPublishing();
 
@@ -95,13 +105,9 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             EntityIdSetter.Set(product, new ProductId(1));
             // ensure product is published before unpublish
             product.Publish();
-            _productRepo.Setup(r => r.GetByIdAsync(It.IsAny<ProductId>())).ReturnsAsync(product);
+            SetupPublishedProductLookup(product);
 
-            var txMock = new Mock<IOutboxTransaction>();
-            _uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _productRepo.Setup(r => r.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
+            var txMock = SetupProductPublishing();
 
             var svc = CreateService();
             await svc.UnpublishProduct(1);

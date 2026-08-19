@@ -28,6 +28,22 @@ namespace ECommerceApp.UnitTests.Backoffice
         private IBackofficeCustomerService CreateSut()
             => new BackofficeCustomerService(_profileService.Object, _orderService.Object);
 
+        private void SetupCustomerList(int pageSize, int pageNumber, string searchString, UserProfileListVm source)
+        {
+            _profileService.Setup(s => s.GetAllAsync(pageSize, pageNumber, searchString)).ReturnsAsync(source);
+        }
+
+        private void SetupCustomerDetails(int customerId, UserProfileDetailsVm details)
+        {
+            _profileService.Setup(s => s.GetDetailsAsync(customerId)).ReturnsAsync(details);
+        }
+
+        private void SetupCustomerOrders(int customerId, IReadOnlyList<OrderForListVm> orders)
+        {
+            _orderService.Setup(s => s.GetOrdersByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(orders);
+        }
+
         // ── GetCustomersAsync ─────────────────────────────────────────────────
 
         [Fact]
@@ -46,9 +62,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 Count = 2,
                 SearchString = "Jan"
             };
-            _profileService
-                .Setup(s => s.GetAllAsync(10, 1, "Jan"))
-                .ReturnsAsync(source);
+            SetupCustomerList(10, 1, "Jan", source);
 
             // Act
             var result = await CreateSut().GetCustomersAsync(10, 1, "Jan", TestContext.Current.CancellationToken);
@@ -72,9 +86,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetCustomersAsync_NullSearch_DelegatesToEmptyString()
         {
             // Arrange
-            _profileService
-                .Setup(s => s.GetAllAsync(10, 1, string.Empty))
-                .ReturnsAsync(new UserProfileListVm { Profiles = new List<UserProfileForListVm>() });
+            SetupCustomerList(10, 1, string.Empty, new UserProfileListVm { Profiles = new List<UserProfileForListVm>() });
 
             // Act
             var result = await CreateSut().GetCustomersAsync(10, 1, null, TestContext.Current.CancellationToken);
@@ -90,9 +102,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetCustomerDetailAsync_ExistingCustomer_ReturnsMappedVm()
         {
             // Arrange
-            _profileService
-                .Setup(s => s.GetDetailsAsync(5))
-                .ReturnsAsync(new UserProfileDetailsVm
+            SetupCustomerDetails(5, new UserProfileDetailsVm
                 {
                     Id = 5,
                     UserId = "user-5",
@@ -117,9 +127,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetCustomerDetailAsync_NotFound_ReturnsNull()
         {
             // Arrange
-            _profileService
-                .Setup(s => s.GetDetailsAsync(99))
-                .ReturnsAsync((UserProfileDetailsVm)null);
+            SetupCustomerDetails(99, null);
 
             // Act
             var result = await CreateSut().GetCustomerDetailAsync(99, TestContext.Current.CancellationToken);
@@ -142,9 +150,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 new() { Id = 4, Number = "O4", Cost = 40m, Status = OrderStatus.Fulfilled },
                 new() { Id = 5, Number = "O5", Cost = 50m, Status = OrderStatus.Placed }
             };
-            _orderService
-                .Setup(s => s.GetOrdersByCustomerIdAsync(7, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(all);
+            SetupCustomerOrders(7, all);
 
             // Act
             var result = await CreateSut().GetOrdersByCustomerAsync(7, pageSize: 2, pageNo: 2, TestContext.Current.CancellationToken);
@@ -164,9 +170,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetOrdersByCustomerAsync_EmptyList_ReturnsEmptyVm()
         {
             // Arrange
-            _orderService
-                .Setup(s => s.GetOrdersByCustomerIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OrderForListVm>());
+            SetupCustomerOrders(99, new List<OrderForListVm>());
 
             // Act
             var result = await CreateSut().GetOrdersByCustomerAsync(99, pageSize: 10, pageNo: 1, TestContext.Current.CancellationToken);

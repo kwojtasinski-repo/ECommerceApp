@@ -23,12 +23,26 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _sut = new CurrencyService(_currencyRepository.Object);
         }
 
+        private void SetupCurrencyLookup(Currency currency)
+        {
+            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
+        }
+
+        private void SetupCurrencyCreation(int currencyId)
+        {
+            _currencyRepository.Setup(r => r.AddAsync(It.IsAny<Currency>())).ReturnsAsync(new CurrencyId(currencyId));
+        }
+
+        private void SetupCurrencyDeletion(bool deleted)
+        {
+            _currencyRepository.Setup(r => r.DeleteAsync(It.IsAny<CurrencyId>())).ReturnsAsync(deleted);
+        }
+
         [Fact]
         public async Task AddAsync_ValidDto_ShouldAddCurrency()
         {
             var dto = new CreateCurrencyDto("EUR", "Euro");
-            _currencyRepository.Setup(r => r.AddAsync(It.IsAny<Currency>()))
-                .ReturnsAsync(new CurrencyId(1));
+            SetupCurrencyCreation(1);
 
             var result = await _sut.AddAsync(dto);
 
@@ -50,7 +64,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         {
             var dto = new UpdateCurrencyDto(1, "USD", "US Dollar");
             var currency = Currency.Create("EUR", "Euro");
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
+            SetupCurrencyLookup(currency);
 
             var result = await _sut.UpdateAsync(dto);
 
@@ -71,7 +85,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public async Task UpdateAsync_NonExistentCurrency_ShouldReturnFalse()
         {
             var dto = new UpdateCurrencyDto(999, "USD", "US Dollar");
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync((Currency)null);
+            SetupCurrencyLookup(null);
 
             var result = await _sut.UpdateAsync(dto);
 
@@ -82,7 +96,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task DeleteAsync_ExistingId_ShouldReturnTrue()
         {
-            _currencyRepository.Setup(r => r.DeleteAsync(It.IsAny<CurrencyId>())).ReturnsAsync(true);
+            SetupCurrencyDeletion(true);
 
             var result = await _sut.DeleteAsync(1);
 
@@ -93,7 +107,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public async Task GetByIdAsync_ExistingId_ShouldReturnCurrencyVm()
         {
             var currency = Currency.Create("PLN", "Polish zloty");
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync(currency);
+            SetupCurrencyLookup(currency);
 
             var result = await _sut.GetByIdAsync(1);
 
@@ -105,7 +119,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetByIdAsync_NonExistentId_ShouldReturnNull()
         {
-            _currencyRepository.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>())).ReturnsAsync((Currency)null);
+            SetupCurrencyLookup(null);
 
             var result = await _sut.GetByIdAsync(999);
 

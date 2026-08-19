@@ -35,6 +35,17 @@ namespace ECommerceApp.UnitTests.Backoffice
                 NeverRun = lastRun == null
             };
 
+        private void SetupJobs(params JobStatusSummary[] jobs)
+        {
+            _jobManagement.Setup(s => s.GetAllJobsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<JobStatusSummary>(jobs));
+        }
+
+        private void SetupHistory(IReadOnlyList<JobExecutionRecord> history, int count)
+        {
+            _jobManagement.Setup(s => s.GetAllHistoryAsync(1, 10, It.IsAny<CancellationToken>())).ReturnsAsync(history);
+            _jobManagement.Setup(s => s.GetAllHistoryCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(count);
+        }
+
         // ── GetJobsAsync ──────────────────────────────────────────────────────
 
         [Fact]
@@ -42,14 +53,10 @@ namespace ECommerceApp.UnitTests.Backoffice
         {
             // Arrange — 3 jobs, page 1 with size 2
             var now = DateTime.UtcNow;
-            _jobManagement
-                .Setup(s => s.GetAllJobsAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<JobStatusSummary>
-                {
+            SetupJobs(
                     MakeJob("JobA", enabled: true,  lastRun: now.AddHours(-1), nextRun: now.AddHours(1)),
                     MakeJob("JobB", enabled: false, lastRun: now.AddHours(-2)),
-                    MakeJob("JobC", enabled: true)
-                });
+                    MakeJob("JobC", enabled: true));
 
             // Act
             var result = await CreateSut().GetJobsAsync(pageSize: 2, pageNo: 1, TestContext.Current.CancellationToken);
@@ -70,14 +77,10 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetJobsAsync_PageTwo_ReturnsCorrectSlice()
         {
             // Arrange — 3 jobs, request page 2 with size 2
-            _jobManagement
-                .Setup(s => s.GetAllJobsAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<JobStatusSummary>
-                {
+            SetupJobs(
                     MakeJob("JobA", true),
                     MakeJob("JobB", false),
-                    MakeJob("JobC", true)
-                });
+                    MakeJob("JobC", true));
 
             // Act
             var result = await CreateSut().GetJobsAsync(pageSize: 2, pageNo: 2, TestContext.Current.CancellationToken);
@@ -91,9 +94,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetJobsAsync_EmptyList_ReturnsEmptyVm()
         {
             // Arrange
-            _jobManagement
-                .Setup(s => s.GetAllJobsAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<JobStatusSummary>());
+            SetupJobs();
 
             // Act
             var result = await CreateSut().GetJobsAsync(10, 1, TestContext.Current.CancellationToken);
@@ -110,9 +111,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         {
             // Arrange
             var now = DateTime.UtcNow;
-            _jobManagement
-                .Setup(s => s.GetAllJobsAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<JobStatusSummary>
+            SetupJobs(new JobStatusSummary
                 {
                     new JobStatusSummary
                     {
@@ -138,9 +137,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetJobDetailAsync_NotFound_ReturnsNull()
         {
             // Arrange
-            _jobManagement
-                .Setup(s => s.GetAllJobsAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<JobStatusSummary> { MakeJob("OtherJob", true) });
+            SetupJobs(MakeJob("OtherJob", true));
 
             // Act
             var result = await CreateSut().GetJobDetailAsync("MissingJob", TestContext.Current.CancellationToken);
@@ -156,16 +153,11 @@ namespace ECommerceApp.UnitTests.Backoffice
         {
             // Arrange
             var now = DateTime.UtcNow;
-            _jobManagement
-                .Setup(s => s.GetAllHistoryAsync(1, 10, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<JobExecutionRecord>
+            SetupHistory(new List<JobExecutionRecord>
                 {
                     new() { JobName = "JobA", ExecutionId = "exec-1", StartedAt = now.AddMinutes(-10), CompletedAt = now.AddMinutes(-9), Succeeded = true  },
                     new() { JobName = "JobB", ExecutionId = "exec-2", StartedAt = now.AddMinutes(-5),  CompletedAt = now.AddMinutes(-4), Succeeded = false }
-                });
-            _jobManagement
-                .Setup(s => s.GetAllHistoryCountAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(2);
+                }, 2);
 
             // Act
             var result = await CreateSut().GetJobHistoryAsync(10, 1, TestContext.Current.CancellationToken);
@@ -186,12 +178,7 @@ namespace ECommerceApp.UnitTests.Backoffice
         public async Task GetJobHistoryAsync_EmptyHistory_ReturnsEmptyVm()
         {
             // Arrange
-            _jobManagement
-                .Setup(s => s.GetAllHistoryAsync(1, 10, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<JobExecutionRecord>());
-            _jobManagement
-                .Setup(s => s.GetAllHistoryCountAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(0);
+            SetupHistory(new List<JobExecutionRecord>(), 0);
 
             // Act
             var result = await CreateSut().GetJobHistoryAsync(10, 1, TestContext.Current.CancellationToken);

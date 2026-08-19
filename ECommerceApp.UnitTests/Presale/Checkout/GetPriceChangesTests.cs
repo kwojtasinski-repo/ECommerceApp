@@ -49,6 +49,16 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             return r;
         }
 
+        private void SetupReservations(IReadOnlyList<SoftReservation> reservations)
+        {
+            _reservationRepo.Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(reservations);
+        }
+
+        private void SetupCurrentPrice(int productId, decimal? price)
+        {
+            _catalogClient.Setup(c => c.GetUnitPriceAsync(productId, It.IsAny<CancellationToken>())).ReturnsAsync(price);
+        }
+
         // ── GetAllForUserAsync ────────────────────────────────────────────────
 
         [Fact]
@@ -59,9 +69,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 MakeReservation(productId: 1, unitPrice: 10m),
                 MakeReservation(productId: 2, unitPrice: 20m)
             };
-            _reservationRepo
-                .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(reservations);
+            SetupReservations(reservations);
 
             var result = await _sut.GetAllForUserAsync(UserId, TestContext.Current.CancellationToken);
 
@@ -71,9 +79,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetAllForUserAsync_NoReservations_ReturnsEmpty()
         {
-            _reservationRepo
-                .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation>());
+            SetupReservations(new List<SoftReservation>());
 
             var result = await _sut.GetAllForUserAsync(UserId, TestContext.Current.CancellationToken);
 
@@ -87,12 +93,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             const decimal price = 50m;
             var reservation = MakeReservation(productId: 1, unitPrice: price);
-            _reservationRepo
-                .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
-            _catalogClient
-                .Setup(c => c.GetUnitPriceAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(price);
+            SetupReservations(new List<SoftReservation> { reservation });
+            SetupCurrentPrice(1, price);
 
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
@@ -103,12 +105,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetPriceChangesAsync_PriceRaised_ReturnsVmWithBothPrices()
         {
             var reservation = MakeReservation(productId: 2, unitPrice: 40m);
-            _reservationRepo
-                .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
-            _catalogClient
-                .Setup(c => c.GetUnitPriceAsync(2, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(60m);
+            SetupReservations(new List<SoftReservation> { reservation });
+            SetupCurrentPrice(2, 60m);
 
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
@@ -121,12 +119,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetPriceChangesAsync_PriceDropped_ReturnsVmWithBothPrices()
         {
             var reservation = MakeReservation(productId: 3, unitPrice: 100m);
-            _reservationRepo
-                .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
-            _catalogClient
-                .Setup(c => c.GetUnitPriceAsync(3, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(80m);
+            SetupReservations(new List<SoftReservation> { reservation });
+            SetupCurrentPrice(3, 80m);
 
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
@@ -140,15 +134,9 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var unchanged = MakeReservation(productId: 1, unitPrice: 20m);
             var changed = MakeReservation(productId: 2, unitPrice: 30m);
-            _reservationRepo
-                .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { unchanged, changed });
-            _catalogClient
-                .Setup(c => c.GetUnitPriceAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(20m);
-            _catalogClient
-                .Setup(c => c.GetUnitPriceAsync(2, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(35m);
+            SetupReservations(new List<SoftReservation> { unchanged, changed });
+            SetupCurrentPrice(1, 20m);
+            SetupCurrentPrice(2, 35m);
 
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
@@ -160,12 +148,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetPriceChangesAsync_CatalogReturnsNull_LineExcluded()
         {
             var reservation = MakeReservation(productId: 4, unitPrice: 25m);
-            _reservationRepo
-                .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<SoftReservation> { reservation });
-            _catalogClient
-                .Setup(c => c.GetUnitPriceAsync(4, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((decimal?)null);
+            SetupReservations(new List<SoftReservation> { reservation });
+            SetupCurrentPrice(4, null);
 
             var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
