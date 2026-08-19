@@ -16,33 +16,47 @@ namespace ECommerceApp.UnitTests.AccountProfile
 
         private GuestPromotionService CreateService() => new(_profiles.Object, _users.Object);
 
-            private void SetupGuestIsNotRegistered(string userId)
-            {
-                _users.Setup(u => u.IsRegisteredAsync(userId)).ReturnsAsync(false);
-            }
+        private void SetupGuestIsNotRegistered(string userId)
+        {
+            _users.Setup(u => u.IsRegisteredAsync(userId)).ReturnsAsync(false);
+        }
 
-            private void SetupSuccessfulGuestRegistration(string userId)
-            {
-                SetupGuestIsNotRegistered(userId);
-                _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
-                    .ReturnsAsync(new GuestAccountProvisioningResult("registered-1", new List<string>()));
-            }
+        private void SetupSuccessfulGuestRegistration(string userId)
+        {
+            SetupGuestIsNotRegistered(userId);
+            _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
+                .ReturnsAsync(new GuestAccountProvisioningResult("registered-1", new List<string>()));
+        }
 
-            private void SetupFailedGuestRegistration(string userId)
-            {
-                SetupGuestIsNotRegistered(userId);
-                _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
-                    .ReturnsAsync(new GuestAccountProvisioningResult(null, new List<string> { "weak password" }));
-            }
+        private void SetupFailedGuestRegistration(string userId)
+        {
+            SetupGuestIsNotRegistered(userId);
+            _users.Setup(u => u.CreateAsync("jan@test.com", "Password1!"))
+                .ReturnsAsync(new GuestAccountProvisioningResult(null, new List<string> { "weak password" }));
+        }
+
+        private void SetupProfileMissing(int profileId)
+        {
+            _profiles.Setup(r => r.GetByIdAsync(new UserProfileId(profileId), true))
+                .ReturnsAsync((UserProfile)null);
+        }
+
+        private void SetupGuestAlreadyRegistered(string userId)
+        {
+            _users.Setup(u => u.IsRegisteredAsync(userId)).ReturnsAsync(true);
+        }
 
         [Fact]
         public async Task PromoteAsync_RequestingUserIdDoesNotMatchProfileOwner_ReturnsNotOwner()
         {
+            // Arrange
             var profile = CreateProfile("gst_owner");
             SetupProfile(profile, 5);
 
+            // Act
             var result = await CreateService().PromoteAsync(5, "gst_attacker", "Password1!");
 
+            // Assert
             result.Status.Should().Be(PromotionStatus.NotOwner);
             _users.Verify(u => u.CreateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
@@ -50,22 +64,28 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task PromoteAsync_ProfileNotFound_ReturnsProfileNotFound()
         {
-            _profiles.Setup(r => r.GetByIdAsync(new UserProfileId(99), true)).ReturnsAsync((UserProfile)null);
+            // Arrange
+            SetupProfileMissing(99);
 
+            // Act
             var result = await CreateService().PromoteAsync(99, "gst_owner", "Password1!");
 
+            // Assert
             result.Status.Should().Be(PromotionStatus.ProfileNotFound);
         }
 
         [Fact]
         public async Task PromoteAsync_Valid_CreatesApplicationUserAndReassignsOwner()
         {
+            // Arrange
             var profile = CreateProfile("gst_owner");
             SetupProfile(profile, 5);
             SetupSuccessfulGuestRegistration("gst_owner");
 
+            // Act
             var result = await CreateService().PromoteAsync(5, "gst_owner", "Password1!");
 
+            // Assert
             result.Status.Should().Be(PromotionStatus.Success);
             profile.UserId.Should().NotBe("gst_owner");
             _profiles.Verify(r => r.UpdateAsync(profile), Times.Once);
@@ -74,12 +94,15 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task PromoteAsync_IdentityCreationFails_DoesNotReassignOwner()
         {
+            // Arrange
             var profile = CreateProfile("gst_owner");
             SetupProfile(profile, 5);
             SetupFailedGuestRegistration("gst_owner");
 
+            // Act
             var result = await CreateService().PromoteAsync(5, "gst_owner", "Password1!");
 
+            // Assert
             result.Status.Should().Be(PromotionStatus.IdentityCreationFailed);
             profile.UserId.Should().Be("gst_owner");
             _profiles.Verify(r => r.UpdateAsync(It.IsAny<UserProfile>()), Times.Never);
@@ -88,12 +111,15 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task PromoteAsync_ProfileAlreadyRegistered_ReturnsAlreadyRegistered()
         {
+            // Arrange
             var profile = CreateProfile("registered-1");
             SetupProfile(profile, 5);
-            _users.Setup(u => u.IsRegisteredAsync("registered-1")).ReturnsAsync(true);
+            SetupGuestAlreadyRegistered("registered-1");
 
+            // Act
             var result = await CreateService().PromoteAsync(5, "registered-1", "Password1!");
 
+            // Assert
             result.Status.Should().Be(PromotionStatus.AlreadyRegistered);
             _users.Verify(u => u.CreateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }

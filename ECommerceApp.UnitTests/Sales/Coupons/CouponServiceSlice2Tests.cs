@@ -124,13 +124,13 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                 .ReturnsAsync(records);
         }
 
-            private void SetupApplicationRecordPersistence()
-            {
-                _applicationRecords.Setup(x => x.AddAsync(
+        private void SetupApplicationRecordPersistence()
+        {
+            _applicationRecords.Setup(x => x.AddAsync(
                     It.IsAny<CouponApplicationRecord>(),
                     It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            }
+        }
 
         private void SetupCouponUsedPersistence(int assignedId = 7)
         {

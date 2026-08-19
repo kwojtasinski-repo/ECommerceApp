@@ -69,6 +69,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         [Fact]
         public async Task UpdateProduct_EnqueuesAndCommits()
         {
+            // Arrange
             var dto = new UpdateProductDto(1, "UpdatedName", 1m, "d", 1, System.Array.Empty<int>());
             var product = Product.Create("OriginalName", 1m, "d", 1);
             EntityIdSetter.Set(product, new ProductId(1));
@@ -78,8 +79,11 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             var txMock = SetupProductPublishing();
 
             var svc = CreateService();
+
+            // Act
             var result = await svc.UpdateProduct(dto);
 
+            // Assert
             result.Should().BeTrue();
             _productRepo.Verify(r => r.UpdateAsync(product), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), txMock.Object, It.IsAny<CancellationToken>()), Times.Once);
@@ -89,6 +93,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         [Fact]
         public async Task PublishProduct_EnqueuesAndCommits()
         {
+            // Arrange
             var product = Product.Create("ProdPublish", 1m, "d", 1);
             EntityIdSetter.Set(product, new ProductId(1));
             SetupPublishedProductLookup(product);
@@ -96,8 +101,11 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             var txMock = SetupProductPublishing();
 
             var svc = CreateService();
+
+            // Act
             await svc.PublishProduct(1);
 
+            // Assert
             _productRepo.Verify(r => r.UpdateAsync(product), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), txMock.Object, It.IsAny<CancellationToken>()), Times.Once);
             txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -106,6 +114,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         [Fact]
         public async Task UnpublishProduct_EnqueuesAndCommits()
         {
+            // Arrange
             var product = Product.Create("ProdUnpublish", 1m, "d", 1);
             EntityIdSetter.Set(product, new ProductId(1));
             // ensure product is published before unpublish
@@ -115,8 +124,11 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             var txMock = SetupProductPublishing();
 
             var svc = CreateService();
+
+            // Act
             await svc.UnpublishProduct(1);
 
+            // Assert
             _productRepo.Verify(r => r.UpdateAsync(product), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), txMock.Object, It.IsAny<CancellationToken>()), Times.Once);
             txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
