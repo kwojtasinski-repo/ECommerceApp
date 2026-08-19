@@ -74,12 +74,15 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task SignInAsync_InvalidCredentials_ShouldThrowBusinessException()
         {
+            // Arrange
             var dto = new SignInDto("test@test.com", "wrongPassword");
             SetupSignInResult(dto.Email, dto.Password, SignInResult.Failed);
 
             var service = CreateService();
+            // Act
             Func<Task> act = async () => await service.SignInAsync(dto);
 
+            // Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage("Invalid credentials");
         }
@@ -87,13 +90,16 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task SignInAsync_UserNotFoundAfterSignIn_ShouldThrowBusinessException()
         {
+            // Arrange
             var dto = new SignInDto("ghost@test.com", "Password1!");
             SetupSignInResult(dto.Email, dto.Password, SignInResult.Success);
             SetupUserLookup(dto.Email, null);
 
             var service = CreateService();
+            // Act
             Func<Task> act = async () => await service.SignInAsync(dto);
 
+            // Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage("Invalid credentials");
         }
@@ -101,6 +107,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task SignInAsync_ValidCredentials_ShouldReturnTokenResponseWithRefreshToken()
         {
+            // Arrange
             var dto = new SignInDto("user@test.com", "Password1!");
             var user = new ApplicationUser { Id = "user-1", Email = dto.Email };
             var roles = new List<string> { "User" };
@@ -112,8 +119,10 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             SetupTokenIssuance(user, roles, expectedToken, expectedJti);
 
             var service = CreateService();
+            // Act
             var result = await service.SignInAsync(dto);
 
+            // Assert
             result.Should().NotBeNull();
             result.AccessToken.Should().Be(expectedToken);
             result.RefreshToken.Should().NotBeNullOrEmpty();
@@ -125,6 +134,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RefreshAsync_ValidToken_ShouldReturnNewTokenPairAndRevokeOld()
         {
+            // Arrange
             var user = new ApplicationUser { Id = "user-1", Email = "user@test.com" };
             var roles = new List<string> { "User" };
             var oldToken = RefreshToken.Create(user.Id, "old-refresh-token", "old-jti", DateTime.UtcNow.AddDays(7));
@@ -136,8 +146,10 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             SetupTokenIssuance(user, roles, newAccessToken, newJti);
 
             var service = CreateService();
+            // Act
             var result = await service.RefreshAsync("old-refresh-token");
 
+            // Assert
             result.AccessToken.Should().Be(newAccessToken);
             result.RefreshToken.Should().NotBeNullOrEmpty();
             result.RefreshToken.Should().NotBe("old-refresh-token");
@@ -150,13 +162,16 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RefreshAsync_ExpiredToken_ShouldThrowBusinessException()
         {
+            // Arrange
             var expiredToken = RefreshToken.Create("user-1", "expired-token", "jti", DateTime.UtcNow.AddDays(-1));
 
             SetupRefreshTokenLookup("expired-token", expiredToken);
 
             var service = CreateService();
+            // Act
             Func<Task> act = async () => await service.RefreshAsync("expired-token");
 
+            // Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage("Refresh token has expired");
         }
@@ -164,14 +179,17 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RefreshAsync_RevokedToken_ShouldRevokeAllAndThrow()
         {
+            // Arrange
             var revokedToken = RefreshToken.Create("user-1", "revoked-token", "jti", DateTime.UtcNow.AddDays(7));
             revokedToken.Revoke();
 
             SetupRefreshTokenLookup("revoked-token", revokedToken);
 
             var service = CreateService();
+            // Act
             Func<Task> act = async () => await service.RefreshAsync("revoked-token");
 
+            // Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage("*theft detected*");
             _refreshTokenRepository.Verify(r => r.RevokeAllForUserAsync("user-1", It.IsAny<CancellationToken>()), Times.Once);
@@ -180,11 +198,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RefreshAsync_InvalidToken_ShouldThrowBusinessException()
         {
+            // Arrange
             SetupRefreshTokenLookup("nonexistent", null);
 
             var service = CreateService();
+            // Act
             Func<Task> act = async () => await service.RefreshAsync("nonexistent");
 
+            // Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage("Invalid refresh token");
         }
@@ -192,13 +213,16 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RevokeAsync_ValidToken_ShouldMarkAsRevoked()
         {
+            // Arrange
             var token = RefreshToken.Create("user-1", "active-token", "jti", DateTime.UtcNow.AddDays(7));
 
             SetupRefreshTokenLookup("active-token", token);
 
             var service = CreateService();
+            // Act
             await service.RevokeAsync("active-token");
 
+            // Assert
             token.IsRevoked.Should().BeTrue();
             _refreshTokenRepository.Verify(r => r.UpdateAsync(token, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -206,11 +230,14 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         [Fact]
         public async Task RevokeAsync_InvalidToken_ShouldThrowBusinessException()
         {
+            // Arrange
             SetupRefreshTokenLookup("nonexistent", null);
 
             var service = CreateService();
+            // Act
             Func<Task> act = async () => await service.RevokeAsync("nonexistent");
 
+            // Assert
             await act.Should().ThrowAsync<BusinessException>()
                      .WithMessage("Invalid refresh token");
         }

@@ -34,58 +34,69 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             "Jan", "Kowalski", "jan@example.com", "123456789",
             false, null, null, "Główna", "1", null, "67-100", "Nowa Sól", "Polska");
 
+        private void SetupOrderLookup(Order order, int orderId = 1)
+        {
+            _orderRepo
+                .Setup(r => r.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(order);
+        }
+
         // ── HandleAsync ───────────────────────────────────────────────────────
 
         [Fact]
         public async Task HandleAsync_OrderNotFound_ShouldNotCancelOrPublish()
         {
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Order)null);
+            // Arrange
+            SetupOrderLookup(null);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(), TestContext.Current.CancellationToken);
 
+            // Assert
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task HandleAsync_AlreadyCancelledOrder_ShouldNotPublish()
         {
+            // Arrange
             var order = CreateOrder();
             order.ExpirePayment();
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrderLookup(order);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
+            // Assert
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task HandleAsync_AlreadyPaidOrder_ShouldNotCancelOrPublish()
         {
+            // Arrange
             var order = CreateOrder();
             order.ConfirmPayment(5);
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrderLookup(order);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
+            // Assert
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task HandleAsync_PlacedOrder_ShouldExpirePaymentAndUpdate()
         {
+            // Arrange
             var order = CreateOrder();
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrderLookup(order);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
+            // Assert
             order.Status.Should().Be(OrderStatus.Cancelled);
             order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentExpired);
             _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
@@ -96,15 +107,16 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         [Fact]
         public async Task HandleAsync_FulfilledOrder_ShouldNotExpireOrUpdate()
         {
+            // Arrange
             var order = CreateOrder();
             order.ConfirmPayment(3);
             order.Fulfill();
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrderLookup(order);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
+            // Assert
             order.Status.Should().Be(OrderStatus.Fulfilled);
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -112,14 +124,15 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         [Fact]
         public async Task HandleAsync_PaymentConfirmedOrder_ShouldNotExpireOrUpdate()
         {
+            // Arrange
             var order = CreateOrder();
             order.ConfirmPayment(7);
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrderLookup(order);
 
+            // Act
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
+            // Assert
             order.Status.Should().Be(OrderStatus.PaymentConfirmed);
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -129,15 +142,16 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         [Fact]
         public async Task HandleAsync_PlacedOrder_ShouldAcceptNonDefaultCorrelationId()
         {
+            // Arrange
             var order = CreateOrder();
-            _orderRepo
-                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(order);
+            SetupOrderLookup(order);
             var message = new PaymentExpired(PaymentId: 10, OrderId: 1, OccurredAt: DateTime.UtcNow,
                 CorrelationId: Guid.NewGuid());
 
+            // Act
             await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
+            // Assert
             // Handler must still apply the state transition regardless of CorrelationId value.
             order.Status.Should().Be(OrderStatus.Cancelled);
             _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);

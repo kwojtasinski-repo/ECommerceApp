@@ -79,12 +79,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task SetCartItemAsync_ValidDto_ShouldUpsertAndRefreshCache()
         {
+            // Arrange
             var lines = new List<CartLine> { CartLine.Create("user-1", 1, 2) };
             SetupCartUpsert();
             SetupCartLines("user-1", lines);
 
+            // Act
             await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2), TestContext.Current.CancellationToken);
 
+            // Assert
             _cartRepo.Verify(r => r.UpsertAsync(
                 It.Is<CartLine>(l => l.UserId.Value == "user-1" && l.ProductId.Value == 1 && l.Quantity.Value == 2),
                 It.IsAny<CancellationToken>()), Times.Once);
@@ -93,12 +96,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task SetCartItemAsync_ValidDto_ShouldPopulateCache()
         {
+            // Arrange
             var lines = new List<CartLine> { CartLine.Create("user-1", 1, 2) };
             SetupCartUpsert();
             SetupCartLines("user-1", lines);
 
+            // Act
             await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2), TestContext.Current.CancellationToken);
 
+            // Assert
             var cart = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
             cart.Should().NotBeNull();
             _cartRepo.Verify(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -109,6 +115,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RestoreAsync_MultipleItems_ShouldUpsertEachLineAndRefreshCache()
         {
+            // Arrange
             var lines = new List<CartLine>
             {
                 CartLine.Create("user-1", 1, 2),
@@ -118,11 +125,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             SetupCartUpsert();
             SetupCartLines(lines);
 
+            // Act
             await _service.RestoreAsync(
                 new PresaleUserId("user-1"),
                 new List<CartRestoreItem> { new(1, 2), new(2, 3) },
                 TestContext.Current.CancellationToken);
 
+            // Assert
             _cartRepo.Verify(r => r.UpsertAsync(
                 It.Is<CartLine>(l => l.UserId.Value == "user-1" && l.ProductId.Value == 1 && l.Quantity.Value == 2),
                 It.IsAny<CancellationToken>()), Times.Once);
@@ -139,16 +148,19 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RestoreAsync_ProductNotInCatalog_ShouldStillRestoreLine()
         {
+            // Arrange
             var lines = new List<CartLine> { CartLine.Create("user-1", 7, 4) };
 
             SetupCartUpsert();
             SetupCartLines(lines);
 
+            // Act
             await _service.RestoreAsync(
                 new PresaleUserId("user-1"),
                 new List<CartRestoreItem> { new(7, 4) },
                 TestContext.Current.CancellationToken);
 
+            // Assert
             var cart = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
             cart.Should().NotBeNull();
             cart!.Lines.Count.Should().Be(1);
@@ -162,11 +174,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task AddToCartAsync_NoExistingItem_ShouldSetQuantityToRequested()
         {
+            // Arrange
             SetupCartUpsert();
             SetupCartLines(new List<CartLine>());
 
+            // Act
             var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3), TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<AddToCartResult.Success>();
             _cartRepo.Verify(r => r.UpsertAsync(
                 It.Is<CartLine>(l => l.ProductId.Value == 1 && l.Quantity.Value == 3),
@@ -176,12 +191,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task AddToCartAsync_ExistingItem_ShouldIncrementQuantity()
         {
+            // Arrange
             var existing = new List<CartLine> { CartLine.Create("user-1", 1, 4) };
             SetupCartUpsert();
             SetupCartLines(existing);
 
+            // Act
             var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3), TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<AddToCartResult.Success>();
             _cartRepo.Verify(r => r.UpsertAsync(
                 It.Is<CartLine>(l => l.ProductId.Value == 1 && l.Quantity.Value == 7), // 4 + 3
@@ -191,11 +209,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task AddToCartAsync_ExceedsLimit_ShouldReturnQuantityExceeded()
         {
+            // Arrange
             var existing = new List<CartLine> { CartLine.Create("user-1", 1, 8) };
             SetupCartLines(existing);
 
+            // Act
             var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 5), TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeOfType<AddToCartResult.QuantityExceeded>()
                 .Which.MaxAllowed.Should().Be(10);
             _cartRepo.Verify(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -206,11 +227,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RemoveAsync_ExistingLine_ShouldDeleteAndRefreshCache()
         {
+            // Arrange
             SetupCartDelete("user-1", 1);
             SetupCartLines("user-1", new List<CartLine>());
 
+            // Act
             await _service.RemoveAsync("user-1", 1, TestContext.Current.CancellationToken);
 
+            // Assert
             _cartRepo.Verify(r => r.DeleteAsync("user-1", 1, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -219,12 +243,15 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task RemoveRangeAsync_MultipleProducts_ShouldDeleteAllInOneCallAndRefreshCache()
         {
+            // Arrange
             var productIds = new List<PresaleProductId> { new(10), new(20) };
             SetupCartRangeDeletion();
             SetupCartLines(new List<CartLine>());
 
+            // Act
             await _service.RemoveRangeAsync("user-1", productIds, TestContext.Current.CancellationToken);
 
+            // Assert
             _cartRepo.Verify(r => r.DeleteRangeAsync(
                 It.Is<PresaleUserId>(id => id.Value == "user-1"),
                 It.Is<IReadOnlyList<PresaleProductId>>(ids => ids.Count == 2),
@@ -238,11 +265,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task ClearAsync_WithLines_ShouldDeleteAllAndEvictCache()
         {
+            // Arrange
             SetupCartClear("user-1");
             _cache.Set("cart:user-1", new CartVm("user-1", new List<CartLineVm>()));
 
+            // Act
             await _service.ClearAsync("user-1", TestContext.Current.CancellationToken);
 
+            // Assert
             _cartRepo.Verify(r => r.DeleteAllForUserAsync("user-1", It.IsAny<CancellationToken>()), Times.Once);
             _cache.TryGetValue("cart:user-1", out _).Should().BeFalse();
         }
@@ -252,11 +282,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetCartAsync_CacheMiss_ShouldLoadFromDbAndReturnVm()
         {
+            // Arrange
             var lines = new List<CartLine> { CartLine.Create("user-1", 1, 3) };
             SetupCartLines("user-1", lines);
 
+            // Act
             var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().NotBeNull();
             result!.UserId.Should().Be("user-1");
             result.Lines.Should().HaveCount(1);
@@ -267,11 +300,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetCartAsync_CacheHit_ShouldReturnCachedValueWithoutDbCall()
         {
+            // Arrange
             var vm = new CartVm("user-1", new List<CartLineVm> { new(1, 3, null) });
             _cache.Set("cart:user-1", vm, TimeSpan.FromMinutes(30));
 
+            // Act
             var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeSameAs(vm);
             _cartRepo.Verify(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -279,20 +315,26 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetCartAsync_EmptyCart_ShouldReturnNull()
         {
+            // Arrange
             SetupCartLines("user-1", new List<CartLine>());
 
+            // Act
             var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().BeNull();
         }
 
         [Fact]
         public async Task GetCartAsync_EmptyCart_ShouldEvictStaleCache()
         {
+            // Arrange
             SetupCartLines(new List<CartLine>());
 
+            // Act
             await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken); // cache miss → DB → empty
 
+            // Assert
             _cache.TryGetValue("cart:user-1", out _).Should().BeFalse();
         }
     }

@@ -61,14 +61,17 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetRateForDayAsync_PlnCurrency_ShouldReturnRateOne()
         {
+            // Arrange
             int currencyId = 1;
             var date = DateTime.Now;
             var currency = Currency.Create("PLN", "Polish zloty");
             SetupCurrency("PLN", currency);
             SetupRatePersistence();
 
+            // Act
             var result = await _sut.GetRateForDayAsync(currencyId, date);
 
+            // Assert
             result.Should().NotBeNull();
             result.CurrencyId.Should().Be(currencyId);
             result.Rate.Should().Be(1.0m);
@@ -78,6 +81,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetRateForDayAsync_PlnCurrencyWithExistingRate_ShouldReturnCachedRate()
         {
+            // Arrange
             int currencyId = 1;
             var date = DateTime.Now;
             var currency = Currency.Create("PLN", "Polish zloty");
@@ -85,8 +89,10 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             SetupCurrency("PLN", currency);
             SetupRateLookup(existingRate);
 
+            // Act
             var result = await _sut.GetRateForDayAsync(currencyId, date);
 
+            // Assert
             result.Should().NotBeNull();
             result.Rate.Should().Be(1.0m);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
@@ -95,6 +101,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetRateForDayAsync_EurCurrency_ShouldFetchFromNbp()
         {
+            // Arrange
             int currencyId = 2;
             var date = DateTime.Now;
             var currency = Currency.Create("EUR", "Euro");
@@ -102,8 +109,10 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             SetupNbpRate("EUR", date, GetDefaultNbpResponse());
             SetupRatePersistence();
 
+            // Act
             var result = await _sut.GetRateForDayAsync(currencyId, date);
 
+            // Assert
             result.Should().NotBeNull();
             result.Rate.Should().BeGreaterThan(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Once);
@@ -113,11 +122,14 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetRateForDayAsync_DateBeforeArchive_ShouldThrowBusinessException()
         {
+            // Arrange
             int currencyId = 1;
             var date = DateTime.Now.AddYears(-1000);
 
+            // Act
             Func<Task> action = () => _sut.GetRateForDayAsync(currencyId, date);
 
+            // Assert
             await action.Should().ThrowAsync<BusinessException>()
                 .WithMessage($"There is no rate for {date}");
         }
@@ -125,12 +137,15 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetRateForDayAsync_NonExistentCurrency_ShouldThrowBusinessException()
         {
+            // Arrange
             int currencyId = 999;
             var date = DateTime.Now;
             SetupCurrency("", null);
 
+            // Act
             Func<Task> action = () => _sut.GetRateForDayAsync(currencyId, date);
 
+            // Assert
             await action.Should().ThrowAsync<BusinessException>()
                 .WithMessage($"Currency with id: {currencyId} not found");
         }
@@ -138,14 +153,17 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetRateForDayAsync_NbpReturnsNull_ShouldThrowAfterMaxRequests()
         {
+            // Arrange
             int currencyId = 10;
             var date = DateTime.Now;
             var currency = Currency.Create("XXX", "Unknown");
             SetupCurrency("XXX", currency);
             SetupAnyNbpRate(null);
 
+            // Act
             Func<Task> action = () => _sut.GetRateForDayAsync(currencyId, date);
 
+            // Assert
             await action.Should().ThrowAsync<BusinessException>()
                 .WithMessage($"Check currency code XXX if is valid");
         }
@@ -153,14 +171,17 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetLatestRateAsync_PlnCurrency_ShouldReturnRate()
         {
+            // Arrange
             int currencyId = 1;
             var currency = Currency.Create("PLN", "Polish zloty");
             var existingRate = CurrencyRate.Create(new CurrencyId(currencyId), 1.0m, DateTime.Now);
             SetupCurrency("PLN", currency);
             SetupRateLookup(existingRate);
 
+            // Act
             var result = await _sut.GetLatestRateAsync(currencyId);
 
+            // Assert
             result.Should().NotBeNull();
             result.CurrencyId.Should().Be(currencyId);
             result.Rate.Should().Be(1.0m);
@@ -169,14 +190,17 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetLatestRateAsync_EurCurrencyWithCachedRate_ShouldReturnCachedRate()
         {
+            // Arrange
             int currencyId = 2;
             var currency = Currency.Create("EUR", "Euro");
             var existingRate = CurrencyRate.Create(new CurrencyId(currencyId), 4.5m, DateTime.Now);
             SetupCurrency("EUR", currency);
             SetupRateLookup(existingRate);
 
+            // Act
             var result = await _sut.GetLatestRateAsync(currencyId);
 
+            // Assert
             result.Should().NotBeNull();
             result.CurrencyId.Should().Be(currencyId);
             result.Rate.Should().Be(4.5m);
@@ -185,11 +209,14 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task GetLatestRateAsync_NonExistentCurrency_ShouldThrowBusinessException()
         {
+            // Arrange
             int currencyId = 999;
             SetupCurrency("", null);
 
+            // Act
             Func<Task> action = () => _sut.GetLatestRateAsync(currencyId);
 
+            // Assert
             await action.Should().ThrowAsync<BusinessException>()
                 .WithMessage($"Currency with id: {currencyId} not found");
         }
@@ -239,10 +266,13 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_TableNotAvailable_ShouldReturnZero()
         {
+            // Arrange
             SetupNbpTable(null);
 
+            // Act
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
         }
@@ -250,10 +280,13 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_EmptyTableResponse_ShouldReturnZero()
         {
+            // Arrange
             SetupNbpTable("[]");
 
+            // Act
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
         }
@@ -261,25 +294,31 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_PlnOnlyCurrencies_ShouldSkipAllAndReturnZero()
         {
+            // Arrange
             var pln = Currency.Create("PLN", "Polish zloty");
             EntityIdSetter.Set(pln, new CurrencyId(1));
             SetupCurrencies(pln);
             SetupNbpTable(GetDefaultTableResponse("EUR", 4.5m));
 
+            // Act
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(0);
         }
 
         [Fact]
         public async Task SyncAllRatesAsync_CurrencyNotInTable_ShouldSkipAndReturnZero()
         {
+            // Arrange
             var usd = CurrencyWithId(3, "USD", "US Dollar");
             SetupCurrencies(usd);
             SetupNbpTable(GetDefaultTableResponse("EUR", 4.5m)); // table has EUR, not USD
 
+            // Act
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
         }
@@ -287,14 +326,17 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_RateAlreadyExistsForToday_ShouldSkipAndReturnZero()
         {
+            // Arrange
             var eur = CurrencyWithId(2, "EUR", "Euro");
             var existingRate = CurrencyRate.Create(new CurrencyId(2), 4.5m, DateTime.UtcNow.Date);
             SetupCurrencies(eur);
             SetupNbpTable(GetDefaultTableResponse("EUR", 4.5m));
             SetupRateLookup(existingRate);
 
+            // Act
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
         }
@@ -302,14 +344,17 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_NewRateInTable_ShouldPersistAndReturnOne()
         {
+            // Arrange
             var eur = CurrencyWithId(2, "EUR", "Euro");
             SetupCurrencies(eur);
             SetupNbpTable(GetDefaultTableResponse("EUR", 4.25m));
             SetupNoRateForDate();
             SetupRatePersistence();
 
+            // Act
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(1);
             _currencyRateRepository.Verify(r => r.AddAsync(
                 It.Is<CurrencyRate>(cr => cr.Rate == 4.25m)), Times.Once);
@@ -318,6 +363,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         [Fact]
         public async Task SyncAllRatesAsync_IssuedOneCallToNbp_RegardlessOfCurrencyCount()
         {
+            // Arrange
             var currencies = new List<Currency>
             {
                 CurrencyWithId(2, "EUR", "Euro"),
@@ -329,8 +375,10 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             SetupNoRateForDate();
             SetupRatePersistence();
 
+            // Act
             var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             result.Should().Be(3);
             _nbpClient.Verify(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()), Times.Once);
         }
