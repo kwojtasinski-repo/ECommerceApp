@@ -24,27 +24,25 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
     /// dispatched <c>StockAvailabilityChanged</c> message.
     /// </para>
     /// </summary>
-    public class StockServiceOutboxIntegrationTests : BcBaseTest<IStockService>
+    public class StockServiceOutboxIntegrationTests
+        : BcBaseTest<IStockService>, IClassFixture<MessageProcessingOperationsFixture>
     {
-        public StockServiceOutboxIntegrationTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
 
-        private static async Task WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
+        public StockServiceOutboxIntegrationTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
         {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (await condition())
-                    return;
-
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
-            }
+            _messageProcessing = messageProcessing;
         }
 
-        private async Task<StockSnapshot> GetSnapshotAsync(int productId)
+        private async Task<StockSnapshot> GetSnapshotAsync(
+            int productId,
+            CancellationToken cancellationToken)
         {
             using var scope = Services.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IStockSnapshotRepository>();
-            return await repo.FindByProductIdAsync(productId, CancellationToken);
+            return await repo.FindByProductIdAsync(productId, cancellationToken);
         }
 
         [Fact]
@@ -55,13 +53,46 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
             var result = await _service.InitializeStockAsync(productId, initialQuantity: 25, CancellationToken);
             result.ShouldBeTrue();
 
-            await WaitUntilAsync(
-                async () => await GetSnapshotAsync(productId) is { } snapshot && snapshot.AvailableQuantity == 25,
-                TimeSpan.FromSeconds(20));
+            var snapshot = await _messageProcessing.WaitUntilAsync(
+                new StockSnapshotQuantityOperation(this, productId, 25));
 
-            var snapshot = await GetSnapshotAsync(productId);
             snapshot.ShouldNotBeNull();
             snapshot.AvailableQuantity.ShouldBe(25);
+        }
+
+        private sealed class StockSnapshotQuantityOperation
+            : IMessageProcessingOperation<StockSnapshot>
+        {
+            private readonly StockServiceOutboxIntegrationTests _test;
+            private readonly int _productId;
+            private readonly int _expectedQuantity;
+
+            public StockSnapshotQuantityOperation(
+                StockServiceOutboxIntegrationTests test,
+                int productId,
+                int expectedQuantity)
+            {
+                _test = test;
+                _productId = productId;
+                _expectedQuantity = expectedQuantity;
+            }
+
+            public Task<StockSnapshot> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetSnapshotAsync(_productId, cancellationToken);
+            }
+
+            public bool IsCompleted(StockSnapshot state)
+            {
+                return state is not null && state.AvailableQuantity == _expectedQuantity;
+            }
+
+            public string Describe(StockSnapshot state)
+            {
+                return state is null
+                    ? $"Stock snapshot for product {_productId} was not created."
+                    : $"Stock snapshot for product {_productId} has quantity {state.AvailableQuantity}, expected {_expectedQuantity}.";
+            }
         }
     }
 }

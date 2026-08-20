@@ -31,13 +31,18 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // A5: align first tick to the next 30-second clock boundary
-            await Task.Delay(ComputeAlignmentDelay(), stoppingToken);
-
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                await TickAsync(stoppingToken);
                 await Task.Delay(ComputeAlignmentDelay(), stoppingToken);
+
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    await TickAsync(stoppingToken);
+                    await Task.Delay(ComputeAlignmentDelay(), stoppingToken);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
             }
         }
 
@@ -79,11 +84,17 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                             }, ct);
                         }
                     }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                    {
+                    }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "CronSchedulerService error for job '{JobName}'", job.Name.Value);
                     }
                 }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
             }
             catch (Exception ex)
             {

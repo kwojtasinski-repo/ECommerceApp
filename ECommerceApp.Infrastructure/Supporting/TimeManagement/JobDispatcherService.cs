@@ -35,9 +35,15 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await foreach (var trigger in _channel.Reader.ReadAllAsync(stoppingToken))
+            try
             {
-                await ProcessTriggerAsync(trigger, stoppingToken);
+                await foreach (var trigger in _channel.Reader.ReadAllAsync(stoppingToken))
+                {
+                    await ProcessTriggerAsync(trigger, stoppingToken);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
             }
         }
 
@@ -77,6 +83,11 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             }
             catch (Exception ex)
             {
+                if (ct.IsCancellationRequested && ex is OperationCanceledException)
+                {
+                    throw;
+                }
+
                 if (context.Outcome is not JobOutcome.Failure)
                     context.ReportFailure(ex.Message);
                 _logger.LogError(ex, "Job '{JobName}' threw an unhandled exception", trigger.JobName);
@@ -177,6 +188,9 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                 }
 
                 await dbContext.SaveChangesAsync(ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
             }
             catch (Exception ex)
             {

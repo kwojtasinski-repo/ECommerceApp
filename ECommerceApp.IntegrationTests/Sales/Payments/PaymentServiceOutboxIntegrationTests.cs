@@ -13,9 +13,17 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Sales.Payments
 {
-    public class PaymentServiceOutboxIntegrationTests : BcBaseTest<IPaymentService>
+    public class PaymentServiceOutboxIntegrationTests
+        : BcBaseTest<IPaymentService>, IClassFixture<MessageProcessingOperationsFixture>
     {
-        public PaymentServiceOutboxIntegrationTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
+
+        public PaymentServiceOutboxIntegrationTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
+        {
+            _messageProcessing = messageProcessing;
+        }
 
         private static OrderCustomer CreateCustomer() => new(
             "Jan", "Kowalski", "jan@test.com", "123456789",
@@ -37,27 +45,17 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
             return seeded!.Id.Value;
         }
 
-        private static async Task WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (await condition())
-                    return;
-
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
-            }
-        }
-
         // Reads the order through a brand-new IServiceScope/DbContext each call — the background
         // OutboxDispatcher applies its update through its own scope, and this test's root-resolved
         // IOrderRepository would otherwise keep returning the stale, already-tracked Order instance
         // from SeedOrderAsync instead of re-querying the shared InMemory store.
-        private async Task<OrderStatus> GetOrderStatusAsync(int orderId)
+        private async Task<OrderStatus> GetOrderStatusAsync(
+            int orderId,
+            CancellationToken cancellationToken)
         {
             using var scope = Services.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
-            var order = await repo.GetByIdWithItemsAsync(orderId, CancellationToken);
+            var order = await repo.GetByIdWithItemsAsync(orderId, cancellationToken);
             return order!.Status;
         }
 
@@ -70,11 +68,43 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
             var result = await _service.ConfirmAsync(new ConfirmPaymentDto(paymentId, "TX-OUTBOX"), CancellationToken);
             result.ShouldBe(PaymentOperationResult.Success);
 
-            await WaitUntilAsync(
-                async () => await GetOrderStatusAsync(orderId) == OrderStatus.PaymentConfirmed,
-                TimeSpan.FromSeconds(20));
+            var finalStatus = await _messageProcessing.WaitUntilAsync(
+                new OrderStatusOperation(this, orderId, OrderStatus.PaymentConfirmed));
 
-            (await GetOrderStatusAsync(orderId)).ShouldBe(OrderStatus.PaymentConfirmed);
+            finalStatus.ShouldBe(OrderStatus.PaymentConfirmed);
+        }
+
+        private sealed class OrderStatusOperation
+            : IMessageProcessingOperation<OrderStatus>
+        {
+            private readonly PaymentServiceOutboxIntegrationTests _test;
+            private readonly int _orderId;
+            private readonly OrderStatus _expectedStatus;
+
+            public OrderStatusOperation(
+                PaymentServiceOutboxIntegrationTests test,
+                int orderId,
+                OrderStatus expectedStatus)
+            {
+                _test = test;
+                _orderId = orderId;
+                _expectedStatus = expectedStatus;
+            }
+
+            public Task<OrderStatus> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetOrderStatusAsync(_orderId, cancellationToken);
+            }
+
+            public bool IsCompleted(OrderStatus state)
+            {
+                return state == _expectedStatus;
+            }
+
+            public string Describe(OrderStatus state)
+            {
+                return $"Order {_orderId} has status {state}, expected {_expectedStatus}.";
+            }
         }
     }
 }

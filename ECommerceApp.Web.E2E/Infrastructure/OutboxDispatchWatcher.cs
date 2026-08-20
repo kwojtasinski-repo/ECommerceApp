@@ -13,6 +13,9 @@ namespace ECommerceApp.Web.E2E.Infrastructure
 {
     public sealed class OutboxDispatchWatcher
     {
+        private static readonly TimeSpan DefaultTimeout =
+            TimeSpan.FromSeconds(20);
+
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly TimeSpan _pollInterval;
 
@@ -25,11 +28,11 @@ namespace ECommerceApp.Web.E2E.Infrastructure
         public async Task WaitForDispatchedAsync<TMessage>(
             DateTime sinceUtc,
             Func<TMessage, bool> predicate,
-            TimeSpan timeout,
+            TimeSpan? timeout = null,
             CancellationToken ct = default)
             where TMessage : IMessage
         {
-            var deadline = DateTime.UtcNow + timeout;
+            var deadline = DateTime.UtcNow + (timeout ?? DefaultTimeout);
             var candidates = new List<OutboxMessage>();
 
             while (DateTime.UtcNow < deadline)

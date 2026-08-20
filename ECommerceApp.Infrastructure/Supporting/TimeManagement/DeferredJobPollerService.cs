@@ -30,10 +30,16 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
-                await PollAsync(stoppingToken);
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                    await PollAsync(stoppingToken);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
             }
         }
 
@@ -77,6 +83,9 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                         DeferredInstanceId = instance.Id.Value
                     }, ct);
                 }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
             }
             catch (Exception ex)
             {

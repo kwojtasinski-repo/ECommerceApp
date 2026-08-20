@@ -30,10 +30,16 @@ namespace ECommerceApp.Infrastructure.Messaging
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                await Task.Delay(_messagingOptions.OutboxPollInterval, stoppingToken);
-                await PollAsync(stoppingToken);
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    await Task.Delay(_messagingOptions.OutboxPollInterval, stoppingToken);
+                    await PollAsync(stoppingToken);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
             }
         }
 
@@ -66,6 +72,9 @@ namespace ECommerceApp.Infrastructure.Messaging
                     var dispatcher = scope.ServiceProvider.GetRequiredService<OutboxDispatcher>();
                     await dispatcher.DispatchAsync(message, ct);
                 }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
             }
             catch (Exception ex)
             {

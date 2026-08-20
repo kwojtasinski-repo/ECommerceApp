@@ -5,11 +5,14 @@ using ECommerceApp.Infrastructure.Messaging;
 using ECommerceApp.Shared.TestInfrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Shouldly;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,7 +34,8 @@ namespace ECommerceApp.IntegrationTests.Messaging
     /// single wait would still be racy against however fast the configured interval actually is.
     /// </para>
     /// </summary>
-    public class OutboxPollerIntegrationTests : BcBaseTest<IOutboxRepository>
+    public class OutboxPollerIntegrationTests
+        : BcBaseTest<IOutboxRepository>, IClassFixture<MessageProcessingOperationsFixture>
     {
         // MessageTypeRegistry keys its internal dictionary by CLR Type, so PollerTestMessage can only
         // ever be registered once for the lifetime of the test process.
@@ -44,7 +48,14 @@ namespace ECommerceApp.IntegrationTests.Messaging
 
         private static readonly ConcurrentBag<Guid> ReceivedCorrelationIds = new();
 
-        public OutboxPollerIntegrationTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
+
+        public OutboxPollerIntegrationTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
+        {
+            _messageProcessing = messageProcessing;
+        }
 
         protected override void OverrideServicesImplementation(IServiceCollection services)
         {
@@ -89,29 +100,13 @@ namespace ECommerceApp.IntegrationTests.Messaging
             return await _service.AddAsync(message, CancellationToken);
         }
 
-        private async Task<OutboxStatus> GetStatusAsync(long id)
+        private async Task<OutboxStatus> GetStatusAsync(
+            long id,
+            CancellationToken cancellationToken)
         {
             var context = GetRequiredService<IMessagingDbContext>();
-            var row = await context.Outbox.AsNoTracking().FirstAsync(m => m.Id == id, CancellationToken);
+            var row = await context.Outbox.AsNoTracking().FirstAsync(m => m.Id == id, cancellationToken);
             return row.Status;
-        }
-
-        /// <summary>
-        /// Bounded retry-poll: checks <paramref name="condition"/> every 500ms up to
-        /// <paramref name="timeout"/>. Returns as soon as the condition is true; never throws on
-        /// timeout — the caller asserts on the final observed state, so a timeout produces a clear
-        /// assertion failure with the actual last-seen value, not an opaque wait-timeout exception.
-        /// </summary>
-        private static async Task WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (await condition())
-                    return;
-
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
-            }
         }
 
         [Fact]
@@ -120,12 +115,30 @@ namespace ECommerceApp.IntegrationTests.Messaging
             var correlationId = Guid.NewGuid();
             var id = await InsertDueMessageAsync(correlationId);
 
-            await WaitUntilAsync(
-                async () => await GetStatusAsync(id) == OutboxStatus.Dispatched,
-                TimeSpan.FromSeconds(20));
+            var finalStatus = await _messageProcessing.WaitUntilAsync(
+                new OutboxStatusOperation(this, id));
 
-            (await GetStatusAsync(id)).ShouldBe(OutboxStatus.Dispatched);
+            finalStatus.ShouldBe(OutboxStatus.Dispatched);
             ReceivedCorrelationIds.ShouldContain(correlationId);
+        }
+
+        [Fact]
+        public async Task OutboxPoller_ShutdownCancellation_CompletesWithoutCanceledTask()
+        {
+            var hostedService = GetRequiredService<IEnumerable<IHostedService>>()
+                .Single(service => service.GetType().Name == "OutboxPollerService");
+            var executeAsync = hostedService.GetType().GetMethod(
+                "ExecuteAsync",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            executeAsync.ShouldNotBeNull();
+
+            using var cancellation = new CancellationTokenSource();
+            var execution = (Task)executeAsync.Invoke(hostedService, new object[] { cancellation.Token })!;
+
+            await Task.Yield();
+            cancellation.Cancel();
+
+            await execution;
         }
 
         /// <summary>
@@ -148,18 +161,18 @@ namespace ECommerceApp.IntegrationTests.Messaging
             message.MarkRunning(DateTime.UtcNow.AddMinutes(-10));
             await _service.UpdateAsync(message, CancellationToken);
 
-            (await GetStatusAsync(id)).ShouldBe(OutboxStatus.Running);
+            (await GetStatusAsync(id, CancellationToken)).ShouldBe(OutboxStatus.Running);
 
             // ResetZombie's backoff computation clamps to a 1-minute floor (see
             // OutboxMessage.ComputeRetryRunAt: Math.Max(factor, 1.0) minutes), so the row only
             // becomes due again ~1 minute after the zombie-detect tick that reset it — plus up to
             // one 10s poll tick to detect the zombie in the first place, plus another to pick it back
             // up once due. Budget generously for both.
-            await WaitUntilAsync(
-                async () => await GetStatusAsync(id) == OutboxStatus.Dispatched,
+            var finalStatus = await _messageProcessing.WaitUntilAsync(
+                new OutboxStatusOperation(this, id),
                 TimeSpan.FromSeconds(100));
 
-            (await GetStatusAsync(id)).ShouldBe(OutboxStatus.Dispatched);
+            finalStatus.ShouldBe(OutboxStatus.Dispatched);
             ReceivedCorrelationIds.ShouldContain(correlationId);
         }
 
@@ -173,16 +186,15 @@ namespace ECommerceApp.IntegrationTests.Messaging
             var goodId = await InsertDueMessageAsync(goodCorrelationId);
 
             // The good row dispatching proves the bad row didn't take the poller down with it.
-            await WaitUntilAsync(
-                async () => await GetStatusAsync(goodId) == OutboxStatus.Dispatched,
-                TimeSpan.FromSeconds(20));
+            var finalStatus = await _messageProcessing.WaitUntilAsync(
+                new OutboxStatusOperation(this, goodId));
 
-            (await GetStatusAsync(goodId)).ShouldBe(OutboxStatus.Dispatched);
+            finalStatus.ShouldBe(OutboxStatus.Dispatched);
             ReceivedCorrelationIds.ShouldContain(goodCorrelationId);
 
             // Default maxRetries (5): one failed attempt leaves it back at Pending (with backoff),
             // not DeadLetter yet — it must never reach Dispatched or Running.
-            var badStatus = await GetStatusAsync(badId);
+            var badStatus = await GetStatusAsync(badId, CancellationToken);
             badStatus.ShouldNotBe(OutboxStatus.Dispatched);
             badStatus.ShouldNotBe(OutboxStatus.Running);
         }
@@ -198,6 +210,36 @@ namespace ECommerceApp.IntegrationTests.Messaging
             var due = await _service.GetDueAsync(batchSize: 50, CancellationToken);
 
             due.ShouldNotContain(m => m.MessageTypeKey == message.MessageTypeKey);
+        }
+
+        private sealed class OutboxStatusOperation
+            : IMessageProcessingOperation<OutboxStatus>
+        {
+            private readonly OutboxPollerIntegrationTests _test;
+            private readonly long _messageId;
+
+            public OutboxStatusOperation(
+                OutboxPollerIntegrationTests test,
+                long messageId)
+            {
+                _test = test;
+                _messageId = messageId;
+            }
+
+            public Task<OutboxStatus> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetStatusAsync(_messageId, cancellationToken);
+            }
+
+            public bool IsCompleted(OutboxStatus state)
+            {
+                return state == OutboxStatus.Dispatched;
+            }
+
+            public string Describe(OutboxStatus state)
+            {
+                return $"Outbox message {_messageId} has status {state}, expected Dispatched.";
+            }
         }
     }
 }

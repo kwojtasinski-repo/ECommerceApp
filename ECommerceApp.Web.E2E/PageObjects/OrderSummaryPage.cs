@@ -37,19 +37,26 @@ namespace ECommerceApp.Web.E2E.PageObjects
             await _page.GetByRole(AriaRole.Link, new() { Name = "Zapłać za zamówienie" }).ClickAsync();
             await _page.WaitForURLAsync("**/Sales/Payments/Create/**");
 
+            int? lastStatus = null;
+            var lastBody = string.Empty;
             for (var attempt = 0; attempt < 10; attempt++)
             {
                 var response = await _page.ReloadAsync();
-                if (response is not null && response.Ok)
+                lastStatus = response?.Status;
+                if (response is not null && response.Ok
+                    && await _page.GetByRole(AriaRole.Button, new() { Name = "Potwierdź płatność" }).CountAsync() > 0)
                 {
                     return new PaymentPage(_page);
                 }
 
+                var body = await _page.Locator("body").InnerTextAsync();
+                lastBody = body.Length <= 500 ? body : body[..500];
                 await Task.Delay(250);
             }
 
             throw new InvalidOperationException(
-                $"Payment page did not become available after order placement. URL: {_page.Url}");
+                $"Payment page did not become available after order placement. "
+                + $"URL: {_page.Url}; status: {lastStatus?.ToString() ?? "none"}; body: {lastBody}");
         }
     }
 }

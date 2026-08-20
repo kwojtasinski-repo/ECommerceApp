@@ -28,49 +28,58 @@ namespace ECommerceApp.Infrastructure.Messaging
 
         protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            await foreach (var message in _channel.Reader.ReadAllAsync(ct))
+            try
             {
-                try
+                await foreach (var message in _channel.Reader.ReadAllAsync(ct))
                 {
-                    var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
-                    var method = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
-                    if (method is null)
+                    try
                     {
-                        _logger.LogError("No HandleAsync method on handler type for {MessageType}", message.GetType().Name);
-                        continue;
+                        var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
+                        var method = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
+                        if (method is null)
+                        {
+                            _logger.LogError("No HandleAsync method on handler type for {MessageType}", message.GetType().Name);
+                            continue;
+                        }
+
+                        int handlerCount;
+                        using (var probe = _serviceScopeFactory.CreateScope())
+                        {
+                            handlerCount = probe.ServiceProvider.GetServices(handlerType).Count();
+                        }
+
+                        if (handlerCount == 0)
+                        {
+                            _logger.LogWarning("No handler registered for message type {MessageType}", message.GetType().Name);
+                            continue;
+                        }
+
+                        var tasks = new List<Task>(handlerCount);
+                        for (var i = 0; i < handlerCount; i++)
+                        {
+                            tasks.Add(RunInScopeAsync(i));
+                        }
+
+                        await Task.WhenAll(tasks);
+
+                        async Task RunInScopeAsync(int index)
+                        {
+                            using var handlerScope = _serviceScopeFactory.CreateScope();
+                            var h = handlerScope.ServiceProvider.GetServices(handlerType).ElementAt(index);
+                            await (Task)method.Invoke(h, new object[] { message, ct })!;
+                        }
                     }
-
-                    int handlerCount;
-                    using (var probe = _serviceScopeFactory.CreateScope())
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested)
                     {
-                        handlerCount = probe.ServiceProvider.GetServices(handlerType).Count();
                     }
-
-                    if (handlerCount == 0)
+                    catch (Exception ex)
                     {
-                        _logger.LogWarning("No handler registered for message type {MessageType}", message.GetType().Name);
-                        continue;
-                    }
-
-                    var tasks = new List<Task>(handlerCount);
-                    for (var i = 0; i < handlerCount; i++)
-                    {
-                        tasks.Add(RunInScopeAsync(i));
-                    }
-
-                    await Task.WhenAll(tasks);
-
-                    async Task RunInScopeAsync(int index)
-                    {
-                        using var handlerScope = _serviceScopeFactory.CreateScope();
-                        var h = handlerScope.ServiceProvider.GetServices(handlerType).ElementAt(index);
-                        await (Task)method.Invoke(h, new object[] { message, ct })!;
+                        _logger.LogError(ex, "Error handling message of type {MessageType}", message.GetType().Name);
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error handling message of type {MessageType}", message.GetType().Name);
-                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
             }
         }
     }

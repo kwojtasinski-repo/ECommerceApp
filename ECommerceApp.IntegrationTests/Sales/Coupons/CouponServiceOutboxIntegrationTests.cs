@@ -15,9 +15,17 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Sales.Coupons
 {
-    public class CouponServiceOutboxIntegrationTests : BcBaseTest<ICouponService>
+    public class CouponServiceOutboxIntegrationTests
+        : BcBaseTest<ICouponService>, IClassFixture<MessageProcessingOperationsFixture>
     {
-        public CouponServiceOutboxIntegrationTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
+
+        public CouponServiceOutboxIntegrationTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
+        {
+            _messageProcessing = messageProcessing;
+        }
 
         private static OrderCustomer CreateCustomer() => new(
             "Jan", "Kowalski", "jan@test.com", "123456789",
@@ -52,24 +60,14 @@ namespace ECommerceApp.IntegrationTests.Sales.Coupons
             return seeded!.Id.Value;
         }
 
-        private static async Task WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (await condition())
-                    return;
-
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
-            }
-        }
-
         // Read order through a fresh scope each call to avoid stale tracked instances
-        private async Task<int?> GetOrderCouponUsedIdAsync(int orderId)
+        private async Task<int?> GetOrderCouponUsedIdAsync(
+            int orderId,
+            CancellationToken cancellationToken)
         {
             using var scope = Services.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
-            var order = await repo.GetByIdWithItemsAsync(orderId, CancellationToken);
+            var order = await repo.GetByIdWithItemsAsync(orderId, cancellationToken);
             return order?.CouponUsedId;
         }
 
@@ -102,9 +100,40 @@ namespace ECommerceApp.IntegrationTests.Sales.Coupons
             result.ShouldBe(CouponRemoveResult.Removed);
 
             // Poll until the OutboxDispatcher has run and the order no longer has CouponUsedId
-            await WaitUntilAsync(async () => await GetOrderCouponUsedIdAsync(orderId) == null, TimeSpan.FromSeconds(20));
+            var couponUsedIdAfterDispatch = await _messageProcessing.WaitUntilAsync(
+                new OrderCouponRemovedOperation(this, orderId));
 
-            (await GetOrderCouponUsedIdAsync(orderId)).ShouldBeNull();
+            couponUsedIdAfterDispatch.ShouldBeNull();
+        }
+
+        private sealed class OrderCouponRemovedOperation
+            : IMessageProcessingOperation<int?>
+        {
+            private readonly CouponServiceOutboxIntegrationTests _test;
+            private readonly int _orderId;
+
+            public OrderCouponRemovedOperation(
+                CouponServiceOutboxIntegrationTests test,
+                int orderId)
+            {
+                _test = test;
+                _orderId = orderId;
+            }
+
+            public Task<int?> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetOrderCouponUsedIdAsync(_orderId, cancellationToken);
+            }
+
+            public bool IsCompleted(int? state)
+            {
+                return state is null;
+            }
+
+            public string Describe(int? state)
+            {
+                return $"CouponUsedId for order {_orderId} is still {state?.ToString() ?? "null"}.";
+            }
         }
     }
 }

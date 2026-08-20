@@ -5,14 +5,23 @@ using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Catalog.Products
 {
-    public class ProductServiceOutboxIntegrationTests : BcBaseTest<IProductService>
+    public class ProductServiceOutboxIntegrationTests
+        : BcBaseTest<IProductService>, IClassFixture<MessageProcessingOperationsFixture>
     {
-        public ProductServiceOutboxIntegrationTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
+
+        public ProductServiceOutboxIntegrationTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
+        {
+            _messageProcessing = messageProcessing;
+        }
 
         private async Task<int> SeedCategoryAsync(string name = "Elektronika")
         {
@@ -20,18 +29,6 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
             var category = Category.Create(name);
             var id = await repo.AddAsync(category);
             return id.Value;
-        }
-
-        private static async Task WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (await condition())
-                    return;
-
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
-            }
         }
 
         [Fact]
@@ -50,15 +47,43 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
 
             var repo = GetRequiredService<IProductSnapshotRepository>();
 
-            await WaitUntilAsync(async () =>
-            {
-                var snapshot = await repo.GetByProductIdAsync(id, CancellationToken);
-                return snapshot is not null;
-            }, TimeSpan.FromSeconds(20));
+            var final = await _messageProcessing.WaitUntilAsync(
+                new ProductSnapshotCreatedOperation(repo, id),
+                cancellationToken: CancellationToken);
 
-            var final = await repo.GetByProductIdAsync(id, CancellationToken);
             final.ShouldNotBeNull();
             final.ProductId.ShouldBe(id);
+        }
+
+        private sealed class ProductSnapshotCreatedOperation : IMessageProcessingOperation<ProductSnapshot>
+        {
+            private readonly IProductSnapshotRepository _repository;
+            private readonly int _productId;
+
+            public ProductSnapshotCreatedOperation(
+                IProductSnapshotRepository repository,
+                int productId)
+            {
+                _repository = repository;
+                _productId = productId;
+            }
+
+            public Task<ProductSnapshot> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _repository.GetByProductIdAsync(_productId, cancellationToken);
+            }
+
+            public bool IsCompleted(ProductSnapshot state)
+            {
+                return state is not null;
+            }
+
+            public string Describe(ProductSnapshot state)
+            {
+                return state is null
+                    ? $"Inventory snapshot for product {_productId} was not created before the timeout."
+                    : $"Inventory snapshot for product {_productId} was created.";
+            }
         }
     }
 }

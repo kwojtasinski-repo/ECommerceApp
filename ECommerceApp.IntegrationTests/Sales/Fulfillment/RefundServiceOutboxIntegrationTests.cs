@@ -15,9 +15,17 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
 {
-    public class RefundServiceOutboxIntegrationTests : BcBaseTest<IRefundService>
+    public class RefundServiceOutboxIntegrationTests
+        : BcBaseTest<IRefundService>, IClassFixture<MessageProcessingOperationsFixture>
     {
-        public RefundServiceOutboxIntegrationTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
+
+        public RefundServiceOutboxIntegrationTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
+        {
+            _messageProcessing = messageProcessing;
+        }
 
         private static OrderCustomer CreateCustomer() => new(
             "Jan", "Kowalski", "jan@test.com", "123456789",
@@ -38,24 +46,14 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
             return await repo.AddAsync(refund, ct);
         }
 
-        private static async Task WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (await condition())
-                    return;
-
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
-            }
-        }
-
         // Read order through a fresh scope each call to avoid stale tracked instances
-        private async Task<Order> GetOrderAsync(int orderId)
+        private async Task<Order> GetOrderAsync(
+            int orderId,
+            CancellationToken cancellationToken)
         {
             using var scope = Services.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
-            return await repo.GetByIdWithItemsAsync(orderId, CancellationToken);
+            return await repo.GetByIdWithItemsAsync(orderId, cancellationToken);
         }
 
         [Fact]
@@ -67,15 +65,44 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
             var result = await _service.ApproveRefundAsync(refundId, CancellationToken);
             result.ShouldBe(RefundOperationResult.Success);
 
-            await WaitUntilAsync(async () =>
-            {
-                var order = await GetOrderAsync(orderId);
-                return order != null && order.Events.Any(e => e.EventType == OrderEventType.RefundAssigned);
-            }, TimeSpan.FromSeconds(20));
+            var finalOrder = await _messageProcessing.WaitUntilAsync(
+                new RefundAssignedOperation(this, orderId));
 
-            var finalOrder = await GetOrderAsync(orderId);
             finalOrder.ShouldNotBeNull();
             finalOrder.Events.Count(e => e.EventType == OrderEventType.RefundAssigned).ShouldBe(1);
+        }
+
+        private sealed class RefundAssignedOperation
+            : IMessageProcessingOperation<Order>
+        {
+            private readonly RefundServiceOutboxIntegrationTests _test;
+            private readonly int _orderId;
+
+            public RefundAssignedOperation(
+                RefundServiceOutboxIntegrationTests test,
+                int orderId)
+            {
+                _test = test;
+                _orderId = orderId;
+            }
+
+            public Task<Order> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetOrderAsync(_orderId, cancellationToken);
+            }
+
+            public bool IsCompleted(Order state)
+            {
+                return state is not null
+                    && state.Events.Any(e => e.EventType == OrderEventType.RefundAssigned);
+            }
+
+            public string Describe(Order state)
+            {
+                return state is null
+                    ? $"Order {_orderId} was not found."
+                    : $"Order {_orderId} has not received the RefundAssigned event.";
+            }
         }
     }
 }

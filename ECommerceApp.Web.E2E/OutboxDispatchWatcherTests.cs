@@ -39,8 +39,7 @@ namespace ECommerceApp.Web.E2E
             await watcher.WaitForDispatchedAsync<ProductPublished>(
                 sinceUtc,
                 message => message.ProductId == productId,
-                TimeSpan.FromSeconds(10),
-                TestContext.Current.CancellationToken);
+                ct: TestContext.Current.CancellationToken);
 
             await Should.ThrowAsync<TimeoutException>(() => watcher.WaitForDispatchedAsync<ProductPublished>(
                 DateTime.UtcNow,
