@@ -44,7 +44,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
 
         private void SetupFulfillment(int orderId, int productId, int quantity, bool succeeded)
         {
-            _stockService.Setup(s => s.FulfillAsync(orderId, productId, quantity, It.IsAny<CancellationToken>()))
+            _stockService.Setup(s => s.FulfillAsync(orderId, productId, quantity, _txMock.Object, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(succeeded);
         }
 
@@ -104,7 +104,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
             await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
             // Assert
-            _stockService.Verify(s => s.FulfillAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+            _stockService.Verify(s => s.FulfillAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
             _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
     }

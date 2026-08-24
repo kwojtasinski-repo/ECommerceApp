@@ -22,7 +22,7 @@ namespace ECommerceApp.E2E.Backend.Sales.Orders
     /// <see cref="OrderRollbackE2EFixture"/>/Testcontainers) because EF Core's InMemory provider
     /// (used by <c>ECommerceApp.IntegrationTests</c>) cannot exercise real transaction rollback at all.
     /// </summary>
-    [Collection("OrderRollbackSqlServer")]
+    [Collection(OrderRollbackE2EFixture.CollectionName)]
     public class OrderServiceRollbackE2ETests : IDisposable
     {
         private readonly IServiceScope _scope;

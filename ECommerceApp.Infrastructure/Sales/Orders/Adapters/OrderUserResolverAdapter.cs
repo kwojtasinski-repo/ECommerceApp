@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Supporting.Communication.Contracts;
+using ECommerceApp.Domain.Sales.Orders;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading;
@@ -17,7 +18,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
 
         public Task<string> GetUserIdForOrderAsync(int orderId, CancellationToken ct = default)
             => _context.Orders
-                .Where(o => o.Id.Value == orderId)
+                .Where(o => o.Id == new OrderId(orderId))
                 .Select(o => (string)o.UserId.Value)
                 .FirstOrDefaultAsync(ct);
     }

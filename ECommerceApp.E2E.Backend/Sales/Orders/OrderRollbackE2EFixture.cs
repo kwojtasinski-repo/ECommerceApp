@@ -136,6 +136,8 @@ namespace ECommerceApp.E2E.Backend.Sales.Orders
     /// </summary>
     public sealed class OrderRollbackE2EFixture : IAsyncLifetime
     {
+        public const string CollectionName = "OrderRollbackSqlServer";
+
         private readonly MsSqlContainer _container = new MsSqlBuilder()
             .WithLogger(TestLogging.CreateTestcontainersLogger())
             .WithOutputConsumer(TestLogging.CreateContainerOutputConsumer())
@@ -163,7 +165,7 @@ namespace ECommerceApp.E2E.Backend.Sales.Orders
         }
     }
 
-    [CollectionDefinition("OrderRollbackSqlServer")]
+    [CollectionDefinition(OrderRollbackE2EFixture.CollectionName)]
     public sealed class OrderRollbackSqlServerCollection : ICollectionFixture<OrderRollbackE2EFixture>
     {
     }

@@ -31,7 +31,7 @@ namespace ECommerceApp.E2E.Backend.Messaging
     /// container is isolated and throwaway — it is never the application's real <c>DefaultConnection</c>.
     /// </para>
     /// </summary>
-    [Collection("CrossContextSqlServer")]
+    [Collection(CrossContextSqlFixture.CollectionName)]
     public class CrossContextTransactionScopeE2ETests : IAsyncLifetime
     {
         private readonly CrossContextSqlFixture _fixture;

@@ -23,6 +23,8 @@ namespace ECommerceApp.E2E.Backend.Messaging
     /// </summary>
     public sealed class CrossContextSqlFixture : IAsyncLifetime
     {
+        public const string CollectionName = "CrossContextSqlServer";
+
         private readonly MsSqlContainer _container = new MsSqlBuilder()
             .WithLogger(TestLogging.CreateTestcontainersLogger())
             .WithOutputConsumer(TestLogging.CreateContainerOutputConsumer())
@@ -35,7 +37,7 @@ namespace ECommerceApp.E2E.Backend.Messaging
         public async ValueTask DisposeAsync() => await _container.DisposeAsync();
     }
 
-    [CollectionDefinition("CrossContextSqlServer")]
+    [CollectionDefinition(CrossContextSqlFixture.CollectionName)]
     public sealed class CrossContextSqlServerCollection : ICollectionFixture<CrossContextSqlFixture>
     {
     }

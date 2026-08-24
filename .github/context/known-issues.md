@@ -24,9 +24,61 @@
 
 ## Deferred Design Decisions
 
+### [DD-003] Centralized Outbox schema forces cross-schema shared-connection transactions
+
+- **Decision**: `MessagingDbContext` owns one centralized `Outbox`/`Inbox` table pair in its own
+  schema, shared by every BC. Any BC write that must commit atomically with its outbox row
+  (transactional outbox pattern) therefore has to bridge two different `DbContext` instances —
+  done today via `CrossContextTransactionScope` sharing one physical ADO.NET connection/transaction,
+  with the transaction passed explicitly as `IOutboxTransaction` down the call stack.
+- **Why deferred, not fixed**: the architecturally clean fix — each BC owning its own local outbox
+  table, written in the same ordinary same-schema transaction as its business data — removes the
+  cross-schema sharing requirement entirely and is also the only shape that survives a real service
+  extraction unchanged. It is a materially larger change (dispatcher polling N tables instead of
+  one, per-BC migrations, per-schema EF configuration) that is not justified while every BC still
+  lives in one physical database.
+- **Revisit when**: extracting any BC into a separately deployable service becomes concrete,
+  scheduled work — migrate that BC's outbox writes to a local table **before** starting the
+  extraction. See `docs/adr/0032/0032-cross-schema-outbox-transaction-sharing.md` for full
+  context, rejected alternatives (ambient scoped-DI transaction accessor, `TransactionScope`/MSDTC),
+  and the exit trigger.
+
 ---
 
 ## Resolved
+
+### [KI-014] Nested-transaction crash: BC service opens its own transaction when caller already has one open ✅
+
+- **Root cause**: `StockService.ReserveAsync`/`ReleaseAsync`/`FulfillAsync` each unconditionally
+  called `_unitOfWork.BeginTransactionAsync()` internally. `RefundApprovedHandler` already fixed
+  this for `ReturnAsync`, but `OrderPlacedHandler` (→ `ReserveAsync`), `OrderShippedHandler`
+  (→ `FulfillAsync`), and `ShipmentStockOutcomeHandlerBase` (→ `FulfillAsync`/`ReleaseAsync`, used
+  by `ShipmentDeliveredHandler`/`ShipmentFailedHandler`/`ShipmentPartiallyDeliveredHandler`) all
+  open their own transaction first and then call into a `StockService` method that tries to open a
+  **second** transaction on the same `AvailabilityDbContext` — EF Core throws
+  `InvalidOperationException: "The connection is already in a transaction..."` on the second
+  `BeginTransactionAsync`. Not caught by existing unit tests because they mock `IStockService`/
+  `IInventoryUnitOfWork`; only a real relational provider enforces transaction semantics.
+- **Fix**: Added transaction-accepting overloads — `ReserveAsync(dto, transaction, ct)`,
+  `ReleaseAsync(orderId, productId, quantity, transaction, ct)`,
+  `FulfillAsync(orderId, productId, quantity, transaction, ct)` — mirroring the existing
+  `ReturnAsync(productId, quantity, transaction, ct)` pattern (public transaction-owning overload +
+  public transaction-accepting overload + private `PersistXxxAsync` helper shared by both). Updated
+  `OrderPlacedHandler`, `OrderShippedHandler`, and `ShipmentStockOutcomeHandlerBase` to pass their
+  already-open transaction through instead of letting the service open a second one.
+- **Files changed**: `IStockService.cs`, `StockService.cs`, `OrderPlacedHandler.cs`,
+  `OrderShippedHandler.cs`, `ShipmentStockOutcomeHandlerBase.cs`, plus matching mock setups/verifies
+  in `OrderPlacedHandlerTests.cs`, `OrderShippedHandlerTests.cs`,
+  `ShipmentDeliveredHandlerTests.cs`, `ShipmentFailedHandlerTests.cs`,
+  `ShipmentPartiallyDeliveredHandlerTests.cs`.
+- **Related**: `docs/adr/0032/0032-cross-schema-outbox-transaction-sharing.md` documents the
+  separate (deferred, not a bug) decision behind *why* `IOutboxTransaction` is passed as an
+  explicit parameter at all — see `[DD-003]` above.
+- **Not touched**: `WithdrawHoldAsync` has no caller that already holds an open transaction (only
+  `StockController`, a top-level request) — no transaction-accepting overload added, to avoid
+  unrequested API surface. `OrderCancelledHandler`/`OrderPlacementFailedHandler`/
+  `PaymentExpiredHandler` call `StockService` methods without opening their own transaction first —
+  not affected by this bug class.
 
 ### [DD-001] `StockHold` — `Withdrawn` status and non-reversible state transitions ✅
 

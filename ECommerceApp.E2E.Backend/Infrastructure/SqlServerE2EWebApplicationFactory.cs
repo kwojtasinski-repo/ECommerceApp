@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Shared.TestInfrastructure;
 using ECommerceApp.Web;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerceApp.E2E.Backend.Infrastructure
 {
@@ -55,6 +58,8 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
                 {
                     ["ConnectionStrings:DefaultConnection"] = _connectionString,
                     ["Database:RunMigrationsOnStart"] = "true",
+                    ["MessagingOptions:UseBackgroundDispatcher"] = "true",
+                    ["MessagingOptions:OutboxPollInterval"] = "00:00:00.100",
                 });
             });
 
@@ -65,9 +70,59 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
                     services.Remove(brokerDescriptor);
 
                 services.AddScoped<IMessageBroker, SynchronousMultiHandlerBroker>();
+
+                foreach (var moduleClientDescriptor in services
+                    .Where(d => d.ServiceType == typeof(IModuleClient))
+                    .ToList())
+                {
+                    services.Remove(moduleClientDescriptor);
+                }
+
+                services.AddScoped<IModuleClient, IsolatedModuleClient>();
             });
 
             builder.UseEnvironment("test");
+        }
+
+        private sealed class IsolatedModuleClient : IModuleClient
+        {
+            private readonly IServiceScopeFactory _scopeFactory;
+            private readonly ILogger<IsolatedModuleClient> _logger;
+
+            public IsolatedModuleClient(IServiceScopeFactory scopeFactory, ILogger<IsolatedModuleClient> logger)
+            {
+                _scopeFactory = scopeFactory;
+                _logger = logger;
+            }
+
+            public async Task PublishAsync(IMessage message, long? outboxMessageId = null)
+            {
+                var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
+                var idAwareHandlerType = typeof(IIdAwareMessageHandler<>).MakeGenericType(message.GetType());
+
+                using var probe = _scopeFactory.CreateScope();
+                var handlers = probe.ServiceProvider.GetServices(handlerType).ToArray();
+                foreach (var handler in handlers)
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var scopedHandler = scope.ServiceProvider.GetServices(handlerType)
+                        .Single(candidate => candidate.GetType() == handler.GetType());
+                    var isIdAware = outboxMessageId.HasValue && idAwareHandlerType.IsInstanceOfType(scopedHandler);
+                    var method = isIdAware
+                        ? idAwareHandlerType.GetMethod(nameof(IIdAwareMessageHandler<IMessage>.HandleAsync))
+                        : handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
+                    if (method is null)
+                        continue;
+
+                    var arguments = isIdAware
+                        ? new object[] { message, outboxMessageId!.Value, CancellationToken.None }
+                        : new object[] { message, CancellationToken.None };
+                    await (Task)method.Invoke(scopedHandler, arguments)!;
+                }
+            }
+
+            public Task<TResult> SendAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default)
+                => throw new NotSupportedException("Queries are not used by the SQL Server E2E module client.");
         }
     }
 }

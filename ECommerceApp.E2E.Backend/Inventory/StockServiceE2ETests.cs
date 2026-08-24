@@ -23,7 +23,7 @@ namespace ECommerceApp.E2E.Backend.Inventory
     /// throwaway database, this suite does not.
     /// </para>
     /// </summary>
-    [Collection("SqlServerE2E")]
+    [Collection(MsSqlE2EFixture.CollectionName)]
     public class StockServiceE2ETests : SqlServerE2ETestBase<IStockService>
     {
         public StockServiceE2ETests(MsSqlE2EFixture fixture) : base(fixture) { }

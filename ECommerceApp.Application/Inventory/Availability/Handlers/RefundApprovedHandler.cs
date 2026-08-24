@@ -47,7 +47,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
 
                 foreach (var item in message.Items)
                 {
-                    await _stockService.ReturnAsync(item.ProductId, item.Quantity, ct);
+                    await _stockService.ReturnAsync(item.ProductId, item.Quantity, transaction, ct);
                 }
 
                 await _outboxWriter.EnqueueAsync(new RefundStockReturned(message.RefundId), transaction, ct);

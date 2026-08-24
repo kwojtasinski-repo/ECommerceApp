@@ -60,6 +60,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                     d.Quantity == 2 &&
                     d.UserId == "user-1" &&
                     d.ExpiresAt == expiresAt),
+                _transaction.Object,
                 It.IsAny<CancellationToken>()), Times.Once);
 
             _stockService.Verify(s => s.ReserveAsync(
@@ -69,6 +70,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                     d.Quantity == 5 &&
                     d.UserId == "user-1" &&
                     d.ExpiresAt == expiresAt),
+                _transaction.Object,
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -92,6 +94,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             // Assert
             _stockService.Verify(s => s.ReserveAsync(
                 It.Is<ReserveStockDto>(d => d.ProductId == 30 && d.OrderId == 7 && d.Quantity == 1),
+                _transaction.Object,
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -113,7 +116,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             // Assert
             _stockService.Verify(s => s.ReserveAsync(
-                It.IsAny<ReserveStockDto>(), It.IsAny<CancellationToken>()), Times.Never);
+                It.IsAny<ReserveStockDto>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

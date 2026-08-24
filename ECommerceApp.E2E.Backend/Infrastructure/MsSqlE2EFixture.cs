@@ -1,6 +1,10 @@
 using System;
 using System.Threading.Tasks;
+using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.Shared.TestInfrastructure;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 using Testcontainers.MsSql;
 using Xunit;
 
@@ -23,6 +27,9 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
     /// </summary>
     public sealed class MsSqlE2EFixture : IAsyncLifetime
     {
+        public const string CollectionName = "SqlServerE2E";
+        public const string TestCustomerId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
+
         private readonly MsSqlContainer _container = new MsSqlBuilder()
             .WithLogger(TestLogging.CreateTestcontainersLogger())
             .WithOutputConsumer(TestLogging.CreateContainerOutputConsumer())
@@ -31,6 +38,27 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
 
         public IServiceProvider Services => (_factory ?? throw new InvalidOperationException(
             $"{nameof(MsSqlE2EFixture)} has not been initialized yet.")).Services;
+
+        public async Task EnsureTestCustomerAsync()
+        {
+            using var scope = Services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await userManager.FindByIdAsync(TestCustomerId);
+            if (user is not null)
+            {
+                return;
+            }
+
+            user = new ApplicationUser
+            {
+                Id = TestCustomerId,
+                UserName = "e2e-customer@test.com",
+                Email = "e2e-customer@test.com",
+                EmailConfirmed = true
+            };
+            var result = await userManager.CreateAsync(user, "Test123!Aa");
+            result.Succeeded.ShouldBeTrue(string.Join("; ", result.Errors));
+        }
 
         public async ValueTask InitializeAsync()
         {
@@ -54,7 +82,7 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
         }
     }
 
-    [CollectionDefinition("SqlServerE2E")]
+    [CollectionDefinition(MsSqlE2EFixture.CollectionName)]
     public sealed class SqlServerE2ECollection : ICollectionFixture<MsSqlE2EFixture>
     {
     }

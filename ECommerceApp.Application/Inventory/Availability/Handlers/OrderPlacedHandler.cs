@@ -52,7 +52,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                         message.UserId,
                         message.ExpiresAt);
 
-                    await _stockService.ReserveAsync(dto, ct);
+                    await _stockService.ReserveAsync(dto, transaction, ct);
                 }
 
                 await transaction.CommitAsync(ct);

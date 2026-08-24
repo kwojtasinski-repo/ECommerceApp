@@ -44,7 +44,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
 
                 foreach (var item in message.Items)
                 {
-                    await _stockService.FulfillAsync(message.OrderId, item.ProductId, item.Quantity, ct);
+                    await _stockService.FulfillAsync(message.OrderId, item.ProductId, item.Quantity, transaction, ct);
                 }
 
                 await transaction.CommitAsync(ct);

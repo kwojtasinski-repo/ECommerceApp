@@ -41,8 +41,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
-            _stockService.Verify(s => s.FulfillAsync(5, 10, 2, It.IsAny<CancellationToken>()), Times.Once);
-            _stockService.Verify(s => s.FulfillAsync(5, 20, 3, It.IsAny<CancellationToken>()), Times.Once);
+            _stockService.Verify(s => s.FulfillAsync(5, 10, 2, _transaction.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _stockService.Verify(s => s.FulfillAsync(5, 20, 3, _transaction.Object, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
-            _stockService.Verify(s => s.FulfillAsync(8, 30, 1, It.IsAny<CancellationToken>()), Times.Once);
+            _stockService.Verify(s => s.FulfillAsync(8, 30, 1, _transaction.Object, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.VerifyNoOtherCalls();
         }
 
@@ -65,7 +65,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.FulfillAsync(
-                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

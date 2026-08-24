@@ -50,8 +50,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                 foreach (var op in operations)
                 {
                     var succeeded = op.Type == StockOperationType.Fulfill
-                        ? await _stockService.FulfillAsync(orderId, op.ProductId, op.Quantity, ct)
-                        : await _stockService.ReleaseAsync(orderId, op.ProductId, op.Quantity, ct);
+                        ? await _stockService.FulfillAsync(orderId, op.ProductId, op.Quantity, transaction, ct)
+                        : await _stockService.ReleaseAsync(orderId, op.ProductId, op.Quantity, transaction, ct);
 
                     if (!succeeded)
                         failures.Add(new StockOperationFailure(op.ProductId, op.Quantity, op.Type));

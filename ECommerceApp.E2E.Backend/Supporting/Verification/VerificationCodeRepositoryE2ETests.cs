@@ -8,7 +8,7 @@ using Xunit;
 
 namespace ECommerceApp.E2E.Backend.Supporting.Verification
 {
-    [Collection("SqlServerE2E")]
+    [Collection(MsSqlE2EFixture.CollectionName)]
     public class VerificationCodeRepositoryE2ETests : SqlServerE2ETestBase<IVerificationCodeRepository>
     {
         public VerificationCodeRepositoryE2ETests(MsSqlE2EFixture fixture) : base(fixture)
