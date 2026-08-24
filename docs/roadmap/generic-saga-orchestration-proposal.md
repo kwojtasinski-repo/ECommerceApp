@@ -1,6 +1,6 @@
 # Generic saga orchestration engine — requirements & implementation proposal
 
-> **Status:** Phases 1–7 implemented. Phase 7 closes the generic saga roadmap; independent validation remains a separate review step.
+> **Status:** Phases 1–7 implemented and independently validated. The E2E coverage follow-up (real production entry point + real async outbox dispatch for all 3 concrete saga definitions) is independently validated PASS as of 2026-08-24 — see `docs/roadmap/README.md` F3 for the summary and ADR-0032 for the transaction-threading decision it surfaced.
 > Existing Option A choreography compensation handlers remain standalone. The generic engine is
 > available for later concrete definitions without changing those handlers today.
 > [`saga-pattern.md`](./saga-pattern.md#option-b--process-manager-per-saga-future-when-option-a-proves-insufficient)
