@@ -43,14 +43,6 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = MaintenanceRole)]
-        [HttpGet]
-        public async Task<IActionResult> ByItem(int id)
-        {
-            var model = await _orderItemService.GetAllPagedAsync(20, 1, id.ToString());
-            return View(model);
-        }
-
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {

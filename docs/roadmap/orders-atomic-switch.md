@@ -66,7 +66,7 @@ before any controller migration or atomic switch:
 |---|---|
 | `Web/Startup.cs` — area route | ✅ Done |
 | `Web/Areas/Sales/Controllers/OrdersController.cs` | ✅ Done |
-| `Web/Areas/Sales/Controllers/OrderItemsController.cs` | ✅ Done — `ByItem` action to be removed in cleanup PR |
+| `Web/Areas/Sales/Controllers/OrderItemsController.cs` | ✅ Done — `ByItem` action removed (2026-08-25); view was intentionally dropped, action was dead code that would have thrown at runtime |
 | `Web/Areas/Sales/Controllers/PaymentsController.cs` | ✅ Done |
 | `Web/Areas/Presale/Controllers/CheckoutController.cs` | ✅ Done |
 | `Web/Areas/Sales/Views/Orders/` | ✅ Done (6 views) |
@@ -192,7 +192,6 @@ before any controller migration or atomic switch:
 | `Infrastructure/DependencyInjection.cs` | Remove registrations for legacy `OrderRepository` (`Infrastructure.Repositories`) and `OrderItemRepository` (`Infrastructure.Repositories`) |
 | `Application/Services/Orders/` | Delete legacy `OrderService.cs`, `OrderItemService.cs` |
 | `Infrastructure/Repositories/` | Delete legacy `OrderRepository.cs`, `OrderItemRepository.cs` |
-| `Web/Areas/Sales/Controllers/OrderItemsController.cs` | Remove `ByItem(int id)` action — view was intentionally dropped (see ADR-0024 View Reduction Decisions) |
 | `Web/Controllers/OrderController.cs` | Remove legacy controller |
 | `Web/Controllers/OrderItemController.cs` | Remove legacy controller |
 | `Web/Views/Order/` | Delete all 15 legacy Order views |
@@ -230,7 +229,7 @@ before any controller migration or atomic switch:
 - [x] Legacy `OrderService` + `OrderItemService` (`Application/Services/Orders/`) DI registrations removed
 - [x] Legacy `OrderRepository` + `OrderItemRepository` (`Infrastructure/Repositories/`) DI registrations removed
 - [x] `Domain/Model/Order.cs` legacy model deleted (coordinate with IAM switch)
-- [ ] `Web/Areas/Sales/Controllers/OrderItemsController.cs` — remove `ByItem(int id)` action (still present)
+- [x] `Web/Areas/Sales/Controllers/OrderItemsController.cs` — `ByItem(int id)` action removed (2026-08-25)
 - [ ] Full test suite green after cleanup
 
 ---
