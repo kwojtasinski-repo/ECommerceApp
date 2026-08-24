@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Shared.TestInfrastructure;
 using ECommerceApp.Web;
@@ -11,7 +9,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace ECommerceApp.E2E.Backend.Infrastructure
 {
@@ -30,12 +27,13 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
     /// </para>
     /// <para>
     /// <see cref="IMessageBroker"/> is still swapped to <see cref="SynchronousMultiHandlerBroker"/>, same
-    /// as <c>BcWebApplicationFactory</c>. This is orthogonal to the real-vs-InMemory database distinction:
-    /// production's default <c>ModuleClient</c> dispatches via <c>dynamic</c>, which cannot bind to the
-    /// (deliberately <c>internal</c>) handler classes from outside their declaring assembly, and only ever
-    /// calls the single first-registered handler besides. Every existing test in this codebase already
-    /// works around both issues the same way; this factory keeps that convention for deterministic,
-    /// multi-consumer-safe dispatch instead of re-introducing a known dispatcher limitation.
+    /// as <c>BcWebApplicationFactory</c>. This is orthogonal to the real-vs-InMemory database distinction.
+    /// <see cref="IModuleClient"/> is likewise swapped to <see cref="PerHandlerScopeModuleClient"/>: production's
+    /// <c>ModuleClient.PublishAsync</c> already resolves and invokes every registered handler (fixed
+    /// under KI-007), but does so against one shared ambient DI scope. Against a real SQL Server engine
+    /// with the background outbox dispatcher running, giving every handler its own DI scope — and thus
+    /// its own <c>DbContext</c> — avoids the same-context nested-transaction conflicts a shared scope
+    /// would risk between handlers reacting to the same message.
     /// </para>
     /// </summary>
     public class SqlServerE2EWebApplicationFactory : WebApplicationFactory<Startup>
@@ -78,51 +76,10 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
                     services.Remove(moduleClientDescriptor);
                 }
 
-                services.AddScoped<IModuleClient, IsolatedModuleClient>();
+                services.AddScoped<IModuleClient, PerHandlerScopeModuleClient>();
             });
 
             builder.UseEnvironment("test");
-        }
-
-        private sealed class IsolatedModuleClient : IModuleClient
-        {
-            private readonly IServiceScopeFactory _scopeFactory;
-            private readonly ILogger<IsolatedModuleClient> _logger;
-
-            public IsolatedModuleClient(IServiceScopeFactory scopeFactory, ILogger<IsolatedModuleClient> logger)
-            {
-                _scopeFactory = scopeFactory;
-                _logger = logger;
-            }
-
-            public async Task PublishAsync(IMessage message, long? outboxMessageId = null)
-            {
-                var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
-                var idAwareHandlerType = typeof(IIdAwareMessageHandler<>).MakeGenericType(message.GetType());
-
-                using var probe = _scopeFactory.CreateScope();
-                var handlers = probe.ServiceProvider.GetServices(handlerType).ToArray();
-                foreach (var handler in handlers)
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var scopedHandler = scope.ServiceProvider.GetServices(handlerType)
-                        .Single(candidate => candidate.GetType() == handler.GetType());
-                    var isIdAware = outboxMessageId.HasValue && idAwareHandlerType.IsInstanceOfType(scopedHandler);
-                    var method = isIdAware
-                        ? idAwareHandlerType.GetMethod(nameof(IIdAwareMessageHandler<IMessage>.HandleAsync))
-                        : handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
-                    if (method is null)
-                        continue;
-
-                    var arguments = isIdAware
-                        ? new object[] { message, outboxMessageId!.Value, CancellationToken.None }
-                        : new object[] { message, CancellationToken.None };
-                    await (Task)method.Invoke(scopedHandler, arguments)!;
-                }
-            }
-
-            public Task<TResult> SendAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default)
-                => throw new NotSupportedException("Queries are not used by the SQL Server E2E module client.");
         }
     }
 }

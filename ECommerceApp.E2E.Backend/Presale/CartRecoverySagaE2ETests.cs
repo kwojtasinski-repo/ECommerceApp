@@ -147,7 +147,7 @@ namespace ECommerceApp.E2E.Backend.Presale
                     services.Remove(descriptor);
                 }
 
-                services.AddScoped<IModuleClient, CartRecoveryModuleClient>();
+                services.AddScoped<IModuleClient, PerHandlerScopeModuleClient>();
 
                 var orderClientDescriptor = services.Single(d => d.ServiceType == typeof(IOrderClient));
                 services.Remove(orderClientDescriptor);
@@ -169,46 +169,6 @@ namespace ECommerceApp.E2E.Backend.Presale
             builder.UseEnvironment("test");
         }
 
-        private sealed class CartRecoveryModuleClient : IModuleClient
-        {
-            private readonly IServiceScopeFactory _scopeFactory;
-
-            public CartRecoveryModuleClient(IServiceScopeFactory scopeFactory)
-            {
-                _scopeFactory = scopeFactory;
-            }
-
-            public async Task PublishAsync(IMessage message, long? outboxMessageId = null)
-            {
-                var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
-                var idAwareHandlerType = typeof(IIdAwareMessageHandler<>).MakeGenericType(message.GetType());
-
-                using var probe = _scopeFactory.CreateScope();
-                var handlers = probe.ServiceProvider.GetServices(handlerType).ToArray();
-                foreach (var handler in handlers)
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var scopedHandler = scope.ServiceProvider.GetServices(handlerType)
-                        .Single(candidate => candidate.GetType() == handler.GetType());
-                    var isIdAware = outboxMessageId.HasValue && idAwareHandlerType.IsInstanceOfType(scopedHandler);
-                    var method = isIdAware
-                        ? idAwareHandlerType.GetMethod(nameof(IIdAwareMessageHandler<IMessage>.HandleAsync))
-                        : handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
-                    if (method is null)
-                    {
-                        continue;
-                    }
-
-                    var arguments = isIdAware
-                        ? new object[] { message, outboxMessageId!.Value, CancellationToken.None }
-                        : new object[] { message, CancellationToken.None };
-                    await (Task)method.Invoke(scopedHandler, arguments)!;
-                }
-            }
-
-            public Task<TResult> SendAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default)
-                => throw new NotSupportedException();
-        }
     }
 
     public sealed class CartRecoveryE2EFixture : IAsyncLifetime
