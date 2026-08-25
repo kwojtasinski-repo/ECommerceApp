@@ -8,6 +8,11 @@ applyTo: "ECommerceApp.Web/wwwroot/**, ECommerceApp.Web/**/*.cshtml"
 Purpose
 - Rules for modifying frontend assets (JS, CSS) and using LibMan in the repository.
 
+Buttons & colors
+- Palette rationale, full token table, page canvas, navbar/typography sizing, vendor-theming discipline → [`docs/style-guides/colors.md`](../../docs/style-guides/colors.md).
+- Which Bootstrap button class (and visual weight: solid/outline/link) for which action → [`docs/style-guides/buttons.md`](../../docs/style-guides/buttons.md). Read it before adding or changing any `.btn-*` in a view.
+- Color tokens (`--brand`, `--accent`, `--caution`, etc.) are defined once in `ECommerceApp.Web/wwwroot/css/site.css` `:root`. Never hardcode a new hex value in a view or add a new `.btn-*` class — extend the relevant style guide first.
+
 Bootstrap
 - Project targets **Bootstrap 5** (5.3.x). Do not use Bootstrap 4 APIs or class names.
 - Use `data-bs-*` attributes (e.g. `data-bs-toggle`, `data-bs-target`, `data-bs-dismiss`). Never use the BS4 `data-toggle`/`data-target`/`data-dismiss` equivalents.

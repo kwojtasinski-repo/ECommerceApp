@@ -1,6 +1,34 @@
 ﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 
+/* Palette rationale & full token table: docs/style-guides/colors.md
+   Which button class to use for which action: docs/style-guides/buttons.md
+   Color tokens below are the single source of truth — style guides link to
+   these names, they never repeat a hex value. */
+:root {
+  --brand: #0F5C56;
+  --brand-rgb: 15, 92, 86;
+  --brand-dark: #0B453F;
+  --brand-tint: #E4EFEC;
+  --accent: #E8792C;
+  --accent-rgb: 232, 121, 44;
+  --accent-dark: #C9631E;
+  --caution: #92400E;
+  --paper: #F7F5F1;
+}
+
+body {
+  background-color: var(--paper);
+}
+
+/* asp-validation-summary always renders one hidden placeholder <li> even
+   with zero errors, so counting <li> elements client-side to decide
+   visibility is never reliable. The framework already computes the
+   correct state server-side via this class — key visibility off that. */
+.validation-summary-valid {
+  display: none;
+}
+
 a.navbar-brand {
   white-space: normal;
   text-align: center;
@@ -9,19 +37,177 @@ a.navbar-brand {
 
 /* Provide sufficient contrast against white background */
 a {
-  color: #0366d6;
+  color: var(--brand);
 }
 
 .btn-primary {
   color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  background-color: var(--accent);
+  border-color: var(--accent-dark);
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--accent-dark) !important;
+  border-color: var(--accent-dark) !important;
+}
+
+.btn-outline-primary {
+  color: #fff;
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+  color: #fff;
+  background-color: var(--brand) !important;
+  border-color: var(--brand) !important;
+  filter: brightness(0.9);
+}
+
+/* Row-action buttons (see docs/style-guides/buttons.md): the HTML keeps
+   stock Bootstrap classes (btn-outline-info/-warning/-danger/-success +
+   btn-sm), rendered here as solid muted-tone chips instead of Bootstrap's
+   outline style. Outline text/border-only color read too pale on a white
+   or paper background (the original bug with warning #ffc107 and info
+   #0dcaf0); solid fill in muted tones fixed contrast without the buttons
+   overwhelming a dense table column. Don't add new colors here — extend
+   the decision table in the style guide first. */
+.btn-outline-info {
+  color: #fff;
+  background-color: var(--brand-dark);
+  border-color: var(--brand-dark);
+}
+
+.btn-outline-info:hover, .btn-outline-info:focus, .btn-outline-info:active {
+  color: #fff;
+  background-color: var(--brand-dark);
+  border-color: var(--brand-dark);
+  filter: brightness(0.9);
+}
+
+.btn-outline-warning {
+  color: #fff;
+  background-color: var(--caution);
+  border-color: var(--caution);
+}
+
+.btn-outline-warning:hover, .btn-outline-warning:focus, .btn-outline-warning:active {
+  color: #fff;
+  background-color: var(--caution);
+  border-color: var(--caution);
+  filter: brightness(0.9);
+}
+
+.btn-outline-danger {
+  color: #fff;
+  background-color: var(--bs-danger);
+  border-color: var(--bs-danger);
+}
+
+.btn-outline-danger:hover, .btn-outline-danger:focus, .btn-outline-danger:active {
+  color: #fff;
+  background-color: var(--bs-danger);
+  border-color: var(--bs-danger);
+  filter: brightness(0.9);
+}
+
+.btn-outline-success {
+  color: #fff;
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+}
+
+.btn-outline-success:hover, .btn-outline-success:focus, .btn-outline-success:active {
+  color: #fff;
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+  filter: brightness(0.9);
+}
+
+.bg-primary {
+  background-color: var(--brand) !important;
+}
+
+.text-primary {
+  color: var(--brand) !important;
+}
+
+.page-item.active .page-link {
+  background-color: var(--brand);
+  border-color: var(--brand);
 }
 
 .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
   color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  background-color: var(--brand);
+  border-color: var(--brand-dark);
+}
+
+/* Navbar: larger brand, links and icons */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--brand-dark) !important;
+}
+
+.navbar-brand::before {
+  content: "";
+  display: inline-block;
+  width: .55rem;
+  height: .55rem;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+.navbar .nav-link {
+  font-size: 1.05rem;
+  font-weight: 500;
+  padding-top: .6rem;
+  padding-bottom: .6rem;
+}
+
+.navbar .nav-link i:not(.fa-lg) {
+  font-size: 1.15em;
+  margin-right: .3rem;
+}
+
+/* Vendor theming: Bootstrap dropdowns.
+   Unlike buttons/forms, Bootstrap exposes the selected-item color as its own
+   CSS variable here, so this is a real override hook, not a hardcode. */
+.dropdown-menu {
+  --bs-dropdown-link-active-bg: var(--brand);
+}
+
+/* Vendor theming: Bootstrap form controls.
+   Bootstrap hardcodes its own blue on these selectors instead of routing
+   through a reusable variable, so this block maps them onto our tokens.
+   Swapping the CSS framework someday means deleting this block only —
+   the tokens above and the rest of the app are untouched. */
+.form-control:focus, .form-select:focus, .form-check-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 .25rem rgba(var(--brand-rgb), .25);
+}
+
+.form-check-input:checked {
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* Vendor theming: Tom Select (multiselect dropdowns).
+   Same situation as above — Tom Select hardcodes Bootstrap's default blue
+   for the focus ring and selected-chip highlight. Isolated here so this
+   whole block goes away cleanly if the multiselect library ever changes. */
+.focus .ts-control, .focus .ts-dropdown .dropdown-input {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 .25rem rgba(var(--brand-rgb), .25);
+}
+
+.ts-wrapper.multi .ts-control > div.active {
+  background: var(--brand);
+  color: #fff;
 }
 
 /* Sticky footer styles
@@ -71,7 +257,7 @@ body {
 }
 
 .anchor-link {
-    color: #0366d6 !important;
+    color: var(--brand) !important;
     cursor: pointer !important;
 }
 
@@ -81,7 +267,7 @@ body {
 }
 
 .anchor-link:hover {
-    color: #0056b3 !important;
+    color: var(--brand-dark) !important;
     text-decoration: underline !important;
 }
 
@@ -90,6 +276,6 @@ textarea {
 }
 
 .fa-custom {
-    color: #0077cc;
+    color: var(--brand);
     cursor: pointer;
 }

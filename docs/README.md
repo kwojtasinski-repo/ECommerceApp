@@ -12,6 +12,9 @@ Short human entry point for the `docs/` folder.
 - `reference/` — endpoint maps and other lookup material
 - `reports/` — analysis snapshots and generated status reports
 - `roadmap/` — planned work, sequencing, and migration tracks
+- `style-guides/` — UI decision rules for `ECommerceApp.Web` (which button
+  class/color for which action, etc.) — start at
+  [`style-guides/README.md`](style-guides/README.md)
 
 ## Recommended reading order
 

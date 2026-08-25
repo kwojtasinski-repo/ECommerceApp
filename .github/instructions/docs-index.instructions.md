@@ -30,6 +30,8 @@ applyTo: ".github/**, docs/**"
 | Test skip/xfail rules? | `.github/context/test-stabilization-policy.md` |
 | Integration/Web/E2E test rules? | `.github/instructions/integration-web-e2e-testing.instructions.md` |
 | Compact setup snapshot | `.github/setup-state.md` |
+| Palette/typography/navbar conventions for `ECommerceApp.Web`? | [`docs/style-guides/colors.md`](../../docs/style-guides/colors.md) |
+| Which button class/color for which action in `ECommerceApp.Web` views? | [`docs/style-guides/buttons.md`](../../docs/style-guides/buttons.md) |
 | Archived setup history (read-only) | `.github/COPILOT-SETUP-CHANGELOG.md` |
 | Full routing table | `.github/instructions/docs-index.full.md` |
 | Pipeline spec | `.github/AGENT-PIPELINE.md` |

@@ -9,7 +9,7 @@
     <form method="post">
         @Html.AntiForgeryToken()
 
-        <div asp-validation-summary="All" class="alert alert-danger d-none" id="validationSummary"></div>
+        <div asp-validation-summary="All" class="alert alert-danger" id="validationSummary"></div>
 
         <div class="mb-3">
             <label asp-for="Code" class="form-label">Kod</label>
@@ -41,11 +41,3 @@
     <partial name="_ValidationScriptsPartial" />
 }
 
-@section Scripts {
-    <script>
-        (function () {
-            var s = document.getElementById('validationSummary');
-            if (s && s.querySelectorAll('li').length > 0) s.classList.remove('d-none');
-        })();
-    </script>
-}

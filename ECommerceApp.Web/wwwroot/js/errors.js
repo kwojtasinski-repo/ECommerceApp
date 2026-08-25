@@ -141,11 +141,25 @@
                 return;
             }
 
-            errorContainer.style.display = 'block';
             let text = '';
             for (const error of errorsArray) {
-                text += errors.getError(error.Code ?? error.code, error.Parameters ?? error.parameters) + '\n';
+                if (!error) {
+                    continue;
+                }
+                const message = errors.getError(error.Code ?? error.code, error.Parameters ?? error.parameters);
+                if (!message) {
+                    continue;
+                }
+                text += message + '\n';
             }
+
+            if (!text.trim()) {
+                errorContainer.style.display = 'none';
+                errorValue.textContent = '';
+                return;
+            }
+
+            errorContainer.style.display = 'block';
             errorValue.textContent = text;
         }
         

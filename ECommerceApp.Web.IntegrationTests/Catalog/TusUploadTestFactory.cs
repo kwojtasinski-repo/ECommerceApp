@@ -4,6 +4,8 @@ using ECommerceApp.Application.Catalog.Products.ViewModels;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Catalog.Products;
+using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Identity.IAM;
 using ECommerceApp.Shared.TestInfrastructure;
 using ECommerceApp.Web;
 using Microsoft.AspNetCore.Hosting;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -28,8 +31,12 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
     /// </summary>
     public sealed class TusUploadTestFactory : CustomWebApplicationFactory<Startup>
     {
+        private const string DefaultTusTestConnectionString =
+            "Server=.;Database=ECommerceApp_TusTests;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;";
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            EnsureDatabaseExists(GetTusTestConnectionString());
             base.ConfigureWebHost(builder);
 
             // Inject the TUS feature flag on top of the test appsettings.
@@ -37,9 +44,47 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
             {
                 config.AddInMemoryCollection(new Dictionary<string, string>
                 {
-                    ["Catalog:ChunkedUploadImplementation"] = "TUS"
+                    ["Catalog:ChunkedUploadImplementation"] = "TUS",
+                    ["ConnectionStrings:DefaultConnection"] =
+                        Environment.GetEnvironmentVariable("TUS_TEST_CONNECTION_STRING")
+                        ?? DefaultTusTestConnectionString
                 });
             });
+
+            builder.ConfigureServices(services =>
+            {
+                foreach (var descriptor in services
+                    .Where(d => d.ServiceType == typeof(IDatabaseInitializer))
+                    .ToList())
+                {
+                    services.Remove(descriptor);
+                }
+
+                services.AddScoped<IDatabaseInitializer, TusDatabaseInitializer>();
+            });
+        }
+
+        private static string GetTusTestConnectionString()
+            => Environment.GetEnvironmentVariable("TUS_TEST_CONNECTION_STRING")
+                ?? DefaultTusTestConnectionString;
+
+        private static void EnsureDatabaseExists(string connectionString)
+        {
+            var databaseConnection = new SqlConnectionStringBuilder(connectionString);
+            var databaseName = databaseConnection.InitialCatalog;
+            if (string.IsNullOrWhiteSpace(databaseName))
+            {
+                throw new InvalidOperationException("TUS test connection string must specify a database name.");
+            }
+
+            databaseConnection.InitialCatalog = "master";
+            using var connection = new SqlConnection(databaseConnection.ConnectionString);
+            connection.Open();
+
+            var escapedDatabaseName = databaseName.Replace("]", "]]", StringComparison.Ordinal);
+            using var command = connection.CreateCommand();
+            command.CommandText = $"IF DB_ID(N'{databaseName.Replace("'", "''", StringComparison.Ordinal)}') IS NULL CREATE DATABASE [{escapedDatabaseName}];";
+            command.ExecuteNonQuery();
         }
 
         protected override void OverrideServicesImplementation(IServiceCollection services)
@@ -66,6 +111,24 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
                 .AddAsync(Product.Create("TUS test product", 1m, "TUS upload test product", category.Value));
 
             return product.Value;
+        }
+    }
+
+    internal sealed class TusDatabaseInitializer : IDatabaseInitializer
+    {
+        private readonly IEnumerable<IDbContextMigrator> _migrators;
+
+        public TusDatabaseInitializer(IEnumerable<IDbContextMigrator> migrators)
+        {
+            _migrators = migrators;
+        }
+
+        public async Task Initialize()
+        {
+            foreach (var migrator in _migrators.Where(m => m.ContextName != nameof(IamDbContext)))
+            {
+                await migrator.MigrateAsync();
+            }
         }
     }
 

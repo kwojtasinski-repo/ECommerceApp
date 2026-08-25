@@ -14,7 +14,7 @@
             <form id="formEditProduct" asp-action="Edit" asp-route-id="@productId" method="post">
                 @Html.AntiForgeryToken()
 
-                <div asp-validation-summary="All" class="alert alert-danger d-none" id="validationSummary"></div>
+                <div asp-validation-summary="All" class="alert alert-danger" id="validationSummary"></div>
 
                 <div class="mb-3">
                     <label asp-for="Name" class="form-label">Nazwa</label>
@@ -98,11 +98,6 @@
 
 @section Scripts {
     <script>
-        (function () {
-            var s = document.getElementById('validationSummary');
-            if (s && s.querySelectorAll('li').length > 0) s.classList.remove('d-none');
-        })();
-
         const fileUploadId = 'FileUpload_FormFile';
         let ajaxRequest, modalService, statusCodes, showError, showErrorFromResponse, errors, forms;
 
