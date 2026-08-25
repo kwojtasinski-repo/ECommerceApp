@@ -1,49 +1,48 @@
 ﻿## Design Amendment — Fulfillment Message Consumption (2025-06-27)
 
-> **Status**: Agreed — not yet implemented. See ADR-0017 §13.3 for the full parallel fan-out decision.
+> **Status**: Implemented. See ADR-0017 section 13.3 and [the current Inventory wiring](../example-implementation/cross-bc-message-wiring.md).
 
 ### Rationale
 
-Inventory currently learns about shipment outcomes indirectly via `OrderShipped` (published by
-Orders BC after `ShipmentDelivered`). This has two problems:
+Inventory originally learned about shipment outcomes indirectly via `OrderShipped` published by
+Orders BC after `ShipmentDelivered`. That lacked failure and partial-delivery information and
+could leave confirmed stock holds unreleased.
 
-1. **`ShipmentFailed` and `ShipmentPartiallyDelivered` don't trigger stock release** — Inventory
-   never sees these events. Failed shipment items remain in `StockHold.Confirmed` status
-   indefinitely, causing a **stock leak**.
-2. **`OrderShipped` lacks line-level detail** — it carries `Items[]` but these are order items,
-   not shipment lines. For partial delivery, Inventory cannot distinguish delivered vs failed items.
+### Implemented changes
 
-### Changes
-
-**3 new handlers** (consume Fulfillment messages directly):
+Fulfillment messages are consumed directly by Inventory:
 
 | Handler | Message | Action |
 |---|---|---|
-| `ShipmentDeliveredHandler` | `ShipmentDelivered` | For each item: find `StockHold` by orderId + productId → `StockItem.Fulfill()` |
-| `ShipmentFailedHandler` | `ShipmentFailed` | For each item: find `StockHold` by orderId + productId → `StockItem.Release()` |
-| `ShipmentPartiallyDeliveredHandler` | `ShipmentPartiallyDelivered` | Delivered items → `Fulfill()`, Failed items → `Release()` |
+| `ShipmentDeliveredHandler` | `ShipmentDelivered` | Find `StockHold` by orderId + productId and call `StockItem.Fulfill()` |
+| `ShipmentFailedHandler` | `ShipmentFailed` | Find `StockHold` by orderId + productId and call `StockItem.Release()` |
+| `ShipmentPartiallyDeliveredHandler` | `ShipmentPartiallyDelivered` | Fulfill delivered items and release failed items |
 
-All three publish `StockAvailabilityChanged` for each affected product.
+All three handlers publish `StockAvailabilityChanged` for affected products.
 
-**`OrderShippedHandler` retirement**:
-- `OrderShippedHandler` is **unregistered** from `Application/Inventory/Availability/Services/Extensions.cs`
-- The handler class file is kept during the parallel-change window for rollback safety
-- Deleted at the atomic switch once Fulfillment handlers are verified green
+### OrderShippedHandler retirement
 
-**DI registration** (in `Extensions.cs`):
+`OrderShippedHandler` is unregistered from
+`Application/Inventory/Availability/Services/Extensions.cs`. Its class file may remain as a
+rollback artifact during the parallel-change window, but it is not an active subscription.
+
+### DI registration
+
+The active registrations in `Extensions.cs` are:
+
 ```csharp
-// Remove:
-// services.AddTransient<IMessageHandler<OrderShipped>, OrderShippedHandler>();
-
-// Add:
-services.AddTransient<IMessageHandler<ShipmentDelivered>, ShipmentDeliveredHandler>();
-services.AddTransient<IMessageHandler<ShipmentFailed>, ShipmentFailedHandler>();
-services.AddTransient<IMessageHandler<ShipmentPartiallyDelivered>, ShipmentPartiallyDeliveredHandler>();
+services.AddScoped<IMessageHandler<ShipmentDelivered>, ShipmentDeliveredHandler>();
+services.AddScoped<IMessageHandler<ShipmentFailed>, ShipmentFailedHandler>();
+services.AddScoped<IMessageHandler<ShipmentPartiallyDelivered>, ShipmentPartiallyDeliveredHandler>();
 ```
 
-**Architecture test update**: `App_Inventory` test must add `FulfillmentMessages` to its allowed
-dependency list in `BoundedContextDependencyTests.cs`.
+### Idempotency
 
-**Idempotency**: `StockHold` status provides natural guard — `Fulfilled` and `Released` are
-terminal states. Replaying a `ShipmentDelivered` for an already-fulfilled hold is a no-op
-(`StockItem.Fulfill()` guards `hold.Status == Confirmed`).
+`StockHold` status provides the natural guard. `Fulfilled` and `Released` are terminal states, so
+replaying a shipment message for an already terminal `StockHold` is a no-op.
+
+### Verification note
+
+This amendment was originally recorded as planned work. The status is now updated because the
+three Fulfillment handlers are registered in the current application code. The detailed current
+subscription table and implementation sketch live in `cross-bc-message-wiring.md`.

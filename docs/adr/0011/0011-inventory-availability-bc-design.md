@@ -1,4 +1,4 @@
-﻿# ADR-0011: Inventory/Availability BC — StockItem Aggregate Design
+# ADR-0011: Inventory/Availability BC — StockItem Aggregate Design
 
 ## Status
 Accepted
@@ -457,267 +457,30 @@ public interface IStockService
 `StockService` is `internal sealed`, registered in DI via
 `Application/Inventory/Availability/Services/Extensions.cs`.
 
-### 8a. `Adjust` — deferred write with command coalescing and exponential backoff
+### 8a. `Adjust` - deferred write with command coalescing and exponential backoff
 
-`Adjust` is the only `StockItem` write driven by a human (admin). Two problems must be solved:
+> Implementation detail extracted to [stock-adjustment-algorithm.md](example-implementation/stock-adjustment-algorithm.md).
 
-1. **Hot-path isolation** — inline admin writes compete with `Reserve`/`Release`/`Fulfill` for
-   `RowVersion`, degrading order throughput. Solution: defer via `StockAdjustmentJob`.
-2. **Command coalescing (setpoint update)** — admins frequently correct values in rapid succession
-   (e.g., submit 4 → realise 10 → adjust to 9 for a broken item). Queuing N independent jobs
-   risks applying a stale value or creating a burst of `RowVersion` contention. Solution:
-   maintain exactly **one pending job per product**, always executing the **latest submitted value**.
-
-This is a **last-write-wins queue** (control theory: *setpoint update*). N submissions always
-produce one job execution against the current setpoint.
-
-#### `PendingStockAdjustment` — the coalescing record
-
-`PendingStockAdjustment` is a plain domain object (no domain methods needed): one row per
-product, holding the latest admin-submitted target quantity and a `Version` GUID reset on every
-upsert. It lives in `Domain/Inventory/Availability/PendingStockAdjustment.cs`.
-
-```csharp
-namespace ECommerceApp.Domain.Inventory.Availability;
-
-public class PendingStockAdjustment
-{
-    public StockProductId ProductId { get; private set; }
-    public StockQuantity NewQuantity { get; private set; }  // latest admin-submitted target (setpoint)
-    public Guid Version { get; private set; }               // reset on each upsert
-    public DateTime SubmittedAt { get; private set; }
-
-    private PendingStockAdjustment() { }
-
-    public static PendingStockAdjustment Create(StockProductId productId, StockQuantity newQuantity)
-        => new PendingStockAdjustment
-        {
-            ProductId   = productId,
-            NewQuantity = newQuantity,
-            Version     = Guid.NewGuid(),
-            SubmittedAt = DateTime.UtcNow
-        };
-}
-```
-
-`IPendingStockAdjustmentRepository.UpsertAsync` is an INSERT-OR-UPDATE: it always overwrites the
-existing row for that `ProductId` (including a fresh `Version` GUID). The upsert is the
-coalescing write — whichever admin call arrives last wins.
-
-#### `StockService.AdjustAsync` — upsert + cancel + reschedule
-
-Because `IDeferredJobScheduler.ScheduleAsync` always inserts a new row (no deduplication on
-`(jobName, entityId)`), `AdjustAsync` must explicitly cancel any existing pending job before
-scheduling a fresh one. This keeps exactly one pending job per product at all times.
-
-```
-StockService.AdjustAsync(AdjustStockDto dto):
-  1. UpsertAsync(dto.ProductId, dto.NewQuantity)                        ← setpoint update; always last-write-wins
-  2. CancelAsync(StockAdjustmentJob.JobTaskName, dto.ProductId.ToString()) ← deletes Pending rows (no-op if Running)
-  3. ScheduleAsync(StockAdjustmentJob.JobTaskName, dto.ProductId.ToString(), now) ← fresh job; reads upserted value
-  4. return                                                              ← admin gets "adjustment queued" immediately
-```
-
-#### `StockAdjustmentJob.ExecuteAsync` — version-match delete for race safety
-
-If the admin submits a new value while the job is already **Running** (Cancel in step 2 is a
-no-op for Running rows), step 3 creates a new Pending job. The running job must not delete the
-`PendingStockAdjustment` record in that case — a version-match delete handles this atomically.
-
-`StockAdjustmentJob` implements `IScheduledTask`:
-- `string TaskName => StockAdjustmentJob.JobTaskName` — the constant used in `ScheduleAsync` / `CancelAsync`
-- `EntityId` encodes `productId.ToString()` — a single integer
-
-**Two independent retry levels** (must not be confused):
-
-| Level | Where | Default | Purpose |
-|---|---|---|---|
-| Infrastructure retry (`DeferredJobInstance.MaxRetries`) | Passed to `DeferredJobScheduler.ScheduleAsync`; controls DeadLetter escalation | **3** (framework default) | How many times the poller re-picks the job after an unhandled exception |
-| Application-level concurrency retry | Loop inside `ExecuteAsync` on `DbUpdateConcurrencyException` | **5 attempts** | Handles `RowVersion` conflicts with exponential backoff — fully within a single job execution |
-
-The application-level loop completes (or throws `BusinessException`) before the job execution
-returns, so the infrastructure never sees a concurrency exception unless the loop exhausts all
-5 attempts and rethrows.
-
-```
-StockAdjustmentJob.JobTaskName = "StockAdjustmentJob"  ← must match AdjustAsync ScheduleAsync/CancelAsync calls
-
-StockAdjustmentJob.ExecuteAsync(context, ct):
-  1. If context.EntityId is null →
-       context.ReportFailure("Missing EntityId"); return
-  2. If !int.TryParse(context.EntityId, out var productId) →
-       context.ReportFailure($"Invalid EntityId: {context.EntityId}"); return
-  3. pending = GetByProductIdAsync(productId)
-  4. If pending is null →
-       context.ReportSuccess("No pending adjustment — already handled"); return
-  5. version = pending.Version    ← capture before any write
-  6. const int maxAttempts = 5;   ← application-level concurrency retry; independent of DeferredJobInstance.MaxRetries
-     for attempt in [0..maxAttempts):
-       stock = GetByProductIdAsync(productId)
-       stock.Adjust(pending.NewQuantity)              ← validates >= ReservedQuantity
-       try:
-         UpdateAsync(stock)                            ← RowVersion checked by DB
-         break
-       catch DbUpdateConcurrencyException when attempt < maxAttempts - 1:
-         await Task.Delay(100ms * 2^attempt, ct)      ← 200ms, 400ms, 800ms…
-     else: throw BusinessException("Adjustment failed after max retries.")
-  7. DeleteIfVersionMatchesAsync(productId, version)
-     → 0 rows deleted: admin submitted a new value while job was Running;
-                        a fresh Pending job already exists to handle it — done
-     → 1 row deleted:  latest setpoint cleanly applied — done
-  8. context.ReportSuccess($"Stock adjusted to {pending.NewQuantity} for product {productId}")
-```
-
-**Properties of this design:**
-
-| Property | Result |
-|---|---|
-| Admin submits N values rapidly | 1 job runs with the latest value — N−1 jobs cancelled before executing |
-| Admin submits while job is Running | Running job applies its captured value; version-match delete leaves the record; fresh Pending job applies the new setpoint |
-| Hot-path `Reserve`/`Release`/`Fulfill` | Never compete with `Adjust` — adjustment is background-only |
-| Admin submits incorrect value, then corrects | Only the correction is ever applied — previous pending job was cancelled |
-| Admin visibility | Job status queryable via `IJobStatusMonitor` |
-
-The invariant (`newQuantity < ReservedQuantity → throw`) is evaluated on freshly loaded data at
-job execution time. If reservations increase between admin submission and job execution, the
-guard is evaluated against the current state — the correction may be rejected and the admin
-notified via the job's `DeadLetter` status.
-
-#### Execution flows
-
-**Flow A — happy path** (N rapid submissions, all arrive before any job fires)
-
-```
-Admin         StockService       inventory.           timemanagement.      DeferredJob-       StockAdjustment-    inventory.
-              .AdjustAsync       PendingStockAdj      DeferredJobQueue     PollerService      Job.ExecuteAsync    StockItems
-  |               |                   |                    |                    |                   |                  |
-  |─Submit 4─────►|                   |                    |                    |                   |                  |
-  |               |─UPSERT(qty=4,     |                    |                    |                   |                  |
-  |               |   ver=A)─────────►|                    |                    |                   |                  |
-  |               |─CancelAsync──────────────────────────►(0 rows)             |                   |                  |
-  |               |─ScheduleAsync────────────────────────►INSERT Job-1─────────────────────────────────────────────── |
-  |◄─"queued"─────|                   |                    |                    |                   |                  |
-  |               |                   |                    |                    |                   |                  |
-  |─Submit 10────►|                   |                    |                    |                   |                  |
-  |               |─UPSERT(qty=10,    |                    |                    |                   |                  |
-  |               |   ver=B)─────────►| (A→B)              |                    |                   |                  |
-  |               |─CancelAsync──────────────────────────►DELETE Job-1(Pending)|                   |                  |
-  |               |─ScheduleAsync────────────────────────►INSERT Job-2─────────────────────────────────────────────── |
-  |◄─"queued"─────|                   |                    |                    |                   |                  |
-  |               |                   |                    |                    |                   |                  |
-  |─Submit 9─────►|                   |                    |                    |                   |                  |
-  |               |─UPSERT(qty=9,     |                    |                    |                   |                  |
-  |               |   ver=C)─────────►| (B→C)              |                    |                   |                  |
-  |               |─CancelAsync──────────────────────────►DELETE Job-2(Pending)|                   |                  |
-  |               |─ScheduleAsync────────────────────────►INSERT Job-3─────────────────────────────────────────────── |
-  |◄─"queued"─────|                   |                    |                    |                   |                  |
-  |               |                   |                    |                    |                   |                  |
-  |               |                   |                    |◄───Poll────────────|                   |                  |
-  |               |                   |                    |Job-3 ready────────►|                   |                  |
-  |               |                   |                    |Mark Running───────►|                   |                  |
-  |               |                   |                    |                    |─ExecuteAsync──────►                  |
-  |               |                   |◄────────────────────────────────────────GET(productId)─────|                  |
-  |               |                   |─qty=9, ver=C────────────────────────────────────────────────►                 |
-  |               |                   |                    |                    |                   |─GET StockItem──►|
-  |               |                   |                    |                    |                   |  .Adjust(9)      |
-  |               |                   |                    |                    |                   |─UPDATE(RowVer)──►|
-  |               |                   |                    |                    |                   |◄─OK (Qty=9)───── |
-  |               |                   |◄─────────────────────────────── DeleteIfVersionMatches(C)──|                  |
-  |               |                   | 1 row deleted ✓    |                    |                   |                  |
-  |               |                   |                    |Mark Complete──────►|                   |                  |
-
-Result: Quantity = 9 ✓  Only Job-3 executed — Job-1 and Job-2 were cancelled before firing.
-```
-
-**Flow B — race case** (admin submits while job is already **Running**)
-
-```
-Admin         StockService       inventory.           timemanagement.      DeferredJob-       StockAdjustment-    inventory.
-              .AdjustAsync       PendingStockAdj      DeferredJobQueue     PollerService      Job.ExecuteAsync    StockItems
-  |               |                   |                    |                    |                   |                  |
-  |               |                   |                    |Job-1 picked up────►|                   |                  |
-  |               |                   |                    |Mark Running───────►|                   |                  |
-  |               |                   |                    |                    |─ExecuteAsync──────►                  |
-  |               |                   |◄────────────────────────────────────────GET(productId)─────|                  |
-  |               |                   |─qty=4, ver=A────────────────────────────────────────────────► captures ver=A  |
-  |               |                   |                    |                    |                   | (processing...)  |
-  |               |                   |                    |                    |                   |                  |
-  |─Submit 9─────►|                   |                    |                    |                   |                  |
-  |               |─UPSERT(qty=9,     |                    |                    |                   |                  |
-  |               |   ver=C)─────────►| (A→C)              |                    |                   |                  |
-  |               |─CancelAsync──────────────────────────►Job-1 is Running     |                   |                  |
-  |               |                   |                    |(not Pending)        |                   |                  |
-  |               |                   |                    |0 rows deleted       |                   |                  |
-  |               |─ScheduleAsync────────────────────────►INSERT Job-2─────────────────────────────────────────────── |
-  |◄─"queued"─────|                   |                    |                    |                   |                  |
-  |               |                   |                    |                    |                   |                  |
-  |               |                   |                    |                    |                   |─GET StockItem──►|
-  |               |                   |                    |                    |                   |  .Adjust(4)      |
-  |               |                   |                    |                    |                   |─UPDATE(RowVer)──►|
-  |               |                   |                    |                    |                   |◄─OK──────────── |
-  |               |                   |◄─────────────────────────────── DeleteIfVersionMatches(A)──|                  |
-  |               |                   | ver is now C ≠ A   |                    |                   |                  |
-  |               |                   | 0 rows deleted     |                    |                   |                  |
-  |               |                   | PendingAdj KEPT ✓  |                    |                   |                  |
-  |               |                   |                    |Mark Complete──────►|                   |                  |
-  |               |                   |                    |                    |                   |                  |
-  |               |                   |                    |◄───Poll────────────|                   |                  |
-  |               |                   |                    |Job-2 ready────────►|                   |                  |
-  |               |                   |                    |Mark Running───────►|                   |                  |
-  |               |                   |                    |                    |─ExecuteAsync──────►                  |
-  |               |                   |◄────────────────────────────────────────GET(productId)─────|                  |
-  |               |                   |─qty=9, ver=C────────────────────────────────────────────────►                 |
-  |               |                   |                    |                    |                   |─GET StockItem──►|
-  |               |                   |                    |                    |                   |  .Adjust(9)      |
-  |               |                   |                    |                    |                   |─UPDATE(RowVer)──►|
-  |               |                   |◄─────────────────────────────── DeleteIfVersionMatches(C)──|                  |
-  |               |                   | 1 row deleted ✓    |                    |                   |                  |
-  |               |                   |                    |Mark Complete──────►|                   |                  |
-
-Result: Quantity = 9 ✓  Job-1 applied 4 transiently; Job-2 corrected to 9.
-        Final value is always the last submitted setpoint regardless of timing.
-```
-
-The `Version` GUID on `PendingStockAdjustment` plays the same role as `RowVersion` on `StockItem`:
-it is the handshake that makes the terminal delete race-safe without any additional locking.
+`Adjust` is the only human-driven `StockItem` write. It is deferred through `StockAdjustmentJob`
+to isolate order hot paths from admin corrections. The pending command is coalesced per product
+using a last-write-wins setpoint. The job evaluates the current reservation guard at execution
+time and uses version-match deletion to preserve a newer setpoint submitted while an earlier job
+is running. The companion contains the retry levels, race behavior, conformance rules, and
+example implementation.
 
 ### 9. Cross-BC integration via message broker (ADR-0010)
 
-All cross-BC triggers use `IMessageBroker`. Dependency direction: Inventory subscribes to
-Sales, Payments, and Catalog messages. The reverse (Sales → Inventory direct call) is
-**forbidden**.
+> Implementation detail extracted to [cross-bc-message-wiring.md](example-implementation/cross-bc-message-wiring.md).
 
-**Inbound (Inventory subscribes)**:
+All cross-BC triggers use `IMessageBroker`; Inventory subscribes to publisher-owned messages and
+never exposes direct service calls to Sales, Payments, Fulfillment, or Catalog. The active
+shipment path is `ShipmentDelivered`, `ShipmentFailed`, and `ShipmentPartiallyDelivered`, each
+handled by its corresponding Fulfillment handler. The former `OrderShippedHandler` is retired and
+must remain unregistered.
 
-| Message | Publisher BC | Inventory Handler | Action |
-|---|---|---|---|
-| `OrderPlaced` | Sales/Orders | `OrderPlacedHandler` | Create Reservation + Reserve / schedule timeout |
-| `OrderCancelled` | Sales/Orders | `OrderCancelledHandler` | Release + DELETE Reservation |
-| `PaymentConfirmed` | Payments | `PaymentConfirmedHandler` | Reservation.Confirm() only |
-| `OrderShipped` | Sales/Orders | `OrderShippedHandler` | Fulfill + DELETE Reservation |
-| `RefundApproved` | Payments | `RefundApprovedHandler` | Return (no Reservation row exists) |
-| `ProductPublished` | Catalog | `ProductPublishedHandler` | Upsert ProductSnapshot (Orderable) |
-| `ProductUnpublished` | Catalog | `ProductUnpublishedHandler` | ProductSnapshot → Suspended |
-| `ProductDiscontinued` | Catalog | `ProductDiscontinuedHandler` | ProductSnapshot → Discontinued |
-
-**Outbound (Inventory publishes)**:
-
-| Message | Published after | Subscribers | Payload |
-|---|---|---|---|
-| `AvailabilityChanged` | Every `Reserve`, `Release`, `Fulfill`, `Return`, `Adjust` | Presale/Checkout | `ProductId, AvailableQuantity, IsOutOfStock, OccurredAt` |
-
-`AvailabilityChanged` carries `StockItem.AvailableQuantity` computed at the moment of the write.
-It is the single integration message downstream consumers use to track availability. Internal
-domain events (`StockReserved`, `StockReleased`, `StockFulfilled`, etc.) are Inventory-internal
-audit events and are **never exposed** as integration messages.
-
-Message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`, `OrderShipped`,
-`RefundApproved`) live in the **publisher's** `Messages/` folder. Each contract must implement
-the `IMessage` marker interface (`ECommerceApp.Application.Messaging.IMessage`). Handlers live
-in `Application/Inventory/Availability/Handlers/` and implement
-`IMessageHandler<TMessage>` (`Task HandleAsync(TMessage message, CancellationToken ct)`).
-Handler registration is performed via the standard `AddMessageHandlers()` DI extension in
-`Application/Inventory/Availability/Services/Extensions.cs`.
+Inventory publishes `StockAvailabilityChanged` after stock mutations. Internal stock domain events
+are not integration contracts. See the companion for the reconciled inbound table, registration
+sketch, idempotency rules, and scope boundaries.
 
 ### 10. Data migration strategy
 
