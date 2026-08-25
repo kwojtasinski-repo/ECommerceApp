@@ -1,13 +1,9 @@
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Fulfillment.Messages;
-using ECommerceApp.Application.Sales.Orders.Messages;
-using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -44,14 +40,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         private async Task ReserveStockViaOrderPlacedAsync(
             int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
         {
-            var orderPlaced = new OrderPlaced(
-                OrderId: orderId,
-                Items: new List<OrderPlacedItem> { new(ProductId: productId, Quantity: quantity) },
-                UserId: PROPER_CUSTOMER_ID,
-                ExpiresAt: DateTime.UtcNow.AddHours(24),
-                OccurredAt: DateTime.UtcNow,
-                TotalAmount: 100m,
-                CurrencyId: 1);
+            var orderPlaced = OrderPlacedTestData.Create(
+                orderId, totalAmount: 100m, productId: productId, quantity: quantity, userId: PROPER_CUSTOMER_ID);
 
             await PublishAsync(orderPlaced, CancellationToken);
         }
@@ -59,37 +49,25 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         private async Task ConfirmPaymentAsync(
             int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
         {
-            var paymentConfirmed = new PaymentConfirmed(
-                PaymentId: 1,
-                OrderId: orderId,
-                Items: new List<PaymentConfirmedItem> { new(ProductId: productId, Quantity: quantity) },
-                OccurredAt: DateTime.UtcNow);
-
-            await PublishAsync(paymentConfirmed, CancellationToken);
+            await PublishAsync(
+                PaymentConfirmedTestData.Create(orderId, productId: productId, quantity: quantity),
+                CancellationToken);
         }
 
         private async Task DeliverShipmentAsync(
             int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
         {
-            var shipmentDelivered = new ShipmentDelivered(
-                ShipmentId: 1,
-                OrderId: orderId,
-                Items: new List<ShipmentLineItem> { new(ProductId: productId, Quantity: quantity) },
-                OccurredAt: DateTime.UtcNow);
-
-            await PublishAsync(shipmentDelivered, CancellationToken);
+            await PublishAsync(
+                ShipmentDeliveredTestData.Create(orderId, productId: productId, quantity: quantity),
+                CancellationToken);
         }
 
         private async Task FailShipmentAsync(
             int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
         {
-            var shipmentFailed = new ShipmentFailed(
-                ShipmentId: 1,
-                OrderId: orderId,
-                Items: new List<ShipmentLineItem> { new(ProductId: productId, Quantity: quantity) },
-                OccurredAt: DateTime.UtcNow);
-
-            await PublishAsync(shipmentFailed, CancellationToken);
+            await PublishAsync(
+                ShipmentFailedTestData.Create(orderId, productId: productId, quantity: quantity),
+                CancellationToken);
         }
 
         // ── PaymentConfirmed → Inventory stock confirmation ──────────────
@@ -121,10 +99,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             stockBefore.ShouldNotBeNull();
             stockBefore.ReservedQuantity.ShouldBe(Quantity);
 
-            var orderCancelled = new OrderCancelled(
-                OrderId: OrderId,
-                Items: new List<OrderCancelledItem> { new(ProductId: ProductId, Quantity: Quantity) },
-                OccurredAt: DateTime.UtcNow);
+            var orderCancelled = OrderCancelledTestData.Create(OrderId, productId: ProductId, quantity: Quantity);
 
             await PublishAsync(orderCancelled, CancellationToken);
 
@@ -211,4 +186,3 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         }
     }
 }
-

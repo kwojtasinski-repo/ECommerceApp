@@ -3,9 +3,9 @@ using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,11 +85,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
             public async Task RedeliverAsync_SameShipmentFailed_ShouldAppendEventExactlyOnce()
             {
                 var orderId = await SeedOrderAsync(CancellationToken);
-                var message = new ShipmentFailed(
-                    ShipmentId: 1,
-                    OrderId: orderId,
-                    Items: new List<ShipmentLineItem> { new(ProductId: 1, Quantity: 1) },
-                    OccurredAt: DateTime.UtcNow);
+                var message = ShipmentFailedTestData.Create(orderId, productId: 1, quantity: 1);
 
                 await RedeliverAsync(message, outboxMessageId: 910002, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 910002, CancellationToken);
@@ -107,12 +103,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
             public async Task RedeliverAsync_SameShipmentPartiallyDelivered_ShouldAppendEventExactlyOnce()
             {
                 var orderId = await SeedPaymentConfirmedOrderAsync(CancellationToken);
-                var message = new ShipmentPartiallyDelivered(
-                    ShipmentId: 1,
-                    OrderId: orderId,
-                    DeliveredItems: new List<ShipmentLineItem> { new(ProductId: 1, Quantity: 1) },
-                    FailedItems: new List<ShipmentLineItem>(),
-                    OccurredAt: DateTime.UtcNow);
+                var message = ShipmentPartiallyDeliveredTestData.Create(orderId, productId: 1, quantity: 1);
 
                 await RedeliverAsync(message, outboxMessageId: 910003, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 910003, CancellationToken);
@@ -130,11 +121,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
             public async Task RedeliverAsync_SameRefundApproved_ShouldAppendEventExactlyOnce()
             {
                 var orderId = await SeedOrderAsync(CancellationToken);
-                var message = new RefundApproved(
-                    RefundId: 1,
-                    OrderId: orderId,
-                    Items: new List<RefundApprovedItem> { new(ProductId: 1, Quantity: 1) },
-                    OccurredAt: DateTime.UtcNow);
+                var message = RefundApprovedTestData.Create(orderId, productId: 1, quantity: 1);
 
                 await RedeliverAsync(message, outboxMessageId: 910004, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 910004, CancellationToken);
@@ -156,14 +143,10 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
                 // looks up a RefundAssigned event carrying this RefundId — seed one first via the
                 // already-proven RefundApproved path (a different outboxMessageId, a real distinct
                 // business event, not part of the redelivery under test).
-                var refundApproved = new RefundApproved(
-                    RefundId: 42,
-                    OrderId: orderId,
-                    Items: new List<RefundApprovedItem> { new(ProductId: 1, Quantity: 1) },
-                    OccurredAt: DateTime.UtcNow);
+                var refundApproved = RefundApprovedTestData.Create(orderId, refundId: 42, productId: 1, quantity: 1);
                 await PublishAsync(refundApproved, CancellationToken);
 
-                var message = new RefundRejected(RefundId: 42, OrderId: orderId, OccurredAt: DateTime.UtcNow);
+                var message = RefundRejectedTestData.Create(orderId, refundId: 42);
 
                 await RedeliverAsync(message, outboxMessageId: 910005, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 910005, CancellationToken);

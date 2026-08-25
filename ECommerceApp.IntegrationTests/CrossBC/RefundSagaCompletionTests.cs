@@ -4,10 +4,9 @@ using ECommerceApp.Domain.Sagas;
 using ECommerceApp.Infrastructure.Messaging;
 using ECommerceApp.Infrastructure.Sagas;
 using ECommerceApp.IntegrationTests.Supporting.Communication;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -26,11 +25,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             var orderId = await SeedOrderAsync(CancellationToken);
 
             await PublishAsync(
-                new RefundApproved(
-                    RefundId: refundId,
-                    OrderId: orderId,
-                    Items: new List<RefundApprovedItem>(),
-                    OccurredAt: DateTime.UtcNow),
+                RefundApprovedTestData.Create(orderId, refundId, includeItem: false),
                 CancellationToken);
 
             var messagingContext = GetRequiredService<MessagingDbContext>();

@@ -1,7 +1,5 @@
-using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Shared.TestInfrastructure;
-using System;
-using System.Collections.Generic;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,11 +13,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         public async Task RedeliverAsync_SameRefundApproved_ShouldSendEmailExactlyOnce()
         {
             var orderId = await SeedOrderAsync(CancellationToken);
-            var message = new RefundApproved(
-                RefundId: 1,
-                OrderId: orderId,
-                Items: new List<RefundApprovedItem>(),
-                OccurredAt: DateTime.UtcNow);
+            var message = RefundApprovedTestData.Create(orderId, includeItem: false);
 
             await AssertEmailSentOnceAsync(message, outboxMessageId: 940009, CancellationToken);
         }
@@ -33,11 +27,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         public async Task RedeliverAsync_SameRefundApproved_ShouldNotifyExactlyOnce()
         {
             var orderId = await SeedOrderAsync(CancellationToken);
-            var message = new RefundApproved(
-                RefundId: 1,
-                OrderId: orderId,
-                Items: new List<RefundApprovedItem>(),
-                OccurredAt: DateTime.UtcNow);
+            var message = RefundApprovedTestData.Create(orderId, includeItem: false);
 
             await AssertNotifiedOnceAsync(message, outboxMessageId: 940010, CancellationToken);
         }
@@ -51,10 +41,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         public async Task RedeliverAsync_SameRefundRejected_ShouldSendEmailExactlyOnce()
         {
             var orderId = await SeedOrderAsync(CancellationToken);
-            var message = new RefundRejected(
-                RefundId: 1,
-                OrderId: orderId,
-                OccurredAt: DateTime.UtcNow);
+            var message = RefundRejectedTestData.Create(orderId);
 
             await AssertEmailSentOnceAsync(message, outboxMessageId: 940011, CancellationToken);
         }
@@ -68,10 +55,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         public async Task RedeliverAsync_SameRefundRejected_ShouldNotifyExactlyOnce()
         {
             var orderId = await SeedOrderAsync(CancellationToken);
-            var message = new RefundRejected(
-                RefundId: 1,
-                OrderId: orderId,
-                OccurredAt: DateTime.UtcNow);
+            var message = RefundRejectedTestData.Create(orderId);
 
             await AssertNotifiedOnceAsync(message, outboxMessageId: 940012, CancellationToken);
         }

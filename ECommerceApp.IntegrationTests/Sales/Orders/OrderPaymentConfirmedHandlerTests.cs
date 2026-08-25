@@ -1,12 +1,10 @@
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Services;
-using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -34,11 +32,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         public async Task HandleAsync_PaymentConfirmed_ShouldTransitionOrderToPaymentConfirmed()
         {
             var orderId = await SeedOrderAsync(ct: CancellationToken);
-            var message = new PaymentConfirmed(
-                PaymentId: 10,
-                OrderId: orderId,
-                Items: new List<PaymentConfirmedItem>(),
-                OccurredAt: DateTime.UtcNow);
+            var message = PaymentConfirmedTestData.Create(orderId, paymentId: 10, includeItem: false);
 
             await PublishAsync(message, CancellationToken);
 
@@ -50,11 +44,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task HandleAsync_PaymentConfirmed_NonExistentOrder_ShouldNotThrow()
         {
-            var message = new PaymentConfirmed(
-                PaymentId: 10,
-                OrderId: int.MaxValue,
-                Items: new List<PaymentConfirmedItem>(),
-                OccurredAt: DateTime.UtcNow);
+            var message = PaymentConfirmedTestData.Create(int.MaxValue, paymentId: 10, includeItem: false);
 
             await PublishAsync(message, CancellationToken);
         }

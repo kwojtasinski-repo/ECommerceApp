@@ -1,13 +1,10 @@
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Fulfillment.Messages;
-using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -54,14 +51,8 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
 
         private async Task ReserveViaOrderPlacedAsync(int orderId, int productId, int quantity, CancellationToken ct = default)
         {
-            var orderPlaced = new OrderPlaced(
-                OrderId: orderId,
-                Items: new List<OrderPlacedItem> { new(ProductId: productId, Quantity: quantity) },
-                UserId: PROPER_CUSTOMER_ID,
-                ExpiresAt: DateTime.UtcNow.AddHours(24),
-                OccurredAt: DateTime.UtcNow,
-                TotalAmount: 100m,
-                CurrencyId: 1);
+            var orderPlaced = OrderPlacedTestData.Create(
+                orderId, totalAmount: 100m, productId: productId, quantity: quantity, userId: PROPER_CUSTOMER_ID);
 
             await PublishAsync(orderPlaced, ct);
         }
@@ -84,11 +75,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
                 await ReserveViaOrderPlacedAsync(orderId, productId, quantity: 10, CancellationToken);
                 await ReserveViaOrderPlacedAsync(decoyOrderId, productId, quantity: 10, CancellationToken);
 
-                var message = new ShipmentDelivered(
-                    ShipmentId: 1,
-                    OrderId: orderId,
-                    Items: new List<ShipmentLineItem> { new(ProductId: productId, Quantity: 10) },
-                    OccurredAt: DateTime.UtcNow);
+                var message = ShipmentDeliveredTestData.Create(orderId, productId: productId, quantity: 10);
 
                 await RedeliverAsync(message, outboxMessageId: 900001, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 900001, CancellationToken);
@@ -115,12 +102,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
                 await ReserveViaOrderPlacedAsync(orderId, productId, quantity: 10, CancellationToken);
                 await ReserveViaOrderPlacedAsync(decoyOrderId, productId, quantity: 10, CancellationToken);
 
-                var message = new ShipmentPartiallyDelivered(
-                    ShipmentId: 1,
-                    OrderId: orderId,
-                    DeliveredItems: new List<ShipmentLineItem> { new(ProductId: productId, Quantity: 10) },
-                    FailedItems: new List<ShipmentLineItem>(),
-                    OccurredAt: DateTime.UtcNow);
+                var message = ShipmentPartiallyDeliveredTestData.Create(orderId, productId: productId, quantity: 10);
 
                 await RedeliverAsync(message, outboxMessageId: 900002, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 900002, CancellationToken);
@@ -154,14 +136,8 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
 
                 await SeedStockAsync(productId, initialQuantity: 100, CancellationToken);
 
-                var message = new OrderPlaced(
-                    OrderId: orderId,
-                    Items: new List<OrderPlacedItem> { new(ProductId: productId, Quantity: 10) },
-                    UserId: PROPER_CUSTOMER_ID,
-                    ExpiresAt: DateTime.UtcNow.AddHours(24),
-                    OccurredAt: DateTime.UtcNow,
-                    TotalAmount: 100m,
-                    CurrencyId: 1);
+                var message = OrderPlacedTestData.Create(
+                    orderId, totalAmount: 100m, productId: productId, quantity: 10, userId: PROPER_CUSTOMER_ID);
 
                 await RedeliverAsync(message, outboxMessageId: 900004, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 900004, CancellationToken);
@@ -186,11 +162,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
 
                 await SeedStockAsync(productId, initialQuantity: 100, CancellationToken);
 
-                var message = new RefundApproved(
-                    RefundId: 1,
-                    OrderId: 1,
-                    Items: new List<RefundApprovedItem> { new(ProductId: productId, Quantity: 10) },
-                    OccurredAt: DateTime.UtcNow);
+                var message = RefundApprovedTestData.Create(orderId: 1, productId: productId, quantity: 10);
 
                 await RedeliverAsync(message, outboxMessageId: 900005, CancellationToken);
                 await RedeliverAsync(message, outboxMessageId: 900005, CancellationToken);

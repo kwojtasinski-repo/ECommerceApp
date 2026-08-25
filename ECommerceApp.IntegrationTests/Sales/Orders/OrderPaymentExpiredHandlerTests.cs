@@ -1,11 +1,10 @@
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Services;
-using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Shared.TestInfrastructure;
+using ECommerceApp.Shared.TestInfrastructure.TestData;
 using Shouldly;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -33,10 +32,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         public async Task HandleAsync_PaymentExpired_ShouldTransitionOrderToCancelled()
         {
             var orderId = await SeedOrderAsync(ct: CancellationToken);
-            var message = new PaymentExpired(
-                PaymentId: 10,
-                OrderId: orderId,
-                OccurredAt: DateTime.UtcNow);
+            var message = PaymentExpiredTestData.Create(orderId, paymentId: 10);
 
             await PublishAsync(message, CancellationToken);
 
@@ -48,10 +44,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task HandleAsync_PaymentExpired_NonExistentOrder_ShouldNotThrow()
         {
-            var message = new PaymentExpired(
-                PaymentId: 10,
-                OrderId: int.MaxValue,
-                OccurredAt: DateTime.UtcNow);
+            var message = PaymentExpiredTestData.Create(int.MaxValue, paymentId: 10);
 
             await PublishAsync(message, CancellationToken);
         }

@@ -1,8 +1,5 @@
-using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Shared.TestInfrastructure;
 using ECommerceApp.Shared.TestInfrastructure.TestData;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -50,10 +47,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         public async Task RedeliverAsync_SameOrderCancelled_ShouldSendEmailExactlyOnce()
         {
             var orderId = await SeedOrderAsync(CancellationToken);
-            var message = new OrderCancelled(
-                OrderId: orderId,
-                Items: new List<OrderCancelledItem>(),
-                OccurredAt: DateTime.UtcNow);
+            var message = OrderCancelledTestData.Create(orderId, includeItem: false);
 
             await AssertEmailSentOnceAsync(message, outboxMessageId: 940007, CancellationToken);
         }
@@ -67,10 +61,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
         public async Task RedeliverAsync_SameOrderCancelled_ShouldNotifyExactlyOnce()
         {
             var orderId = await SeedOrderAsync(CancellationToken);
-            var message = new OrderCancelled(
-                OrderId: orderId,
-                Items: new List<OrderCancelledItem>(),
-                OccurredAt: DateTime.UtcNow);
+            var message = OrderCancelledTestData.Create(orderId, includeItem: false);
 
             await AssertNotifiedOnceAsync(message, outboxMessageId: 940008, CancellationToken);
         }
