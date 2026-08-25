@@ -1,6 +1,5 @@
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Shared.TestInfrastructure;
-using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,10 +21,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
                 Items: new List<RefundApprovedItem>(),
                 OccurredAt: DateTime.UtcNow);
 
-            await RedeliverAsync(message, outboxMessageId: 940009, CancellationToken);
-            await RedeliverAsync(message, outboxMessageId: 940009, CancellationToken);
-
-            GetRequiredService<CountingEmailService>().SentCount.ShouldBe(1);
+            await AssertEmailSentOnceAsync(message, outboxMessageId: 940009, CancellationToken);
         }
     }
 
@@ -43,10 +39,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
                 Items: new List<RefundApprovedItem>(),
                 OccurredAt: DateTime.UtcNow);
 
-            await RedeliverAsync(message, outboxMessageId: 940010, CancellationToken);
-            await RedeliverAsync(message, outboxMessageId: 940010, CancellationToken);
-
-            GetRequiredService<CountingNotificationService>().NotifyCount.ShouldBe(1);
+            await AssertNotifiedOnceAsync(message, outboxMessageId: 940010, CancellationToken);
         }
     }
 
@@ -63,10 +56,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
                 OrderId: orderId,
                 OccurredAt: DateTime.UtcNow);
 
-            await RedeliverAsync(message, outboxMessageId: 940011, CancellationToken);
-            await RedeliverAsync(message, outboxMessageId: 940011, CancellationToken);
-
-            GetRequiredService<CountingEmailService>().SentCount.ShouldBe(1);
+            await AssertEmailSentOnceAsync(message, outboxMessageId: 940011, CancellationToken);
         }
     }
 
@@ -83,10 +73,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
                 OrderId: orderId,
                 OccurredAt: DateTime.UtcNow);
 
-            await RedeliverAsync(message, outboxMessageId: 940012, CancellationToken);
-            await RedeliverAsync(message, outboxMessageId: 940012, CancellationToken);
-
-            GetRequiredService<CountingNotificationService>().NotifyCount.ShouldBe(1);
+            await AssertNotifiedOnceAsync(message, outboxMessageId: 940012, CancellationToken);
         }
     }
 }

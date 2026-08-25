@@ -56,6 +56,42 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             await PublishAsync(orderPlaced, CancellationToken);
         }
 
+        private async Task ConfirmPaymentAsync(
+            int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
+        {
+            var paymentConfirmed = new PaymentConfirmed(
+                PaymentId: 1,
+                OrderId: orderId,
+                Items: new List<PaymentConfirmedItem> { new(ProductId: productId, Quantity: quantity) },
+                OccurredAt: DateTime.UtcNow);
+
+            await PublishAsync(paymentConfirmed, CancellationToken);
+        }
+
+        private async Task DeliverShipmentAsync(
+            int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
+        {
+            var shipmentDelivered = new ShipmentDelivered(
+                ShipmentId: 1,
+                OrderId: orderId,
+                Items: new List<ShipmentLineItem> { new(ProductId: productId, Quantity: quantity) },
+                OccurredAt: DateTime.UtcNow);
+
+            await PublishAsync(shipmentDelivered, CancellationToken);
+        }
+
+        private async Task FailShipmentAsync(
+            int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
+        {
+            var shipmentFailed = new ShipmentFailed(
+                ShipmentId: 1,
+                OrderId: orderId,
+                Items: new List<ShipmentLineItem> { new(ProductId: productId, Quantity: quantity) },
+                OccurredAt: DateTime.UtcNow);
+
+            await PublishAsync(shipmentFailed, CancellationToken);
+        }
+
         // ── PaymentConfirmed → Inventory stock confirmation ──────────────
 
         [Fact]
@@ -63,14 +99,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         {
             await SeedStockAsync(ct: CancellationToken);
             await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
-
-            var paymentConfirmed = new PaymentConfirmed(
-                PaymentId: 1,
-                OrderId: OrderId,
-                Items: new List<PaymentConfirmedItem> { new(ProductId: ProductId, Quantity: Quantity) },
-                OccurredAt: DateTime.UtcNow);
-
-            await PublishAsync(paymentConfirmed, CancellationToken);
+            await ConfirmPaymentAsync(ct: CancellationToken);
 
             // Stock should still show reserved (confirmed holds are still "reserved" until fulfilled)
             var stockService = GetRequiredService<IStockService>();
@@ -115,21 +144,10 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
 
             // Confirm stock holds (simulating PaymentConfirmed)
-            var paymentConfirmed = new PaymentConfirmed(
-                PaymentId: 1,
-                OrderId: OrderId,
-                Items: new List<PaymentConfirmedItem> { new(ProductId: ProductId, Quantity: Quantity) },
-                OccurredAt: DateTime.UtcNow);
-            await PublishAsync(paymentConfirmed, CancellationToken);
+            await ConfirmPaymentAsync(ct: CancellationToken);
 
             // Now deliver the shipment
-            var shipmentDelivered = new ShipmentDelivered(
-                ShipmentId: 1,
-                OrderId: OrderId,
-                Items: new List<ShipmentLineItem> { new(ProductId: ProductId, Quantity: Quantity) },
-                OccurredAt: DateTime.UtcNow);
-
-            await PublishAsync(shipmentDelivered, CancellationToken);
+            await DeliverShipmentAsync(ct: CancellationToken);
 
             // Stock should be fulfilled — total quantity decreased, no longer reserved
             var stock = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
@@ -147,22 +165,11 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
 
             // Confirm stock holds (transitions from Reserved → Confirmed)
-            var paymentConfirmed = new PaymentConfirmed(
-                PaymentId: 1,
-                OrderId: OrderId,
-                Items: new List<PaymentConfirmedItem> { new(ProductId: ProductId, Quantity: Quantity) },
-                OccurredAt: DateTime.UtcNow);
-            await PublishAsync(paymentConfirmed, CancellationToken);
+            await ConfirmPaymentAsync(ct: CancellationToken);
 
             // Shipment fails — ReleaseAsync returns false for confirmed holds,
             // handler publishes StockReconciliationRequired (correct behavior per ADR-0011)
-            var shipmentFailed = new ShipmentFailed(
-                ShipmentId: 1,
-                OrderId: OrderId,
-                Items: new List<ShipmentLineItem> { new(ProductId: ProductId, Quantity: Quantity) },
-                OccurredAt: DateTime.UtcNow);
-
-            await PublishAsync(shipmentFailed, CancellationToken);
+            await FailShipmentAsync(ct: CancellationToken);
 
             // Confirmed holds cannot be released via ReleaseAsync — stock stays reserved
             // Manual reconciliation required (StockReconciliationRequired published)
@@ -187,20 +194,14 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             stage1.AvailableQuantity.ShouldBe(100 - Quantity);
 
             // Stage 2: PaymentConfirmed → holds confirmed (reserved qty stays)
-            await PublishAsync(new PaymentConfirmed(
-                PaymentId: 1, OrderId: OrderId,
-                Items: new List<PaymentConfirmedItem> { new(ProductId, Quantity) },
-                OccurredAt: DateTime.UtcNow), CancellationToken);
+            await ConfirmPaymentAsync(ct: CancellationToken);
 
             var stage2 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stage2.ShouldNotBeNull();
             stage2.AvailableQuantity.ShouldBe(100 - Quantity);
 
             // Stage 3: ShipmentDelivered → stock fulfilled (total decreases, reserved cleared)
-            await PublishAsync(new ShipmentDelivered(
-                ShipmentId: 1, OrderId: OrderId,
-                Items: new List<ShipmentLineItem> { new(ProductId, Quantity) },
-                OccurredAt: DateTime.UtcNow), CancellationToken);
+            await DeliverShipmentAsync(ct: CancellationToken);
 
             var stage3 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stage3.ShouldNotBeNull();

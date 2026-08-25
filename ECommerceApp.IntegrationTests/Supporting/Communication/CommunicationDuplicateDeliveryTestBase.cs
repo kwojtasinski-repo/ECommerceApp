@@ -6,6 +6,7 @@ using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Shared.TestInfrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -50,6 +51,28 @@ namespace ECommerceApp.IntegrationTests.Supporting.Communication
             var repo = GetRequiredService<IOrderRepository>();
             var order = Order.Create(1, 1, PROPER_CUSTOMER_ID, OrderNumber.Generate(), CreateCustomer());
             return await repo.AddAsync(order, ct);
+        }
+
+        /// <summary>
+        /// Redelivers <paramref name="message"/> twice under the same <paramref name="outboxMessageId"/>
+        /// and asserts the email-sending handler's Inbox guard collapsed both deliveries into one send.
+        /// </summary>
+        protected async Task AssertEmailSentOnceAsync(IMessage message, long outboxMessageId, CancellationToken ct = default)
+        {
+            await RedeliverAsync(message, outboxMessageId, ct);
+            await RedeliverAsync(message, outboxMessageId, ct);
+            GetRequiredService<CountingEmailService>().SentCount.ShouldBe(1);
+        }
+
+        /// <summary>
+        /// Redelivers <paramref name="message"/> twice under the same <paramref name="outboxMessageId"/>
+        /// and asserts the notification handler's Inbox guard collapsed both deliveries into one notify.
+        /// </summary>
+        protected async Task AssertNotifiedOnceAsync(IMessage message, long outboxMessageId, CancellationToken ct = default)
+        {
+            await RedeliverAsync(message, outboxMessageId, ct);
+            await RedeliverAsync(message, outboxMessageId, ct);
+            GetRequiredService<CountingNotificationService>().NotifyCount.ShouldBe(1);
         }
     }
 }
