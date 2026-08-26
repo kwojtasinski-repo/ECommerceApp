@@ -305,16 +305,9 @@
      │             │  Coupons: ◄─OrderCancelled──┘         │
      │             │  Release coupon (if applied)           │
      │             │                       │               │
-     │  ⏰ Inventory PaymentWindowTimeoutJob triggers:     │
+     │             │                       │     Inventory's release above publishes
+     │             │                       │     StockAvailabilityChanged ──────────►│
      │             │                       │               │
-     │             │           │           │     StockService│
-     │             │           │           │     .ReleaseAsync│
-     │             │           │           │     hold.Released│
-     │             │           │           │     stock avail │
-     │             │           │           │     increased   │
-     │             │           │           │     ──StockAvail│
-     │             │           │           │       Changed──►│
-     │             │           │           │               │
      │             │  Presale: ◄─StockAvailabilityChanged──┘
      │             │  Update StockSnapshot                 │
      ▼             ▼           ▼           ▼               ▼
@@ -322,6 +315,10 @@
 ```
 
 **Status**: ✅ Complete — event chain: `PaymentExpired` → `OrderCancelled` → Inventory + Coupons. ⚠️ 3-deep handler chain (F4 candidate).
+**Update (2026-08-26)**: at the time this flow was drawn, Inventory also ran a second, redundant
+`PaymentWindowTimeoutJob` timer that released the same stock independently. That job was retired
+2026-08-17 (`payments-atomic-switch.md` Step 6) as a duplicate, always-racing path; the diagram
+above now shows the single remaining path.
 
 ---
 

@@ -40,7 +40,7 @@
     — `PaymentId` identity conversion, `PaymentOrderId` conversion, `RowVersion → IsRowVersion()`, `UNIQUE` on `OrderId`
 27. `Infrastructure/Sales/Payments/Repositories/PaymentRepository.cs`
 28. `Infrastructure/Sales/Payments/Extensions.cs` — registers `AddDbContext<PaymentsDbContext>`, `IDbContextMigrator`, `IPaymentRepository`
-29. Register `PaymentWindowExpiredJob` in TimeManagement DI alongside `PaymentWindowTimeoutJob` (Inventory) and `SoftReservationExpiredJob` (Presale)
+29. Register `PaymentWindowExpiredJob` in TimeManagement DI alongside `PaymentWindowTimeoutJob` (Inventory, since retired 2026-08-17 — do not re-add it in a fresh setup) and `SoftReservationExpiredJob` (Presale)
 
 **Phase 7 — Infrastructure layer (Orders BC schema extension)**
 30. `Infrastructure/Sales/Orders/Configurations/OrderConfiguration.cs` — add `IsCancelled` and `CancelledAt` mapping

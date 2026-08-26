@@ -42,7 +42,7 @@
 - [ ] `PaymentWindowExpiredJob.ExecuteAsync` guards `context.EntityId` for null and parse failure, calling `context.ReportFailure(...)` and returning early
 - [ ] `PaymentWindowExpiredJob.ExecuteAsync` is a no-op (`ReportSuccess`) if payment not found or not `Pending`
 - [ ] `PaymentWindowExpiredJob.ExecuteAsync` calls `Payment.Expire()` then publishes `PaymentExpired` on happy path
-- [ ] `PaymentWindowExpiredJob` is registered in TimeManagement DI alongside `PaymentWindowTimeoutJob` (Inventory) and `SoftReservationExpiredJob` (Presale)
+- [ ] `PaymentWindowExpiredJob` is registered in TimeManagement DI alongside `SoftReservationExpiredJob` (Presale) — Inventory's own `PaymentWindowTimeoutJob` was retired 2026-08-17 and must stay unregistered
 
 ### Orders application handlers
 - [ ] `OrderPaymentConfirmedHandler` is `internal sealed`, implements `IMessageHandler<PaymentConfirmed>`

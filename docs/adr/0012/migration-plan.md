@@ -22,7 +22,8 @@
    `SoftReservations`, `StockSnapshots` DbSets), EF configurations (composite PK for
    `CartLine`, `ValueGeneratedNever` for `StockSnapshot.ProductId`), repositories,
    `CatalogClientAdapter`, `StockClientAdapter`, DI registration. Register
-   `SoftReservationExpiredJob` in TimeManagement DI alongside `PaymentWindowTimeoutJob`.
+   `SoftReservationExpiredJob` in TimeManagement DI alongside `PaymentWindowTimeoutJob`
+   (Inventory's own timer, since retired 2026-08-17 — do not re-add it in a fresh setup).
 6. Generate EF migration `InitPresaleSchema` targeting `PresaleDbContext`.
 7. Move `SoftHoldTtl` from `InventoryOptions` to `PresaleOptions.SoftReservationTtl`. Add
    `IValidateOptions<PresaleOptions>` startup validation.

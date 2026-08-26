@@ -204,7 +204,7 @@ public class Reservation
             ExpiresAt  = expiresAt
         };
 
-    public bool IsGuaranteed => Status == ReservationStatus.Guaranteed; // pure predicate; guards PaymentWindowTimeoutJob
+    public bool IsGuaranteed => Status == ReservationStatus.Guaranteed; // pure predicate; guards StockService.ReleaseAsync
 
     public void Confirm()         => Status = ReservationStatus.Confirmed;
     public void MarkAsReleased()  => Status = ReservationStatus.Released;
@@ -493,8 +493,8 @@ ECommerceApp.Application/Inventory/Availability/
     ProductPublishedHandler.cs
     ProductUnpublishedHandler.cs
     ProductDiscontinuedHandler.cs
-    PaymentWindowTimeoutJob.cs            ← IScheduledTask, JobType.Deferred
     StockAdjustmentJob.cs                 ← IScheduledTask, JobType.Deferred, command coalescing + exponential backoff
+                                             (PaymentWindowTimeoutJob.cs retired 2026-08-17; superseded by PaymentExpiredHandler)
   DTOs/
     StockItemDto.cs
     ReservationDto.cs
@@ -544,8 +544,10 @@ ECommerceApp.Infrastructure/Inventory/Availability/
   no accumulation of dead rows. Table stays small under normal operation.
 - **Digital product support** — `IsDigital` flag on `ProductSnapshot` bypasses the counter
   for digital goods while still creating a `Reservation` for order tracing.
-- **Idempotent timeout handling** — `PaymentWindowTimeoutJob` checks status before acting;
-  safe to fire even if payment was already confirmed.
+- **Idempotent timeout handling** — `StockService.ReleaseAsync` (reached via `PaymentExpiredHandler`)
+  checks `IsGuaranteed` before releasing the counter; safe to fire even if payment was already
+  confirmed. Inventory's own standalone timer (`PaymentWindowTimeoutJob`) was retired 2026-08-17
+  as a redundant, always-racing duplicate of this event-driven path.
 - **Domain events** — `StockReserved`, `StockReleased`, `StockFulfilled`, `StockReturned`,
   `StockAdjusted`, `StockDepleted` provide audit and extension points.
 
@@ -563,7 +565,7 @@ ECommerceApp.Infrastructure/Inventory/Availability/
 - **Risk**: Optimistic concurrency retries degrade throughput under high contention.
   **Mitigation**: Current traffic does not justify concern. If contention grows, introduce a
   per-product serialized queue.
-- **Risk**: `PaymentWindowTimeoutJob` not registered → stock never released.
+- **Risk**: `PaymentExpiredHandler` not registered → stock never released on payment expiry.
   **Mitigation**: `BackgroundMessageDispatcher` logs handler resolution failures at `Critical`.
   Integration tests verify handler registration.
 - **Risk**: Data migration loses or corrupts stock levels.
