@@ -193,6 +193,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "e
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0009\example-implementation\ideferred-job-scheduler-usage.md = docs\adr\0009\example-implementation\ideferred-job-scheduler-usage.md
 		docs\adr\0009\example-implementation\ischeduledtask-implementation.md = docs\adr\0009\example-implementation\ischeduledtask-implementation.md
+		docs\adr\0009\example-implementation\job-engine.md = docs\adr\0009\example-implementation\job-engine.md
 		docs\adr\0009\example-implementation\job-registration-di.md = docs\adr\0009\example-implementation\job-registration-di.md
 	EndProjectSection
 EndProject
@@ -471,6 +472,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0030", "0030", "{00300000-0
 		docs\adr\0030\checklist.md = docs\adr\0030\checklist.md
 		docs\adr\0030\migration-plan.md = docs\adr\0030\migration-plan.md
 		docs\adr\0030\README.md = docs\adr\0030\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0030E001-0000-0000-0000-000000000030}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0030\example-implementation\guest-checkout-implementation.md = docs\adr\0030\example-implementation\guest-checkout-implementation.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0031", "0031", "{00310000-0000-0000-0000-000000000031}"
@@ -967,6 +973,7 @@ Global
 		{0009A001-0000-0000-0000-000000000009} = {00090000-0000-0000-0000-000000000009}
 		{0009E001-0000-0000-0000-000000000009} = {00090000-0000-0000-0000-000000000009}
 		{00100000-0000-0000-0000-000000000010} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
+		{0030E001-0000-0000-0000-000000000030} = {00300000-0000-0000-0000-000000000030}
 		{0010A001-0000-0000-0000-000000000010} = {00100000-0000-0000-0000-000000000010}
 		{0010E001-0000-0000-0000-000000000010} = {00100000-0000-0000-0000-000000000010}
 		{00110000-0000-0000-0000-000000000011} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}

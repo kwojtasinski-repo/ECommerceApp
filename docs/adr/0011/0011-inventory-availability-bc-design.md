@@ -269,58 +269,17 @@ public enum CatalogProductStatus { Orderable, Suspended, Discontinued }
 
 ### 4. Two-phase reservation
 
-#### Phase 1 — Soft reservation (UX only, in-memory TTL)
+> Implementation detail extracted to [two-phase-reservation-flow.md](example-implementation/two-phase-reservation-flow.md).
 
-Soft reservations live in the **Presale/Checkout BC** — see [ADR-0012](./0012-presale-checkout-bc-design.md).
-`Inventory/Availability` has no knowledge of soft reservations. The only reservation concept
-in this BC is the **hard reservation** (Guaranteed/Confirmed, DB-persisted).
-
-The `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, and `SoftHold` DTO were removed from
-this BC during the Presale/Checkout BC design phase. `IMemoryCache` is not a dependency of any
-Inventory service.
-
-#### Phase 2 — Guaranteed hold (DB, `RowVersion`, payment window)
-
-At **Order Created** (`OrderPlaced` message received):
-
-- Check `ProductSnapshot.CanBeReserved`, check `StockItem.AvailableQuantity >= qty`, then:
-  create `Reservation(Guaranteed)`, call `StockItem.Reserve(qty)` (RowVersion bumped), schedule
-  `PaymentWindowTimeout` deferred job at `OrderPlaced.ExpiresAt`.
-
-`OrderPlaced.ExpiresAt` is the **single source of truth** for both the `Reservation.ExpiresAt`
-field and the `PaymentWindowTimeout` job fire time. This eliminates the gap where a user could
-pay after the reservation has expired.
-
-```
-StockService.ReserveAsync(ReserveStockDto dto):
-  1. Load ProductSnapshot → guard CanBeReserved (throws BusinessException if not)
-  2. If !IsDigital: load StockItem → Reserve(qty) → UpdateAsync (RowVersion checked by DB)
-  3. AddAsync(Reservation.Create(productId, orderId, qty, dto.ExpiresAt))
-  4. ScheduleAsync(PaymentWindowTimeoutJob.JobTaskName, dto.ProductId.ToString(), fireAt=dto.ExpiresAt)
-```
-
-#### Payment window timeout (idempotent)
-
-`PaymentWindowTimeoutJob` implements `IScheduledTask`:
-- `string TaskName => PaymentWindowTimeoutJob.JobTaskName` — the constant used in `ScheduleAsync`
-- `EntityId` encodes `"{orderId}:{productId}:{quantity}"` (colon-delimited) because the timeout
-  needs all three values and `JobExecutionContext.EntityId` is a single `string?`
-
-```
-PaymentWindowTimeoutJob.JobTaskName = "PaymentWindowTimeoutJob"  ← must match ScheduleAsync jobName
-
-PaymentWindowTimeoutJob.ExecuteAsync(context, ct):
-  1. If context.EntityId is null → context.ReportFailure("Missing EntityId"); return
-  2. parts = context.EntityId.Split(':')
-     If parts.Length != 3 or any parse fails → context.ReportFailure("Invalid EntityId format"); return
-     orderId = parts[0], productId = parts[1], quantity = parts[2]
-  3. Load Reservation by (orderId, productId)
-  4. If not found OR Status != Guaranteed → context.ReportSuccess("No-op: not in Guaranteed state"); return
-  5. StockItem.Release(quantity)
-     reservation.MarkAsReleased()
-     UpdateAsync(reservation)     ← soft-terminal; row preserved for audit
-     context.ReportSuccess()
-```
+Soft reservations live entirely in the Presale/Checkout BC ([ADR-0012](../0012/0012-presale-checkout-bc-design.md));
+Inventory has no knowledge of them and never depends on `IMemoryCache`. The only reservation
+concept in this BC is the hard `StockHold` (Guaranteed/Confirmed, DB-persisted), created when
+`OrderPlaced` is received. Inventory does **not** schedule its own expiry job — the payment
+window is owned end-to-end by Sales/Payments' `PaymentWindowExpiredJob` ([ADR-0015](../0015/0015-sales-payments-bc-design.md)),
+which publishes `PaymentExpired` on expiry. Inventory's `PaymentExpiredHandler` reacts by
+releasing every hold for that order through the same `StockService.ReleaseAsync` path used by
+manual order cancellation, so both are idempotent by construction. See the companion for the
+full flow and the exact release guard.
 
 ### 5. Domain events
 
@@ -659,19 +618,19 @@ ECommerceApp.Infrastructure/Inventory/Availability/
 ## References
 
 - Related ADRs:
-  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md) (§ 4 — Inventory concurrency model)
-  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](./0003-feature-folder-organization-for-new-bounded-context-code.md)
-  - [ADR-0004 — Module Taxonomy and Bounded Context Grouping](./0004-module-taxonomy-and-bounded-context-grouping.md) (`Inventory/Availability` greenfield)
-  - [ADR-0006 — TypedId and Value Objects as Shared Domain Primitives](./0006-typedid-and-value-objects-as-shared-domain-primitives.md) (`StockItemId`, `ReservationId`)
-  - [ADR-0007 — Catalog BC — Product, Category, and Tag Aggregate Design](./0007-catalog-bc-product-category-tag-aggregate-design.md) (Quantity removed from Product)
-  - [ADR-0009 — Supporting TimeManagement BC Design](./0009-supporting-timemanagement-bc-design.md) (`PaymentWindowTimeoutJob`, `JobType.Deferred`)
-  - [ADR-0010 — In-Memory Message Broker for Cross-BC Communication](./0010-in-memory-message-broker-for-cross-bc-communication.md) (cross-BC integration pattern)
-  - [ADR-0012 — Presale/Checkout BC Design](./0012-presale-checkout-bc-design.md) (soft reservation, StorefrontProduct, `AvailabilityChanged` consumer)
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../0002/0002-post-event-storming-architectural-evolution-strategy.md) (§ 4 — Inventory concurrency model)
+  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../0003/0003-feature-folder-organization-for-new-bounded-context-code.md)
+  - [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../0004/0004-module-taxonomy-and-bounded-context-grouping.md) (`Inventory/Availability` greenfield)
+  - [ADR-0006 — TypedId and Value Objects as Shared Domain Primitives](../0006/0006-typedid-and-value-objects-as-shared-domain-primitives.md) (`StockItemId`, `StockHoldId`)
+  - [ADR-0007 — Catalog BC — Product, Category, and Tag Aggregate Design](../0007/0007-catalog-bc-product-category-tag-aggregate-design.md) (Quantity removed from Product)
+  - [ADR-0009 — Supporting TimeManagement BC Design](../0009/0009-supporting-timemanagement-bc-design.md) (deferred job scheduling)
+  - [ADR-0010 — In-Memory Message Broker for Cross-BC Communication](../0010/0010-in-memory-message-broker-for-cross-bc-communication.md) (cross-BC integration pattern)
+  - [ADR-0012 — Presale/Checkout BC Design](../0012/0012-presale-checkout-bc-design.md) (soft reservation, `StockAvailabilityChanged` consumer)
 - Instruction files:
-  - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
-  - [`.github/instructions/efcore-instructions.md`](../../.github/instructions/efcore-instructions.md)
-  - [`.github/instructions/testing-instructions.md`](../../.github/instructions/testing-instructions.md)
-  - [`.github/instructions/migration-policy.md`](../../.github/instructions/migration-policy.md)
+  - [`.github/instructions/dotnet.instructions.md`](../../../.github/instructions/dotnet.instructions.md)
+  - [`.github/instructions/efcore.instructions.md`](../../../.github/instructions/efcore.instructions.md)
+  - [`.github/instructions/testing.instructions.md`](../../../.github/instructions/testing.instructions.md)
+  - [`.github/instructions/migration-policy.instructions.md`](../../../.github/instructions/migration-policy.instructions.md)
 - Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 
 ## Reviewers

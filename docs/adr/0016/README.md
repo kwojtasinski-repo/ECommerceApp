@@ -21,8 +21,9 @@ multi-coupon stacking strategy, and Catalog name sync.
 | example-implementation/coupon-evaluation-context.md | CouponEvaluationContext structure and usage | Writing rule evaluators |
 
 ## Key rules
-- Max coupons per order: default 5, ceiling 10 (`CouponsOptions.MaxCouponsPerOrder`) — see also copilot-instructions.md §7
-- Amendment §10.1: `CouponOversizeGuard` is always-on; `BypassOversizeGuard` per-coupon override
+- Max coupons per order: default 5, hard ceiling 10 (`CouponsOptions.MaxCouponsPerOrder`) — see also copilot-instructions.md §7
+- Amendment §10.1 governs the oversize guard: it is auto-added for fixed-amount rules and can be bypassed per evaluation with `CouponEvaluationContext.BypassOversizeGuard`. The amendment's `EnableOversizeGuard` option is not yet implemented.
+- Amendment §10.2 is implemented: Catalog name-change messages update display-only `CouponScopeTarget` names through the three Coupons handlers.
 - Switch complete — legacy coupon DI removed
 
 ## Related ADRs

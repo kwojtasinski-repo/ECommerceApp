@@ -1,6 +1,6 @@
 # ADR-0030: Guest Checkout — Anonymous Order Placement
 
-**Status**: Proposed
+**Status**: Accepted; closed initiative (Phases 1-9 implemented and independently validated)
 **BC**: Presale/Checkout (primary, `ECommerceApp.Web` only), AccountProfile (extended), Supporting
 (new `Verification` sub-area)
 **Last amended**: 2026-08-14 (see the ADR's Revision note for the full list of what changed since
@@ -23,6 +23,7 @@ real email until that infrastructure exists.
 | 0030-guest-checkout-anonymous-order-placement.md | Core design: §1–§12, including the 2026-08-14 revision note | Understanding the guest checkout flow end-to-end |
 | checklist.md | Conformance rules | Code review |
 | migration-plan.md | Implementation steps, mapped to `.github/plans/01`–`08-phase-*` | Implementation |
+| example-implementation/guest-checkout-implementation.md | Verified shipped types, routes, and regression coverage | Implementation detail |
 
 ## Key rules
 - **`ECommerceApp.API` is out of scope.** No guest-checkout code touches

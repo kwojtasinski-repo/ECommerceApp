@@ -1,8 +1,8 @@
 ﻿# ADR-0014: Sales/Orders BC — Order and OrderItem Aggregate Design
 
-**Status**: Accepted — Amended (§16–§19 implemented)
+**Status**: Accepted — Amended (§16–§19 recorded)
 **BC**: Sales/Orders
-**Last amended**: 2025-06-27
+**Last amended**: 2026-03-09
 
 ## What this decision covers
 Design of `Order` and `OrderItem` aggregates, TypedIds, result-based error handling,
@@ -12,7 +12,7 @@ Design of `Order` and `OrderItem` aggregates, TypedIds, result-based error handl
 
 | File | Purpose | When to read |
 |------|---------|--------------|
-| 0014-sales-orders-bc-design.md | Core design: aggregates §1–§15, Consequences, Alternatives | Understanding Orders BC structure |
+| 0014-sales-orders-bc-design.md | Decision record: context, boundaries, consequences, alternatives, and amendment precedence | Understanding Orders BC structure |
 | amendments/a1-order-status-lifecycle.md | OrderStatus enum, state transitions, timestamp derivation (overrides §1) | Working with order lifecycle |
 | amendments/a2-event-payload-records.md | Event payload record shapes, PaymentId/RefundId moved to payloads | Adding or reading OrderEvents |
 | amendments/a3-integration-flow-decisions.md | CartLine cleanup, PaymentConfirmed.Items gap, currency decision | Cross-BC integration questions |

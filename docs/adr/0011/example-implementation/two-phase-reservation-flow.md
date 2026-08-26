@@ -18,15 +18,14 @@ is an availability hint for UX, not a durable inventory reservation, and it must
 ## Phase 2 — Guaranteed reservation
 
 The `OrderPlaced` message is the boundary at which Inventory creates a durable `StockHold`.
-`OrderPlaced.ExpiresAt` is the single source of truth for both `StockHold.ExpiresAt` and the
-`PaymentWindowTimeout` scheduled-job fire time.
+`OrderPlaced.ExpiresAt` is stored as `StockHold.ExpiresAt` for record-keeping, but Inventory does
+**not** schedule its own expiry job. The payment window is owned end-to-end by Sales/Payments.
 
 ```text
 StockService.ReserveAsync(dto):
   1. Load ProductSnapshot and require CanBeReserved.
-  2. For physical products, load StockItem, call Reserve(qty), and persist with RowVersion.
-	3. Add StockHold.Create(productId, orderId, qty, dto.ExpiresAt).
-  4. Schedule PaymentWindowTimeoutJob at dto.ExpiresAt.
+  2. For physical products, load StockItem, call Reserve(qty), and persist via a transaction.
+  3. Add StockHold.Create(productId, orderId, qty, dto.ExpiresAt).
 ```
 
 Digital products still receive a StockHold row for order tracing, but do not touch the
@@ -34,23 +33,37 @@ Digital products still receive a StockHold row for order tracing, but do not tou
 
 ## Timeout and idempotency
 
-`PaymentWindowTimeoutJob` receives an `EntityId` encoded as `orderId:productId:quantity`.
-Malformed or missing identifiers report a failed job. A missing hold or a hold that
-is no longer `Guaranteed` is a successful no-op.
+There is no `IScheduledTask` in Inventory for reservation expiry — only `StockAdjustmentJob`
+(§8a) is registered there. The actual timeout is `PaymentWindowExpiredJob`
+(`Application/Sales/Payments/Handlers/PaymentWindowExpiredJob.cs`, ADR-0015), scheduled per
+`Payment` and keyed by `paymentId`, not by product or quantity. On expiry it marks the `Payment`
+as `Expired` and publishes `PaymentExpired(PaymentId, OrderId, OccurredAt, CorrelationId)`.
+
+Inventory's `PaymentExpiredHandler` (`Application/Inventory/Availability/Handlers/`) subscribes to
+that message and releases every hold for the order in one call, not just the single hold that
+expired first:
 
 ```text
-PaymentWindowTimeoutJob.ExecuteAsync(context):
-  1. Validate EntityId and parse orderId, productId, quantity.
-	2. Load StockHold by (orderId, productId).
-  3. If absent or not Guaranteed, report success as a no-op.
-  4. Release quantity from StockItem.
-	5. Mark StockHold as Released and update it; retain the row for audit history.
-  6. Report success.
+PaymentExpiredHandler.HandleAsync(message):
+  1. Call StockService.ReleaseAllHoldsForOrderAsync(message.OrderId).
+     -> loads every StockHold for the order and calls ReleaseAsync(orderId, productId, qty)
+        for each one.
+
+StockService.ReleaseAsync(orderId, productId, quantity):
+  1. Load StockHold by (orderId, productId); missing hold is a no-op (returns false).
+  2. If the hold is Guaranteed, release the quantity from StockItem inside a transaction.
+     A hold that is no longer Guaranteed skips the counter release — this is what makes a
+     replayed PaymentExpired safe.
+  3. Mark the StockHold as Released and persist it regardless of the branch above.
 ```
+
+`OrderCancelled` follows the same `ReleaseAsync` path through `OrderCancelledHandler` for the
+manual-cancel case, so both expiry and cancellation share one idempotent release routine.
 
 ## Rules
 
-- Reuse `OrderPlaced.ExpiresAt`; do not calculate a second timeout independently.
+- Do not schedule a reservation-expiry job inside Inventory; the payment window belongs to
+  Sales/Payments (`PaymentWindowExpiredJob`, ADR-0015).
 - Soft holds never enter the Inventory database.
 - Hard holds are persisted and terminal rows are retained for audit.
 - `StockItem` never owns a `StockHold` collection; holds are queried separately.
@@ -79,11 +92,6 @@ public async Task ReserveAsync(ReserveStockDto dto, CancellationToken ct)
 
 	await stockHolds.AddAsync(
 		StockHold.Create(dto.ProductId, dto.OrderId, dto.Quantity, dto.ExpiresAt), ct);
-	await scheduler.ScheduleAsync(
-		PaymentWindowTimeoutJob.JobTaskName,
-		$"{dto.OrderId}:{dto.ProductId}:{dto.Quantity}",
-		dto.ExpiresAt,
-		ct);
 }
 ```
 

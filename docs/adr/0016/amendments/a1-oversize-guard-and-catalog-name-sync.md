@@ -1,6 +1,8 @@
 ﻿## §10 Design Amendments — CouponOversizeGuard and Catalog Name Sync (2025-06-27)
 
-> **Status**: Agreed — not yet implemented. Amends §9.3, §9.8, §9.10.
+> **Status**: Agreed and implemented in the current coupon rule and Catalog message paths.
+> The proposed `CouponsOptions.EnableOversizeGuard` deployment toggle remains unimplemented;
+> the current behavior is auto-injection plus the per-evaluation bypass flag.
 
 ### §10.1 `coupon-oversize-guard` Constraint Rule (amends §9.3)
 
@@ -48,7 +50,7 @@ When product, category, or tag names change in the Catalog BC, `CouponScopeTarge
 (display-only snapshot) must be updated. `CouponScopeTarget.UpdateTargetName(string)` already
 exists in the domain — this amendment defines the full integration path.
 
-**Catalog BC — new messages** (published by Catalog services on name change):
+**Catalog BC — messages** (published by Catalog services on name change):
 
 ```csharp
 // Application/Catalog/Products/Messages/
@@ -62,15 +64,15 @@ public record TagNameChanged(int TagId, string NewName, DateTime OccurredAt) : I
 - `CategoryService.UpdateCategoryAsync` → publish `CategoryNameChanged` when name differs
 - `ProductTagService.UpdateTagAsync` → publish `TagNameChanged` when name differs
 
-**Coupons BC — new repository interface**:
+**Coupons BC — repository interface**:
 
 ```csharp
 // Domain/Sales/Coupons/
 public interface IScopeTargetRepository
 {
-    Task<IReadOnlyList<CouponScopeTarget>> GetByTargetIdAndScopeTypeAsync(
-        int targetId, string scopeType, CancellationToken ct = default);
-    Task UpdateAsync(CouponScopeTarget target, CancellationToken ct = default);
+    Task<IReadOnlyList<CouponScopeTarget>> GetByScopeTypeAndTargetIdAsync(
+      string scopeType, int targetId, CancellationToken ct = default);
+    Task UpdateRangeAsync(IReadOnlyList<CouponScopeTarget> targets, CancellationToken ct = default);
 }
 ```
 

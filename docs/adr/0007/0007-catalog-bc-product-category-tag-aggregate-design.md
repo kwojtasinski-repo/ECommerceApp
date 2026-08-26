@@ -49,169 +49,18 @@ The aggregate root class, its typed ID, and the join entity are renamed:
 | `ItemId` | `ProductId` | FK column `ProductId` |
 | `ItemTag` | `ProductTag` | `catalog.ProductTags` |
 
-### 2. Domain model structure
-```
-Domain/Catalog/Products/
-  Product.cs              ← aggregate root
-  ProductId.cs            ← TypedId<int>
-  Category.cs             ← entity (no parent, no visibility — v1)
-  CategoryId.cs           ← TypedId<int>
-  Tag.cs                  ← entity (no color, no visibility — v1)
-  TagId.cs                ← TypedId<int>
-  Image.cs                ← owned entity (ProductId FK)
-  ImageId.cs              ← TypedId<int>
-  ProductTag.cs           ← join entity
-  ProductStatus.cs        ← enum (Draft | Published | Unpublished | Discontinued)
-  UnpublishReason.cs      ← enum (ManagerDecision | TestSaleEnded | LegalWithdrawal)
-  IProductRepository.cs
-  ICategoryRepository.cs
-  IProductTagRepository.cs
-  Events/
-    ProductCreated.cs          ← domain event — raised on Create(); triggers ProductAdded integration message
-    ProductPublished.cs        ← domain event — raised on Publish(); visibility toggle only
-    ProductUnpublished.cs      ← domain event — raised on Unpublish(reason)
-    ProductDiscontinued.cs     ← domain event — raised on Discontinue()
-    ProductDetailsUpdated.cs   ← domain event — raised on UpdateDetails(); name/price/category changed
-    ProductMainImageUpdated.cs ← domain event — raised when first image added or SetMainImage called
-  ValueObjects/
-    ProductName.cs          max 150, min 3
-    ProductDescription.cs   max 300, empty allowed
-    ProductQuantity.cs      >= 0
-    CategoryName.cs         max 100
-    CategorySlug.cs         max 100
-    TagName.cs              max 50
-    TagSlug.cs              max 30
-    ImageFileName.cs        max 500
-```
+### 2–10. Implementation detail
 
-### 3. BC-specific slug value objects: `CategorySlug` and `TagSlug`
-Rather than a shared `Slug` VO with manual length guards inside each entity method, each BC
-entity defines its own typed slug that embeds the length constraint in the constructor.
-Both delegate format validation to the shared `Slug` VO:
+The aggregate layout, value-object constraints, product state transitions, image invariant,
+catalog schema, deferred v1 fields, and mapping examples are implementation guidance rather
+than additional architectural decisions. The maintained examples are collected here:
 
-```csharp
-public sealed record CategorySlug
-{
-    public string Value { get; }
-    public CategorySlug(string value)
-    {
-        var slug = new Slug(value);           // validates lowercase/format
-        if (slug.Value.Length > 100)
-            throw new DomainException("Category slug must not exceed 100 characters.");
-        Value = slug.Value;
-    }
-    public static CategorySlug FromName(string name) { ... }
-}
-```
+- [Catalog implementation sketch](example-implementation/product-aggregate-usage.md)
 
-This means entity factory methods (`Category.Create`, `Tag.Create`) contain no length guard
-logic — the invariant lives in the VO, which is the single source of truth.
-
-### 4. Product `Status` state machine
-```
-Draft ──Publish()──► Published ──Unpublish(reason)──► Unpublished ──Publish()──► Published
-                  Published ──Discontinue()──► Discontinued
-```
-- `Publish()` throws `DomainException` if already `Published`.
-- `Unpublish(UnpublishReason reason)` throws `DomainException` if not `Published`.
-- `Discontinue()` throws `DomainException` if already `Discontinued`.
-- State transitions return domain events (`ProductPublished`, `ProductUnpublished`, `ProductDiscontinued`).
-- `UpdateDetails(...)` returns `ProductDetailsUpdated` domain event — not `void`.
-- `AddImage` / `SetMainImage` raise `ProductMainImageUpdated` when the main image changes.
-- `Create(...)` always starts in `Draft`; returns `(Product, ProductCreated)` tuple.
-
-### 4a. `UnpublishReason` enum
-
-Catalog is the authoritative owner of WHY a product is unpublished. Downstream BCs
-(e.g., Presale/Checkout — ADR-0012) map these reasons to their own visibility concepts.
-
-```csharp
-public enum UnpublishReason
-{
-    ManagerDecision = 0,   // general temporary hide
-    TestSaleEnded   = 1,   // product was a trial — did not meet sales targets
-    LegalWithdrawal = 2,   // compliance / legal issue — product must be withdrawn
-}
-```
-
-### 4b. Outbound integration messages (Application layer)
-
-The Application layer translates domain events into integration messages published via `IMessageBroker`.
-These are the **public contract** for downstream BCs.
-
-| Domain event | Integration message | Status | Payload | Consumers |
-|---|---|---|---|---|
-| `ProductCreated` | `ProductAdded` | **New** | `ProductId, Name, Price, CategoryId, OccurredAt` | Presale/Checkout |
-| `ProductPublished` | `ProductPublished` | Existing (unchanged) | `ProductId, ProductName, IsDigital, OccurredAt` | Inventory, Presale/Checkout |
-| `ProductUnpublished` | `ProductUnpublished` | **Changed** — adds `Reason` field | `ProductId, Reason: UnpublishReason, OccurredAt` | Inventory, Presale/Checkout |
-| `ProductDiscontinued` | `ProductDiscontinued` | Existing (unchanged) | `ProductId, OccurredAt` | Inventory, Presale/Checkout |
-| `ProductDetailsUpdated` | `ProductUpdated` | **New** | `ProductId, Name, Price, CategoryId, OccurredAt` | Presale/Checkout |
-| `ProductMainImageUpdated` | `ProductMainImageUpdated` | **New** | `ProductId, MainImageUrl, OccurredAt` | Presale/Checkout |
-
-> **Note**: `ProductPublished` currently carries `ProductName` and `IsDigital` for backward
-> compatibility with `Inventory/ProductPublishedHandler`. When Presale/Checkout Slice 1 is built,
-> Inventory’s handler will transition to consuming `ProductAdded` for those fields, and
-> `ProductPublished` will become a pure visibility toggle (`ProductId, OccurredAt`).
-
-### 5. Image ownership and main-image invariant
-`Image` is an owned entity of `Product` (max 5 per product). The `IsMain` flag is
-controlled exclusively by `Product` through:
-
-- `AddImage(fileName)` — auto-assigns `sortOrder = _images.Count`; first image becomes main
-- `SetMainImage(int imageId)` — clears all main flags, then sets exactly one; throws if imageId not found
-- `RemoveImage(int imageId)` — removes image, re-compacts sort order (0, 1, 2, …), promotes
-  first remaining image as main if the removed one was main
-
-`Image.SetAsMain()` and `Image.ClearMain()` are **`internal`** — callable only within
-`ECommerceApp.Domain`. External code (Application, Infrastructure) cannot bypass the invariant.
-
-### 6. Sort order: auto-assign + explicit reorder
-`Product.AddImage(fileName)` assigns `sortOrder = _images.Count` (append-to-end).
-Reordering is done atomically via `Product.ReorderImages(IList<int> orderedImageIds)`, which
-validates the complete list and reassigns positions 0, 1, 2, … in one operation.
-This eliminates collision risk and removes position-tracking responsibility from callers.
-
-### 7. Per-BC `ProductDbContext` with `catalog.*` schema
-Own `ProductDbContext : DbContext` with `HasDefaultSchema("catalog")`.
-Tables: `catalog.Products`, `catalog.Categories`, `catalog.Tags`, `catalog.Images`,
-`catalog.ProductTags`.
-
-All string columns have explicit `HasMaxLength` constraints — no `varchar(max)`.
-
-| Column | Max |
-|---|---|
-| `Products.Name` | 150 |
-| `Products.Description` | 300 |
-| `Categories.Name` | 100 |
-| `Categories.Slug` | 100 |
-| `Tags.Name` | 50 |
-| `Tags.Slug` | 30 |
-| `Images.FileName` | 500 |
-
-### 8. Category — v1 scope
-`Category` has only `CategoryName Name` and `CategorySlug Slug`. `ParentId` (hierarchy)
-and `IsVisible` are explicitly deferred — they require a separate UI and ADR before
-implementation. A note is tracked in the refactoring progress table below.
-
-### 9. Tag — v1 scope
-`Tag` has only `TagName Name` and `TagSlug Slug`. `Color` and `IsVisible` are deferred.
-
-### 10. AutoMapper global converters
-The following global converters are registered in `MappingProfile` so per-VM mappings
-do not need `ForMember` for type conversion:
-
-```csharp
-CreateMap<ProductId, int>().ConvertUsing(x => x.Value);
-CreateMap<ProductName, string>().ConvertUsing(x => x.Value);
-CreateMap<Price, decimal>().ConvertUsing(x => x.Amount);
-CreateMap<TagName, string>().ConvertUsing(x => x.Value);
-CreateMap<CategoryName, string>().ConvertUsing(x => x.Value);
-CreateMap<CategorySlug, string>().ConvertUsing(x => x.Value);
-CreateMap<TagSlug, string>().ConvertUsing(x => x.Value);
-CreateMap<ProductDescription, string>().ConvertUsing(x => x.Value);
-CreateMap<ProductQuantity, int>().ConvertUsing(x => x.Value);
-CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
-```
+The architectural decisions remain in this ADR: Catalog owns Product, Category, Tag, and Image;
+image ownership and soft-delete preserve product invariants; category and tag v1 deliberately
+exclude hierarchy, visibility, and color; and slug constraints are encoded in Catalog-specific
+value objects.
 
 ## Consequences
 
@@ -255,8 +104,8 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 ## References
 
 - Related ADRs:
-  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
-  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](./0003-feature-folder-organization-for-new-bounded-context-code.md)
-  - [ADR-0006 — TypedId and Value Objects as Shared Domain Primitives](./0006-typedid-and-value-objects-as-shared-domain-primitives.md)
-  - [ADR-0011 — Inventory/Availability BC Design](./0011-inventory-availability-bc-design.md) (ProductSnapshot consumes Catalog events)
-  - [ADR-0012 — Presale/Checkout BC Design](./0012-presale-checkout-bc-design.md) (Presale/Checkout BC; Slice 1 has zero message subscriptions)
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
+  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../0003/0003-feature-folder-organization-for-new-bounded-context-code.md)
+  - [ADR-0006 — TypedId and Value Objects as Shared Domain Primitives](../0006/0006-typedid-and-value-objects-as-shared-domain-primitives.md)
+  - [ADR-0011 — Inventory/Availability BC Design](../0011/0011-inventory-availability-bc-design.md) (ProductSnapshot consumes Catalog events)
+  - [ADR-0012 — Presale/Checkout BC Design](../0012/0012-presale-checkout-bc-design.md) (Presale/Checkout BC; Slice 1 has zero message subscriptions)

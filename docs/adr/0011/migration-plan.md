@@ -1,13 +1,13 @@
 ﻿## Migration plan
 
-1. Create `Domain/Inventory/Availability/` with `StockItem`, `StockItemId`, `Reservation`,
-   `ReservationId`, `ReservationStatus`, `ProductSnapshot`, `CatalogProductStatus`,
+1. Create `Domain/Inventory/Availability/` with `StockItem`, `StockItemId`, `StockHold`,
+   `StockHoldId`, `StockHoldStatus`, `ProductSnapshot`, `CatalogProductStatus`,
    repository interfaces, domain events.
 2. Create `Infrastructure/Inventory/Availability/` with `AvailabilityDbContext`,
-   `StockItemConfiguration` (`RowVersion` → `IsRowVersion()`), `ReservationConfiguration`,
+   `StockItemConfiguration` (`RowVersion` → `IsRowVersion()`), `StockHoldConfiguration`,
    `ProductSnapshotConfiguration`, all three repositories.
 3. Create `Application/Inventory/Availability/` with `IStockService`, `StockService`,
-   all message handlers, `PaymentWindowTimeoutJob`, DTOs, ViewModels.
+   all message handlers (including `PaymentExpiredHandler`), DTOs, ViewModels.
 4. Register via `AddAvailabilityServices()` in `Application/DependencyInjection.cs` and
    `AddAvailabilityInfrastructure()` in `Infrastructure/DependencyInjection.cs`.
 5. Generate EF migration `InitInventorySchema` targeting `AvailabilityDbContext`.

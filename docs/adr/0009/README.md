@@ -12,13 +12,14 @@ Design of the job scheduling infrastructure: `IScheduledTask` (recurring), `IDef
 
 | File | Purpose | When to read |
 |------|---------|--------------|
-| 0009-supporting-timemanagement-bc-design.md | Core design: job taxonomy, IScheduledTask, IDeferredJobScheduler, DB schema | Understanding the job engine |
+| 0009-supporting-timemanagement-bc-design.md | Decision summary, job taxonomy, ownership, and amendment precedence | Understanding job-engine decisions |
 | amendments/a1-design-revisions.md | A1–A5: DB-first config, table split, status simplification, retry backoff, tick alignment | Working with job scheduling internals |
 | checklist.md | Implementation conformance rules | Code review of job implementations |
 | migration-plan.md | Implementation steps (completed) | Historical reference |
 | example-implementation/ischeduledtask-implementation.md | How to implement a new scheduled task | Adding a new recurring job |
 | example-implementation/ideferred-job-scheduler-usage.md | How to schedule a deferred job from a domain event | Wiring domain events to jobs |
 | example-implementation/job-registration-di.md | DI registration pattern for jobs | Setting up AddXxxServices() |
+| example-implementation/job-engine.md | Dispatch, persistence, admin surface, and amendment-aware rules | Implementing or debugging the job engine |
 
 ## Key rules
 - All job definitions live in TimeManagement BC — never define job metadata in the calling BC
