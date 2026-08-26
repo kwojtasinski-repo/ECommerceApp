@@ -55,6 +55,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 		.github\instructions\rag.instructions.md = .github\instructions\rag.instructions.md
 		.github\instructions\razorpages.instructions.md = .github\instructions\razorpages.instructions.md
 		.github\instructions\safety.instructions.md = .github\instructions\safety.instructions.md
+		.github\instructions\session-continuity.instructions.md = .github\instructions\session-continuity.instructions.md
 		.github\instructions\shared-primitives.instructions.md = .github\instructions\shared-primitives.instructions.md
 		.github\instructions\testing.instructions.md = .github\instructions\testing.instructions.md
 		.github\instructions\integration-web-e2e-testing.instructions.md = .github\instructions\integration-web-e2e-testing.instructions.md
@@ -64,21 +65,33 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{6E1A68B1-6E1A-4C59-BBC0-26FE3199BB75}"
 	ProjectSection(SolutionItems) = preProject
 		.github\templates\adr.template.md = .github\templates\adr.template.md
+		.github\templates\BLOCKER_TEMPLATE.md = .github\templates\BLOCKER_TEMPLATE.md
+		.github\templates\PILOT_REPORT_TEMPLATE.md = .github\templates\PILOT_REPORT_TEMPLATE.md
+		.github\templates\REVIEW_TEMPLATE.md = .github\templates\REVIEW_TEMPLATE.md
+		.github\templates\specification.template.md = .github\templates\specification.template.md
+		.github\templates\STAGE_REPORT_TEMPLATE.md = .github\templates\STAGE_REPORT_TEMPLATE.md
+		.github\templates\TASK_TEMPLATE.md = .github\templates\TASK_TEMPLATE.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agents", "agents", "{D2867909-022A-479A-A6F9-3CF92C8F518C}"
 	ProjectSection(SolutionItems) = preProject
 		.github\agents\adr-generator.md = .github\agents\adr-generator.md
+		.github\agents\architecture-guardian.md = .github\agents\architecture-guardian.md
 		.github\agents\bc-switch.md = .github\agents\bc-switch.md
 		.github\agents\code-reviewer.md = .github\agents\code-reviewer.md
 		.github\agents\copilot-setup-maintainer.md = .github\agents\copilot-setup-maintainer.md
+		.github\agents\coordinator.md = .github\agents\coordinator.md
+		.github\agents\documentation-governance.md = .github\agents\documentation-governance.md
 		.github\agents\implementer.md = .github\agents\implementer.md
+		.github\agents\knowledge-librarian.md = .github\agents\knowledge-librarian.md
 		.github\agents\planner.md = .github\agents\planner.md
 		.github\agents\pr-commit.md = .github\agents\pr-commit.md
+		.github\agents\repository-analyzer.md = .github\agents\repository-analyzer.md
 		.github\agents\spec-writer.md = .github\agents\spec-writer.md
 		.github\agents\setup-discovery.md = .github\agents\setup-discovery.md
 		.github\agents\research-planner.md = .github\agents\research-planner.md
 		.github\agents\information-gatherer-lite.md = .github\agents\information-gatherer-lite.md
+		.github\agents\stage-validator.md = .github\agents\stage-validator.md
 		.github\agents\verifier.md = .github\agents\verifier.md
 	EndProjectSection
 EndProject
@@ -87,6 +100,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{908C6C00-4
 		docs\getting-started-ai-mcp-stack.md = docs\getting-started-ai-mcp-stack.md
 		docs\README.md = docs\README.md
 		docs\rag\README.md = docs\rag\README.md
+		docs\rag\decisions-and-roadmap.md = docs\rag\decisions-and-roadmap.md
+		docs\rag\index-stats.md = docs\rag\index-stats.md
+		docs\rag\index-stats-dotnet.md = docs\rag\index-stats-dotnet.md
+		docs\rag\mcp-first-routing-migration-playbook.md = docs\rag\mcp-first-routing-migration-playbook.md
+		docs\rag\pipeline-test-report.md = docs\rag\pipeline-test-report.md
+		docs\rag\rag-architecture.md = docs\rag\rag-architecture.md
+		docs\rag\rag-architecture-v2-design.md = docs\rag\rag-architecture-v2-design.md
+		docs\rag\reports\2026-05-26-architecture-audit-and-refactor.md = docs\rag\reports\2026-05-26-architecture-audit-and-refactor.md
+		docs\rag\reports\2026-05-26-real-mcp-verification.md = docs\rag\reports\2026-05-26-real-mcp-verification.md
+		docs\rag\reports\eval-results\README.md = docs\rag\reports\eval-results\README.md
+		docs\rag\reports\mcp-routing-eval-50q.md = docs\rag\reports\mcp-routing-eval-50q.md
+		docs\rag\reports\mcp-routing-eval-batched-5q.md = docs\rag\reports\mcp-routing-eval-batched-5q.md
+		docs\rag\SETUP-GUIDE.md = docs\rag\SETUP-GUIDE.md
+		docs\rag\validation-report-v2.md = docs\rag\validation-report-v2.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC3-46DC-8502-C91F85A1F7BC}"
@@ -453,6 +480,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", 
 		docs\adr\0028\amendments\0028-003-transport-aware-tools.md = docs\adr\0028\amendments\0028-003-transport-aware-tools.md
 		docs\adr\0028\amendments\0028-004-per-collection-config-gap.md = docs\adr\0028\amendments\0028-004-per-collection-config-gap.md
 		docs\adr\0028\amendments\0028-005-phase3-per-collection-config-dotnet.md = docs\adr\0028\amendments\0028-005-phase3-per-collection-config-dotnet.md
+		docs\adr\0028\amendments\0028-006-phase3-python-parity.md = docs\adr\0028\amendments\0028-006-phase3-python-parity.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0029", "0029", "{00290000-0000-0000-0000-000000000029}"
@@ -485,17 +513,48 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0031", "0031", "{00310000-0
 		docs\adr\0031\README.md = docs\adr\0031\README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0032", "0032", "{00320000-0000-0000-0000-000000000032}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0032\0032-cross-schema-outbox-transaction-sharing.md = docs\adr\0032\0032-cross-schema-outbox-transaction-sharing.md
+		docs\adr\0032\README.md = docs\adr\0032\README.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "architecture", "architecture", "{5EC11768-8E47-4C89-9EBC-78E600311851}"
 	ProjectSection(SolutionItems) = preProject
 		docs\architecture\bounded-context-map.md = docs\architecture\bounded-context-map.md
 		docs\architecture\knowledge-graph-ontology-design.md = docs\architecture\knowledge-graph-ontology-design.md
+		docs\architecture\architect-consultant-tooling.md = docs\architecture\architect-consultant-tooling.md
+		docs\architecture\kg-implementation-planning\README.md = docs\architecture\kg-implementation-planning\README.md
+		docs\architecture\kg-implementation-planning\marker-discovery.md = docs\architecture\kg-implementation-planning\marker-discovery.md
+		docs\architecture\kg-implementation-planning\output-modes.md = docs\architecture\kg-implementation-planning\output-modes.md
+		docs\architecture\kg-implementation-planning\phase-derivation.md = docs\architecture\kg-implementation-planning\phase-derivation.md
+		docs\architecture\kg-implementation-planning\project-profile.md = docs\architecture\kg-implementation-planning\project-profile.md
+		docs\architecture\kg-implementation-planning\verification.md = docs\architecture\kg-implementation-planning\verification.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "architect-consultant", "architect-consultant", "{6AC5F5F0-1B33-4A9E-9A2A-42BAA23E1B01}"
+	ProjectSection(SolutionItems) = preProject
+		docs\architect-consultant\IMPLEMENTATION_PLAYBOOK.md = docs\architect-consultant\IMPLEMENTATION_PLAYBOOK.md
+		docs\architect-consultant\IMPLEMENTATION_RULES.md = docs\architect-consultant\IMPLEMENTATION_RULES.md
+		docs\architect-consultant\IMPLEMENTATION_STATE.md = docs\architect-consultant\IMPLEMENTATION_STATE.md
+		docs\architect-consultant\Implementation-Blueprint-v1.md = docs\architect-consultant\Implementation-Blueprint-v1.md
+		docs\architect-consultant\knowledge-library.md = docs\architect-consultant\knowledge-library.md
+		docs\architect-consultant\README.md = docs\architect-consultant\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD}"
 	ProjectSection(SolutionItems) = preProject
 		.github\prompts\batched-tasks.prompt.md = .github\prompts\batched-tasks.prompt.md
+		.github\prompts\ac-adr.prompt.md = .github\prompts\ac-adr.prompt.md
+		.github\prompts\ac-blocker.prompt.md = .github\prompts\ac-blocker.prompt.md
+		.github\prompts\ac-implementation.prompt.md = .github\prompts\ac-implementation.prompt.md
+		.github\prompts\ac-knowledge-review.prompt.md = .github\prompts\ac-knowledge-review.prompt.md
+		.github\prompts\ac-knowledge-update.prompt.md = .github\prompts\ac-knowledge-update.prompt.md
+		.github\prompts\ac-pilot.prompt.md = .github\prompts\ac-pilot.prompt.md
+		.github\prompts\ac-review.prompt.md = .github\prompts\ac-review.prompt.md
+		.github\prompts\ac-stage-complete.prompt.md = .github\prompts\ac-stage-complete.prompt.md
 		.github\prompts\bc-analysis.prompt.md = .github\prompts\bc-analysis.prompt.md
 		.github\prompts\bc-implementation.prompt.md = .github\prompts\bc-implementation.prompt.md
 		.github\prompts\general.prompt.md = .github\prompts\general.prompt.md
@@ -525,6 +584,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 		docs\roadmap\saga-pattern.md = docs\roadmap\saga-pattern.md
 		docs\roadmap\generic-saga-orchestration-proposal.md = docs\roadmap\generic-saga-orchestration-proposal.md
 		docs\roadmap\storefront-offers.md = docs\roadmap\storefront-offers.md
+		docs\roadmap\bc-migration-history.md = docs\roadmap\bc-migration-history.md
+		docs\roadmap\guest-checkout.md = docs\roadmap\guest-checkout.md
+		docs\roadmap\order-placement-compensation-followup.md = docs\roadmap\order-placement-compensation-followup.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "style-guides", "style-guides", "{6AC5F5F0-1B33-4A9E-9A2A-42BAA23E1B02}"
+	ProjectSection(SolutionItems) = preProject
+		docs\style-guides\README.md = docs\style-guides\README.md
+		docs\style-guides\buttons.md = docs\style-guides\buttons.md
+		docs\style-guides\colors.md = docs\style-guides\colors.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "specifications", "specifications", "{D1A5D27B-9E6B-4B34-9DAE-90C54A47E1B3}"
@@ -547,19 +616,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064
 		.github\context\agent-decisions.md = .github\context\agent-decisions.md
 		.github\context\anti-patterns-critical.context.md = .github\context\anti-patterns-critical.context.md
 		.github\context\anti-patterns-advisory.context.md = .github\context\anti-patterns-advisory.context.md
+		.github\context-cost-analysis.md = .github\context-cost-analysis.md
 		.github\context\future-skills.md = .github\context\future-skills.md
 		.github\context\known-issues.md = .github\context\known-issues.md
 		.github\context\project-state.md = .github\context\project-state.md
 		.github\context\repo-index.md = .github\context\repo-index.md
 		.github\context\test-stabilization-policy.md = .github\context\test-stabilization-policy.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hooks", "hooks", "{5A7C54F0-2E0E-4C75-A54A-8BF71003D4C2}"
-	ProjectSection(SolutionItems) = preProject
-		.github\hooks\auto-cache.mjs = .github\hooks\auto-cache.mjs
-		.github\hooks\posttooluse-chain.mjs = .github\hooks\posttooluse-chain.mjs
-		.github\hooks\posttooluse-chain.sh = .github\hooks\posttooluse-chain.sh
-		.github\hooks\session-policy.mjs = .github\hooks\session-policy.mjs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reference", "reference", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
@@ -575,6 +637,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E
 		docs\reports\rag-requirements-compliance-2026-05-29.md = docs\reports\rag-requirements-compliance-2026-05-29.md
 		docs\reports\remaining-work-effort.md = docs\reports\remaining-work-effort.md
 		docs\reports\web-ui-views-report.md = docs\reports\web-ui-views-report.md
+		docs\reports\rag-bare-server-integration-2026-05-29.md = docs\reports\rag-bare-server-integration-2026-05-29.md
+		docs\reports\rag-bare-server-integration-2026-05-29-addendum.md = docs\reports\rag-bare-server-integration-2026-05-29-addendum.md
+		docs\reports\rag-parity-audit-2026-05-28.md = docs\reports\rag-parity-audit-2026-05-28.md
+		docs\reports\rag-parity-findings-2026-05-28.md = docs\reports\rag-parity-findings-2026-05-28.md
+		docs\reports\rag-parity-fix-diagnosis-2026-05-28.md = docs\reports\rag-parity-fix-diagnosis-2026-05-28.md
+		docs\reports\session-rag-billing-optimization.md = docs\reports\session-rag-billing-optimization.md
+		docs\reports\sprint3-sprint4-requirements-brief.md = docs\reports\sprint3-sprint4-requirements-brief.md
+		docs\reports\test-infrastructure-iam-seeding-duplication-2026-08-13.md = docs\reports\test-infrastructure-iam-seeding-duplication-2026-08-13.md
+		docs\reports\web-e2e-parallelisation-and-flake-fix-2026-08-13.md = docs\reports\web-e2e-parallelisation-and-flake-fix-2026-08-13.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HttpScenarios", "HttpScenarios", "{B3C4D5E6-F7A8-4B9C-8D0E-1F2A3B4C5D6E}"
@@ -594,8 +665,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\accounting-archetype-mapper\SKILL.md = .github\skills\accounting-archetype-mapper\SKILL.md
+		.github\skills\accounting-archetype-mapper\ENFORCEMENT.md = .github\skills\accounting-archetype-mapper\ENFORCEMENT.md
 		.github\skills\aggregate-designer\SKILL.md = .github\skills\aggregate-designer\SKILL.md
+		.github\skills\aggregate-designer\ENFORCEMENT.md = .github\skills\aggregate-designer\ENFORCEMENT.md
 		.github\skills\archetype-scanner\SKILL.md = .github\skills\archetype-scanner\SKILL.md
+		.github\skills\archetype-scanner\ENFORCEMENT.md = .github\skills\archetype-scanner\ENFORCEMENT.md
 		.github\skills\code-validator\SKILL.md = .github\skills\code-validator\SKILL.md
 		.github\skills\linguistic-boundary-verifier\SKILL.md = .github\skills\linguistic-boundary-verifier\SKILL.md
 		.github\skills\context-distiller\SKILL.md = .github\skills\context-distiller\SKILL.md
@@ -614,20 +688,27 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A
 		.github\skills\create-unit-test\SKILL.md = .github\skills\create-unit-test\SKILL.md
 		.github\skills\create-validator\SKILL.md = .github\skills\create-validator\SKILL.md
 		.github\skills\knowledge-management-archetype-mapper\SKILL.md = .github\skills\knowledge-management-archetype-mapper\SKILL.md
+		.github\skills\knowledge-management-archetype-mapper\ENFORCEMENT.md = .github\skills\knowledge-management-archetype-mapper\ENFORCEMENT.md
 		.github\skills\ecommerceapp-kg-query\SKILL.md = .github\skills\ecommerceapp-kg-query\SKILL.md
 		.github\skills\kg-implementation-planner\SKILL.md = .github\skills\kg-implementation-planner\SKILL.md
 		.github\skills\kg-ontology-designer\SKILL.md = .github\skills\kg-ontology-designer\SKILL.md
 		.github\skills\metaprogram-classifier\SKILL.md = .github\skills\metaprogram-classifier\SKILL.md
+		.github\skills\metaprogram-classifier\ENFORCEMENT.md = .github\skills\metaprogram-classifier\ENFORCEMENT.md
 		.github\skills\mermaid-diagram\SKILL.md = .github\skills\mermaid-diagram\SKILL.md
 		.github\skills\pricing-archetype-mapper\SKILL.md = .github\skills\pricing-archetype-mapper\SKILL.md
+		.github\skills\pricing-archetype-mapper\ENFORCEMENT.md = .github\skills\pricing-archetype-mapper\ENFORCEMENT.md
 		.github\skills\problem-classifier\SKILL.md = .github\skills\problem-classifier\SKILL.md
+		.github\skills\problem-classifier\ENFORCEMENT.md = .github\skills\problem-classifier\ENFORCEMENT.md
 		.github\skills\diagnose-rag\SKILL.md = .github\skills\diagnose-rag\SKILL.md
 		.github\skills\expand-rag-glossary\SKILL.md = .github\skills\expand-rag-glossary\SKILL.md
 		.github\skills\generate-eval-questions\SKILL.md = .github\skills\generate-eval-questions\SKILL.md
 		.github\skills\generate-rag-rules\SKILL.md = .github\skills\generate-rag-rules\SKILL.md
 		.github\skills\requirements-critic\SKILL.md = .github\skills\requirements-critic\SKILL.md
+		.github\skills\requirements-critic\ENFORCEMENT.md = .github\skills\requirements-critic\ENFORCEMENT.md
 		.github\skills\research-gatherer\SKILL.md = .github\skills\research-gatherer\SKILL.md
+		.github\skills\research-gatherer\references\research-methodologies.md = .github\skills\research-gatherer\references\research-methodologies.md
 		.github\skills\transcript-critic\SKILL.md = .github\skills\transcript-critic\SKILL.md
+		.github\skills\transcript-critic\ENFORCEMENT.md = .github\skills\transcript-critic\ENFORCEMENT.md
 		.github\skills\test-strategy-reviewer\SKILL.md = .github\skills\test-strategy-reviewer\SKILL.md
 		.github\skills\rag-collection-rebuild\SKILL.md = .github\skills\rag-collection-rebuild\SKILL.md
 		.github\skills\rag-eval-coverage\SKILL.md = .github\skills\rag-eval-coverage\SKILL.md

@@ -139,7 +139,7 @@
 - **Fix**: Removed the `RemoveRangeAsync` call from `InitiateAsync`. Cart lines are now only cleared by `Presale.Checkout.OrderPlacedHandler` after a successful `OrderPlaced` event.
 - **Files changed**: `CheckoutService.cs`
 
-### [KI-012]
+### [KI-012] `GetUsageSummariesAsync` — EF.Property failure on owned `TagName` ✅
 
 - **Fix**: `GetUsageSummariesAsync` was using `EF.Property<string>(t, "Name")` which fails because `Name` is an owned entity (`OwnsOne(TagName)`), not a scalar shadow property. Changed to `OrderBy(t => t.Name.Value)` to match the pattern used by all other queries in the same repository.
 - **Files changed**: `ProductTagRepository.cs`
@@ -149,11 +149,11 @@
 - **Fix**: `GetByProductIdsAsync` used `productIds.Contains(p.ProductId.Value)` which EF cannot translate because it cannot decompose the value-object accessor inside a `Contains` call. Changed to `productIds.Contains(EF.Property<int>(p, "ProductId"))` to read the mapped column directly.
 - **Files changed**: `PendingStockAdjustmentRepository.cs`
 
-### [KI-008]
+### [KI-008] Unit test assertion library migration — FluentAssertions → AwesomeAssertions ✅
 
 - **Fix**: `AwesomeAssertions` v8.3.0 installed in `ECommerceApp.UnitTests.csproj`. All unit test files use `using AwesomeAssertions;` — zero `using FluentAssertions;` remaining. Integration tests correctly use `Shouldly` (by design). Migration executed ahead of .NET 8+ upgrade.
 - **Files changed**: `ECommerceApp.UnitTests.csproj`, all `*.cs` test files in `ECommerceApp.UnitTests`.
 
 ---
 
-_Last reviewed: 2026-05-05_
+_Last reviewed: 2026-08-26_
