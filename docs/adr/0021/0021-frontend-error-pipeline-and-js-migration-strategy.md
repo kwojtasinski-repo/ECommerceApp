@@ -206,15 +206,15 @@ will already require a rewrite pass.
 
 ## References
 
-- [ADR-0001 — Technology Stack](./0001-project-overview-and-technology-stack.md)
-- [ADR-0022 — Navbar Two-Tier Redesign](./0022-navbar-two-tier-redesign.md)
+- [ADR-0001 — Technology Stack](../0001/0001-project-overview-and-technology-stack.md)
+- [ADR-0022 — Navbar Two-Tier Redesign](../0022/0022-navbar-two-tier-redesign.md)
   _(The navbar redesign is the first large new-code surface governed by the fetch-first
   standard from § 3 of this ADR)_
-- [`ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs`](../../ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs)
-- [`ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs`](../../ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs)
-- [`ECommerceApp.Application/ViewModels/ExceptionResponse.cs`](../../ECommerceApp.Application/ViewModels/ExceptionResponse.cs)
-- [`ECommerceApp.Application/Exceptions/BusinessException.cs`](../../ECommerceApp.Application/Exceptions/BusinessException.cs)
-- [`ECommerceApp.Web/wwwroot/js/errors.js`](../../ECommerceApp.Web/wwwroot/js/errors.js)
-- [`ECommerceApp.Web/wwwroot/js/ajaxRequest.js`](../../ECommerceApp.Web/wwwroot/js/ajaxRequest.js)
-- [`ECommerceApp.Web/wwwroot/js/modalService.js`](../../ECommerceApp.Web/wwwroot/js/modalService.js)
-- [`.github/instructions/frontend-instructions.md`](../../.github/instructions/frontend-instructions.md)
+- [`ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs`](../../../ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs)
+- [`ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs`](../../../ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs)
+- [`ECommerceApp.Application/ViewModels/ExceptionResponse.cs`](../../../ECommerceApp.Application/ViewModels/ExceptionResponse.cs)
+- [`ECommerceApp.Application/Exceptions/BusinessException.cs`](../../../ECommerceApp.Application/Exceptions/BusinessException.cs)
+- [`ECommerceApp.Web/wwwroot/js/errors.js`](../../../ECommerceApp.Web/wwwroot/js/errors.js)
+- [`ECommerceApp.Web/wwwroot/js/ajaxRequest.js`](../../../ECommerceApp.Web/wwwroot/js/ajaxRequest.js)
+- [`ECommerceApp.Web/wwwroot/js/modalService.js`](../../../ECommerceApp.Web/wwwroot/js/modalService.js)
+- [`.github/instructions/frontend.instructions.md`](../../../.github/instructions/frontend.instructions.md)

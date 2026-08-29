@@ -158,13 +158,13 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services;
 ## References
 
 - Related ADRs:
-  - [ADR-0001 — Project Overview and Technology Stack](./0001-project-overview-and-technology-stack.md)
-  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
-  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](./0003-feature-folder-organization-for-new-bounded-context-code.md)
+  - [ADR-0001 — Project Overview and Technology Stack](../0001/0001-project-overview-and-technology-stack.md)
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
+  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../0003/0003-feature-folder-organization-for-new-bounded-context-code.md)
 - Architecture map:
-  - [`docs/architecture/bounded-context-map.md`](../architecture/bounded-context-map.md)
+  - [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md)
 - Instruction files:
-  - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 17
+  - [`.github/instructions/dotnet.instructions.md`](../../../.github/instructions/dotnet.instructions.md) § 17
 - Issues / PRs: <!-- link to PR when raised -->
 - Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 

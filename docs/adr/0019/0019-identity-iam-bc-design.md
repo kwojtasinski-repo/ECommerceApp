@@ -150,9 +150,9 @@ layer via a dedicated read query against `IamDbContext` (read-only, no cross-BC 
 
 ## References
 
-- [ADR-0002 §8 — Bounded context autonomy policy](./0002-post-event-storming-architectural-evolution-strategy.md)
-- [ADR-0013 — Per-BC DbContext Interfaces](./0013-per-bc-dbcontext-interfaces.md)
-- [ADR-0014 — Sales/Orders BC](./0014-sales-orders-bc-design.md) — `Order.User` nav prop removal coordination
+- [ADR-0002 §8 — Bounded context autonomy policy](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
+- [ADR-0013 — Per-BC DbContext Interfaces](../0013/0013-per-bc-dbcontext-interfaces.md)
+- [ADR-0014 — Sales/Orders BC](../0014/0014-sales-orders-bc-design.md) — `Order.User` nav prop removal coordination
 - `ECommerceApp.Infrastructure/Identity/IAM/IamDbContext.cs`
 - `ECommerceApp.Application/Identity/IAM/Services/`
 - `ECommerceApp.Infrastructure/Identity/IAM/Auth/IamFeatureOptions.cs` — `UseIamStore` flag

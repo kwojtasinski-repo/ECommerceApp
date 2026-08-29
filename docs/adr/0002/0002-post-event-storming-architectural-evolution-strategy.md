@@ -154,7 +154,7 @@ Trigger a dedicated architectural review if any of the following are observed:
 ## References
 
 - Related ADRs:
-  - [ADR-0001 — ECommerceApp Project Overview and Technology Stack](./0001-project-overview-and-technology-stack.md)
+  - [ADR-0001 — ECommerceApp Project Overview and Technology Stack](../0001/0001-project-overview-and-technology-stack.md)
   - Planned: ADR-0003 — Selective Event Sourcing for Orders and Payments
   - Planned: ADR-0004 — Saga Orchestration for Order and Payment lifecycle
   - Planned: ADR-0005 — CQRS read model separation
@@ -163,10 +163,10 @@ Trigger a dedicated architectural review if any of the following are observed:
   - Planned: ADR-0008 — Payments domain as explicit state machine
   - Planned: ADR-0009 — Bounded context autonomy enforcement policy
 - Instruction files:
-  - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
-  - [`.github/instructions/efcore-instructions.md`](../../.github/instructions/efcore-instructions.md)
-  - [`.github/instructions/web-api-instructions.md`](../../.github/instructions/web-api-instructions.md)
-  - [`.github/instructions/migration-policy.md`](../../.github/instructions/migration-policy.md)
+  - [`.github/instructions/dotnet.instructions.md`](../../../.github/instructions/dotnet.instructions.md)
+  - [`.github/instructions/efcore.instructions.md`](../../../.github/instructions/efcore.instructions.md)
+  - [`.github/instructions/web-api.instructions.md`](../../../.github/instructions/web-api.instructions.md)
+  - [`.github/instructions/migration-policy.instructions.md`](../../../.github/instructions/migration-policy.instructions.md)
 - Issues / PRs: <!-- link to PR when raised -->
 - Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 

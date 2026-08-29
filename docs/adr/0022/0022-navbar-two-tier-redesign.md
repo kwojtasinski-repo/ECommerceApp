@@ -260,14 +260,14 @@ accessible via its existing in-flow link from order detail pages. Not added to t
 
 ## References
 
-- [ADR-0001 — Technology Stack](./0001-project-overview-and-technology-stack.md)
-- [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](./0021-frontend-error-pipeline-and-js-migration-strategy.md)
+- [ADR-0001 — Technology Stack](../0001/0001-project-overview-and-technology-stack.md)
+- [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](../0021/0021-frontend-error-pipeline-and-js-migration-strategy.md)
   *(This navbar redesign is the first large new-code surface governed by the fetch-first
   standard from ADR-0021 § 3)*
-- [ADR-0011 — Inventory Availability BC Design](./0011-inventory-availability-bc-design.md)
-- [`ECommerceApp.Web/Views/Shared/_Layout.cshtml`](../../ECommerceApp.Web/Views/Shared/_Layout.cshtml)
+- [ADR-0011 — Inventory Availability BC Design](../0011/0011-inventory-availability-bc-design.md)
+- [`ECommerceApp.Web/Views/Shared/_Layout.cshtml`](../../../ECommerceApp.Web/Views/Shared/_Layout.cshtml)
 - ~~[`ECommerceApp.Web/Views/Shared/_LoginPartial.cshtml`]~~ *(deleted — Phase 4 cleanup)*
-- [`ECommerceApp.Application/Inventory/Availability/Services/IStockQueryService.cs`](../../ECommerceApp.Application/Inventory/Availability/Services/IStockQueryService.cs)
-- [`ECommerceApp.Application/Inventory/Availability/Services/StockQueryService.cs`](../../ECommerceApp.Application/Inventory/Availability/Services/StockQueryService.cs)
-- [`ECommerceApp.Web/Controllers/BaseController.cs`](../../ECommerceApp.Web/Controllers/BaseController.cs)
-- [`ECommerceApp.Application/Catalog/Products/Services/ICategoryService.cs`](../../ECommerceApp.Application/Catalog/Products/Services/ICategoryService.cs)
+- [`ECommerceApp.Application/Inventory/Availability/Services/IStockQueryService.cs`](../../../ECommerceApp.Application/Inventory/Availability/Services/IStockQueryService.cs)
+- [`ECommerceApp.Application/Inventory/Availability/Services/StockQueryService.cs`](../../../ECommerceApp.Application/Inventory/Availability/Services/StockQueryService.cs)
+- [`ECommerceApp.Web/Controllers/BaseController.cs`](../../../ECommerceApp.Web/Controllers/BaseController.cs)
+- [`ECommerceApp.Application/Catalog/Products/Services/ICategoryService.cs`](../../../ECommerceApp.Application/Catalog/Products/Services/ICategoryService.cs)

@@ -222,17 +222,17 @@ Legacy registrations are removed only at atomic switch (Step 7 of bc-implementat
 ## References
 
 - Related ADRs:
-  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](0002-post-event-storming-architectural-evolution-strategy.md)
-  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](0003-feature-folder-organization-for-new-bounded-context-code.md)
-  - [ADR-0004 — Module Taxonomy and Bounded Context Grouping](0004-module-taxonomy-and-bounded-context-grouping.md)
-  - [ADR-0006 — Strongly-Typed IDs and Self-Validating Value Objects as Shared Domain Primitives](0006-typedid-and-value-objects-as-shared-domain-primitives.md)
-  - [ADR-0007 — Catalog BC: Product, Category and Tag Aggregate Design](0007-catalog-bc-product-category-tag-aggregate-design.md)
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
+  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../0003/0003-feature-folder-organization-for-new-bounded-context-code.md)
+  - [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../0004/0004-module-taxonomy-and-bounded-context-grouping.md)
+  - [ADR-0006 — Strongly-Typed IDs and Self-Validating Value Objects as Shared Domain Primitives](../0006/0006-typedid-and-value-objects-as-shared-domain-primitives.md)
+  - [ADR-0007 — Catalog BC: Product, Category and Tag Aggregate Design](../0007/0007-catalog-bc-product-category-tag-aggregate-design.md)
 - Instruction files:
-  - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) §7, §13, §15, §16, §17
-  - [`.github/instructions/efcore-instructions.md`](../../.github/instructions/efcore-instructions.md)
-  - [`.github/instructions/testing-instructions.md`](../../.github/instructions/testing-instructions.md)
-  - [`.github/instructions/migration-policy.md`](../../.github/instructions/migration-policy.md)
-- BC map: [`docs/architecture/bounded-context-map.md`](../architecture/bounded-context-map.md)
+  - [`.github/instructions/dotnet.instructions.md`](../../../.github/instructions/dotnet.instructions.md) §7, §13, §15, §16, §17
+  - [`.github/instructions/efcore.instructions.md`](../../../.github/instructions/efcore.instructions.md)
+  - [`.github/instructions/testing.instructions.md`](../../../.github/instructions/testing.instructions.md)
+  - [`.github/instructions/migration-policy.instructions.md`](../../../.github/instructions/migration-policy.instructions.md)
+- BC map: [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md)
 - Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 
 ## Reviewers

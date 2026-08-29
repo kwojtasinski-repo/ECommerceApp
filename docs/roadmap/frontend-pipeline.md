@@ -1,6 +1,6 @@
 # Roadmap: Frontend Error Pipeline & JS Migration
 
-> ADR: [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md)
+> ADR: [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](../adr/0021/0021-frontend-error-pipeline-and-js-migration-strategy.md)
 > Status: ⬜ Not started
 
 ---
@@ -91,4 +91,4 @@ This phase cannot start until a Bootstrap 5 upgrade ADR is accepted. That ADR mu
 
 ---
 
-*Last reviewed: 2026-03-12 · ADR: [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md)*
+*Last reviewed: 2026-03-12 · ADR: [ADR-0021](../adr/0021/0021-frontend-error-pipeline-and-js-migration-strategy.md)*

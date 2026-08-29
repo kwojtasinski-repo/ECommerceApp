@@ -1,6 +1,6 @@
 ﻿# Roadmap: Identity/IAM — Refresh Token Feature
 
-> ADR: [ADR-0019](../adr/0019-identity-iam-bc-design.md) — Identity/IAM BC Design (amendment pending — see note below)
+> ADR: [ADR-0019](../adr/0019/0019-identity-iam-bc-design.md) — Identity/IAM BC Design (amendment pending — see note below)
 > Status: ✅ Complete — Steps 1–8 ✅ done (2026-05-28); `ExpiredRefreshTokenCleanupJob` deferred (optional, low priority)
 > **Fits inside**: IAM BC — implement before or alongside `iam-atomic-switch.md` Step 2
 

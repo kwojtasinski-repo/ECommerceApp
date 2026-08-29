@@ -1,6 +1,6 @@
 # Roadmap: Sales/Payments BC — DB Migrations + Atomic Switch
 
-> ADR: [ADR-0015](../adr/0015-sales-payments-bc-design.md) — Sales/Payments BC Design
+> ADR: [ADR-0015](../adr/0015/0015-sales-payments-bc-design.md) — Sales/Payments BC Design
 > Status: ✅ Switch live — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved; cleanup Step 5 ✅, Step 6 ✅ (2026-08-17)
 > **Unblocked by**: Sales/Orders atomic switch ✅ complete
 
@@ -51,7 +51,7 @@ implementations before the legacy `PaymentHandler` is removed.
 
 ### Step 3 — Activate new services (controller swap)
 
-> Routing strategy: [ADR-0024](../adr/0024-controller-routing-strategy.md)
+> Routing strategy: [ADR-0024](../adr/0024/0024-controller-routing-strategy.md)
 > - **Web**: New `Areas/Sales/Controllers/PaymentsController.cs` with `[Area("Sales")]`. Legacy `PaymentController` stays active.
 > - **API**: In-place swap on existing payment endpoints.
 >
@@ -141,4 +141,4 @@ suites green after the change.
 
 ---
 
-*Last reviewed: 2026-08-17 · ADRs: [ADR-0015](../adr/0015-sales-payments-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*
+*Last reviewed: 2026-08-17 · ADRs: [ADR-0015](../adr/0015/0015-sales-payments-bc-design.md), [ADR-0024](../adr/0024/0024-controller-routing-strategy.md)*

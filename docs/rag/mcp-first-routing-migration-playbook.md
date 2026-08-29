@@ -768,7 +768,7 @@ Three follow-ups documented but not implemented:
 
 ### What the case study confirms
 
-- The **single-source-of-truth pattern** (Phase 1) is the most important hour of the rollout. Every later phase becomes a one-line pointer (`[mcp-routing.instructions.md](mcp-routing.instructions.md)`), so future rule changes happen in **one** place rather than fanning out across 20+ files.
+- The **single-source-of-truth pattern** (Phase 1) is the most important hour of the rollout. Every later phase becomes a one-line pointer (`[mcp-routing.instructions.md](../../.github/instructions/mcp-routing.instructions.md)`), so future rule changes happen in **one** place rather than fanning out across 20+ files.
 - "**NEVER call both MCPs for the same atomic intent**" is the rule that pays for itself fastest — without it, agents will happily call `query_docs` AND `ctx_execute_file` for the same ADR "just to be thorough" and double the context cost.
 - A **dormant** MCP can be wired with full precedence rules ahead of activation, as long as every reference carries an "applies once <hooks land>" gating clause. This decouples docs work from infra work.
 - **Verifier-must-not-use-MCPs** is the exception that proves the rule. Mark it explicitly in the agent file _and_ in the pipeline orchestrator (`AGENT-PIPELINE.md` MCP column) — agents will ignore one or the other if the rule lives in only one place.

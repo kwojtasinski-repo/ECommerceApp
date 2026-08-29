@@ -1,6 +1,6 @@
 # Roadmap: Presale/Checkout — Slice 2
 
-> ADR: [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 (formal amendment — not a separate ADR)
+> ADR: [ADR-0012](../adr/0012/0012-presale-checkout-bc-design.md) §11–14 (formal amendment — not a separate ADR)
 > Status: ✅ Switch live
 > ~~**Blocked by**: Sales/Orders BC implementation below 80%~~ — Orders switch is live
 
@@ -116,4 +116,4 @@ If `NoSoftReservations` is returned, the user's cart is still intact; they only 
 
 ---
 
-*Last reviewed: 2026-03-26 · ADR: [ADR-0012 §11–14](../adr/0012-presale-checkout-bc-design.md)*
+*Last reviewed: 2026-03-26 · ADR: [ADR-0012 §11–14](../adr/0012/0012-presale-checkout-bc-design.md)*

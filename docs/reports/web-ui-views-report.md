@@ -356,7 +356,7 @@ Replaced by inline `Email` + `PhoneNumber` fields on `UserProfile`.
 
 ## References
 
-- [endpoint-map.md](endpoint-map.md) — post-switch target route definitions
-- [ADR-0007 — Catalog BC](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
-- [ADR-0005 — AccountProfile BC](../adr/0005-accountprofile-bc-userprofile-aggregate-design.md)
-- [ADR-0017 — Sales/Fulfillment BC](../adr/0017-sales-fulfillment-bc-design.md)
+- [endpoint-map.md](../reference/endpoint-map.md) — post-switch target route definitions
+- [ADR-0007 — Catalog BC](../adr/0007/0007-catalog-bc-product-category-tag-aggregate-design.md)
+- [ADR-0005 — AccountProfile BC](../adr/0005/0005-accountprofile-bc-userprofile-aggregate-design.md)
+- [ADR-0017 — Sales/Fulfillment BC](../adr/0017/0017-sales-fulfillment-bc-design.md)

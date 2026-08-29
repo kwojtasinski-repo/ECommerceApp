@@ -3,7 +3,8 @@
 > Domain: Presale Checkout + Sales Orders integration
 > Status: Draft
 > Last verified: 2026-06-05
-> Governing ADRs: [docs/adr/0012/0012-presale-checkout-bc-design.md](docs/adr/0012/0012-presale-checkout-bc-design.md), [docs/adr/0014/0014-sales-orders-bc-design.md](docs/adr/0014/0014-sales-orders-bc-design.md)
+> Governing ADRs: [0012/0012-presale-checkout-bc-design.md](../adr/0012/0012-presale-checkout-bc-design.md), [0014/0014-sales-orders-bc-design.md](../adr/0014/0014-sales-orders-bc-design.md)
+> Visual flow: [orders-checkout.md](../../assets/diagrams/flows/orders-checkout.md)
 
 ---
 

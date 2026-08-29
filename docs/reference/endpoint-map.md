@@ -2,7 +2,8 @@
 
 > **Reference document.** Lists every HTTP endpoint that will exist **after all BC atomic switches are complete.**
 > Legacy endpoints (pre-switch) are not listed. Deleted endpoints are noted where the contrast matters.
-> Routing strategy authority: [ADR-0024](../adr/0024-controller-routing-strategy.md).
+> Routing strategy authority: [ADR-0024](../adr/0024/0024-controller-routing-strategy.md).
+> Trusted purchase policy: [ADR-0025](../adr/0025/0025-api-tiered-access-trusted-purchase-policy.md).
 > Last updated: 2026-03-27 (initial draft — pre-switch)
 
 ---
@@ -257,7 +258,7 @@ Web .cshtml views reference images as img src="/api/images/{id}" loading="lazy".
 
 > **V2 replacement:** `api/v2/cart` → `api/cart`, `api/v2/checkout` → `api/checkout`, `api/v2/orders` → `api/orders`, `api/v2/payments` → `api/payments`. No `api/v2/` prefix in the final state — V2 controllers are fully replaced.
 > **Philosophy:** API is client-facing only. Admin operations have no API counterpart — they are Web-only.
-> `[Auth]` = `[Authorize]`. `[Maint]` = `[Authorize(Roles = MaintenanceRole)]`. `[Trusted]` = TrustedApiUser policy (authenticated + `api:purchase` claim OR Service/Manager/Administrator role). See [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md).
+> `[Auth]` = `[Authorize]`. `[Maint]` = `[Authorize(Roles = MaintenanceRole)]`. `[Trusted]` = TrustedApiUser policy (authenticated + `api:purchase` claim OR Service/Manager/Administrator role). See [ADR-0025](../adr/0025/0025-api-tiered-access-trusted-purchase-policy.md).
 
 ---
 
@@ -390,9 +391,10 @@ Web .cshtml views reference images as img src="/api/images/{id}" loading="lazy".
 
 ## References
 
-- [ADR-0024 — Controller Routing Strategy](../adr/0024-controller-routing-strategy.md)
-- [ADR-0005 — AccountProfile BC](../adr/0005-accountprofile-bc-userprofile-aggregate-design.md)
-- [ADR-0007 — Catalog BC](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
-- [ADR-0008 — Currencies BC](../adr/0008-supporting-currencies-bc-design.md)
-- [ADR-0016 — Sales/Coupons BC](../adr/0016-sales-coupons-bc-design.md)
-- [ADR-0017 — Sales/Fulfillment BC](../adr/0017-sales-fulfillment-bc-design.md)
+- [ADR-0024 — Controller Routing Strategy](../adr/0024/0024-controller-routing-strategy.md)
+- [ADR-0025 — API Tiered Access: Trusted Purchase Policy](../adr/0025/0025-api-tiered-access-trusted-purchase-policy.md)
+- [ADR-0005 — AccountProfile BC](../adr/0005/0005-accountprofile-bc-userprofile-aggregate-design.md)
+- [ADR-0007 — Catalog BC](../adr/0007/0007-catalog-bc-product-category-tag-aggregate-design.md)
+- [ADR-0008 — Currencies BC](../adr/0008/0008-supporting-currencies-bc-design.md)
+- [ADR-0016 — Sales/Coupons BC](../adr/0016/0016-sales-coupons-bc-design.md)
+- [ADR-0017 — Sales/Fulfillment BC](../adr/0017/0017-sales-fulfillment-bc-design.md)

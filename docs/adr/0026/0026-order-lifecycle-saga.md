@@ -29,7 +29,7 @@ There is no saga state record — failure leaves only application logs as breadc
 This decision records how we address the highest-risk gap (partial failure after `OrderPlaced`
 fan-out) in a way consistent with the existing choreography infrastructure.
 
-See also: [`docs/roadmap/saga-pattern.md`](../roadmap/saga-pattern.md) for the full analysis,
+See also: [`roadmap/saga-pattern.md`](../../roadmap/saga-pattern.md) for the full analysis,
 gap inventory, and sequencing plan.
 
 ## Decision
@@ -85,7 +85,7 @@ returns `PlaceOrderResult.PlacementFailed(orderId)`.
 - **Option B — Process Manager / OrderLifecycleSaga**: deferred. Requires a new `sales.OrderSagas`
   table, a `SagaCorrelationId` on every message, and an Outbox pattern for reliable delivery.
   Evaluate after F4 (handler chain refactoring) and Outbox are complete. See
-  [`docs/roadmap/saga-pattern.md`](../roadmap/saga-pattern.md) §Option B.
+  [`roadmap/saga-pattern.md`](../../roadmap/saga-pattern.md) §Option B.
 
 - **Status quo (timeout-based safety net only)**: the existing `SoftReservationExpiredJob` sweeper
   handles some cases but is a timeout, not a compensating transaction. Orphaned Payment records

@@ -172,14 +172,14 @@ hidden behind a custom interface.
 
 ## References
 
-- [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy §8](0002-post-event-storming-architectural-evolution-strategy.md)
-- [ADR-0004 — Module Taxonomy and Bounded Context Grouping](0004-module-taxonomy-and-bounded-context-grouping.md)
-- [ADR-0007 — Catalog BC Design](0007-catalog-bc-product-category-tag-aggregate-design.md)
-- [ADR-0008 — Currencies BC Design](0008-supporting-currencies-bc-design.md)
-- [ADR-0009 — TimeManagement BC Design](0009-supporting-timemanagement-bc-design.md)
-- [ADR-0011 — Inventory/Availability BC Design](0011-inventory-availability-bc-design.md)
-- [ADR-0012 — Presale/Checkout BC Design](0012-presale-checkout-bc-design.md)
-- [Bounded Context Map](../architecture/bounded-context-map.md)
+- [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy §8](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
+- [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../0004/0004-module-taxonomy-and-bounded-context-grouping.md)
+- [ADR-0007 — Catalog BC Design](../0007/0007-catalog-bc-product-category-tag-aggregate-design.md)
+- [ADR-0008 — Currencies BC Design](../0008/0008-supporting-currencies-bc-design.md)
+- [ADR-0009 — TimeManagement BC Design](../0009/0009-supporting-timemanagement-bc-design.md)
+- [ADR-0011 — Inventory/Availability BC Design](../0011/0011-inventory-availability-bc-design.md)
+- [ADR-0012 — Presale/Checkout BC Design](../0012/0012-presale-checkout-bc-design.md)
+- [Bounded Context Map](../../architecture/bounded-context-map.md)
 - Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 
 ## Reviewers

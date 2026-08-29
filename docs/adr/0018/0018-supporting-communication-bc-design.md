@@ -159,9 +159,9 @@ receives their own notifications.
 
 ## References
 
-- [ADR-0002 §2](./0002-post-event-storming-architectural-evolution-strategy.md) — async event-driven direction
-- [ADR-0010 — In-Memory Message Broker](./0010-in-memory-message-broker-for-cross-bc-communication.md)
-- [ADR-0014 — Sales/Orders BC](./0014-sales-orders-bc-design.md) — source of `OrderPlaced`, `OrderCancelled`
-- [ADR-0015 — Sales/Payments BC](./0015-sales-payments-bc-design.md) — source of `PaymentConfirmed`, `PaymentExpired`
-- [ADR-0016 — Sales/Coupons BC](./0016-sales-coupons-bc-design.md) — future source of `CouponExpired`
-- [ADR-0017 — Sales/Fulfillment BC](./0017-sales-fulfillment-bc-design.md) — source of `RefundApproved`, `RefundRejected`
+- [ADR-0002 §2](../0002/0002-post-event-storming-architectural-evolution-strategy.md) — async event-driven direction
+- [ADR-0010 — In-Memory Message Broker](../0010/0010-in-memory-message-broker-for-cross-bc-communication.md)
+- [ADR-0014 — Sales/Orders BC](../0014/0014-sales-orders-bc-design.md) — source of `OrderPlaced`, `OrderCancelled`
+- [ADR-0015 — Sales/Payments BC](../0015/0015-sales-payments-bc-design.md) — source of `PaymentConfirmed`, `PaymentExpired`
+- [ADR-0016 — Sales/Coupons BC](../0016/0016-sales-coupons-bc-design.md) — future source of `CouponExpired`
+- [ADR-0017 — Sales/Fulfillment BC](../0017/0017-sales-fulfillment-bc-design.md) — source of `RefundApproved`, `RefundRejected`

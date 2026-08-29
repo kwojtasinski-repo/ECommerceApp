@@ -286,9 +286,9 @@ the following agreed design applies:
 
 ## References
 
-- [ADR-0014](0014-sales-orders-bc-design.md) — Sales/Orders BC Design
-- [ADR-0015](0015-sales-payments-bc-design.md) — Sales/Payments BC Design
-- [Orders atomic switch roadmap](../roadmap/orders-atomic-switch.md)
-- [Payments atomic switch roadmap](../roadmap/payments-atomic-switch.md)
-- [Bounded context map](../architecture/bounded-context-map.md)
+- [ADR-0014](../0014/0014-sales-orders-bc-design.md) — Sales/Orders BC Design
+- [ADR-0015](../0015/0015-sales-payments-bc-design.md) — Sales/Payments BC Design
+- [Orders atomic switch roadmap](../../roadmap/orders-atomic-switch.md)
+- [Payments atomic switch roadmap](../../roadmap/payments-atomic-switch.md)
+- [Bounded context map](../../architecture/bounded-context-map.md)
 - [ASP.NET Core Areas documentation](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/areas)

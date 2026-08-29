@@ -37,5 +37,5 @@ describing context-mode as an active dependency.
 
 - [ADR-0029 README](./README.md)
 - [ADR-0029 Amendment 1](./amendments/0029-001-host-side-rag-auto-cache.md)
-- [ADR-0028](../0028/)
+- [ADR-0028](../0028/README.md)
 - [ADR-0031](../0031/0031-structural-knowledge-graph.md)

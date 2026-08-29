@@ -302,11 +302,11 @@ All publisher call sites (`_messageBroker.PublishAsync(...)`) and all handler im
 
 ## References
 
-- [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
-- [ADR-0004 — Module Taxonomy and Bounded Context Grouping](./0004-module-taxonomy-and-bounded-context-grouping.md)
-- [ADR-0009 — Supporting/TimeManagement BC Design](./0009-supporting-timemanagement-bc-design.md) (first consumer)
-- [`docs/architecture/bounded-context-map.md`](../architecture/bounded-context-map.md)
-- [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
+- [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
+- [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../0004/0004-module-taxonomy-and-bounded-context-grouping.md)
+- [ADR-0009 — Supporting/TimeManagement BC Design](../0009/0009-supporting-timemanagement-bc-design.md) (first consumer)
+- [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md)
+- [`.github/instructions/dotnet.instructions.md`](../../../.github/instructions/dotnet.instructions.md)
 
 ## Reviewers
 

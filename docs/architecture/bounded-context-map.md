@@ -1,22 +1,22 @@
 ﻿﻿﻿# Bounded Context Map — ECommerceApp
 
 > **Living document.** Update this map when BC boundaries change or new ADRs are accepted.
-> Strategic direction: [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
-> Module taxonomy: [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../adr/0004-module-taxonomy-and-bounded-context-grouping.md)
-> Folder organization: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
-> Catalog BC design: [ADR-0007 — Catalog BC — Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
-> Currencies BC design: [ADR-0008 — Supporting/Currencies BC — Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
-> TimeManagement BC design: [ADR-0009 — Supporting/TimeManagement BC — Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
-> Inventory BC design: [ADR-0011 — Inventory/Availability BC Design](../adr/0011-inventory-availability-bc-design.md)
-> Presale/Checkout BC design: [ADR-0012 — Presale/Checkout BC Design](../adr/0012-presale-checkout-bc-design.md)
-> Payments BC design: [ADR-0015 — Sales/Payments BC Design](../adr/0015-sales-payments-bc-design.md)
-> Per-BC DbContext interfaces: [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013-per-bc-dbcontext-interfaces.md)
-> Sales/Orders BC design: [ADR-0014 — Sales/Orders BC — Order and OrderItem Aggregate Design](../adr/0014-sales-orders-bc-design.md)
-> Coupons BC design: [ADR-0016 — Sales/Coupons BC Design](../adr/0016-sales-coupons-bc-design.md)
-> Fulfillment BC design: [ADR-0017 — Sales/Fulfillment BC Design](../adr/0017-sales-fulfillment-bc-design.md)
-> Communication BC design: [ADR-0018 — Supporting/Communication BC — Customer Notification Design](../adr/0018-supporting-communication-bc-design.md)
-> Identity/IAM BC design: [ADR-0019 — Identity/IAM BC — Standalone Design and Atomic Switch Plan](../adr/0019-identity-iam-bc-design.md)
-> Backoffice BC design: [ADR-0020 — Backoffice BC — Admin Aggregation and Reporting Design](../adr/0020-backoffice-bc-design.md)
+> Strategic direction: [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002/0002-post-event-storming-architectural-evolution-strategy.md)
+> Module taxonomy: [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../adr/0004/0004-module-taxonomy-and-bounded-context-grouping.md)
+> Folder organization: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../adr/0003/0003-feature-folder-organization-for-new-bounded-context-code.md)
+> Catalog BC design: [ADR-0007 — Catalog BC — Product, Category and Tag Aggregate Design](../adr/0007/0007-catalog-bc-product-category-tag-aggregate-design.md)
+> Currencies BC design: [ADR-0008 — Supporting/Currencies BC — Currency and CurrencyRate Aggregate Design](../adr/0008/0008-supporting-currencies-bc-design.md)
+> TimeManagement BC design: [ADR-0009 — Supporting/TimeManagement BC — Scheduled and Deferred Job Design](../adr/0009/0009-supporting-timemanagement-bc-design.md)
+> Inventory BC design: [ADR-0011 — Inventory/Availability BC Design](../adr/0011/0011-inventory-availability-bc-design.md)
+> Presale/Checkout BC design: [ADR-0012 — Presale/Checkout BC Design](../adr/0012/0012-presale-checkout-bc-design.md)
+> Payments BC design: [ADR-0015 — Sales/Payments BC Design](../adr/0015/0015-sales-payments-bc-design.md)
+> Per-BC DbContext interfaces: [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013/0013-per-bc-dbcontext-interfaces.md)
+> Sales/Orders BC design: [ADR-0014 — Sales/Orders BC — Order and OrderItem Aggregate Design](../adr/0014/0014-sales-orders-bc-design.md)
+> Coupons BC design: [ADR-0016 — Sales/Coupons BC Design](../adr/0016/0016-sales-coupons-bc-design.md)
+> Fulfillment BC design: [ADR-0017 — Sales/Fulfillment BC Design](../adr/0017/0017-sales-fulfillment-bc-design.md)
+> Communication BC design: [ADR-0018 — Supporting/Communication BC — Customer Notification Design](../adr/0018/0018-supporting-communication-bc-design.md)
+> Identity/IAM BC design: [ADR-0019 — Identity/IAM BC — Standalone Design and Atomic Switch Plan](../adr/0019/0019-identity-iam-bc-design.md)
+> Backoffice BC design: [ADR-0020 — Backoffice BC — Admin Aggregation and Reporting Design](../adr/0020/0020-backoffice-bc-design.md)
 
 ---
 
@@ -223,22 +223,22 @@ The parallel-change migration is complete. Every BC has been implemented and swi
 
 | BC                                                                               | ADRs                                                                                                                                                        | State                                                                                                                           |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Identity / IAM**                                                               | [ADR-0019](../adr/0019-identity-iam-bc-design.md)                                                                                                           | ✅ Switch complete — `Context` → `DbContext`, `Domain.Model.ApplicationUser` deleted, legacy controllers/services/repos deleted |
-| **AccountProfile**                                                               | [ADR-0005](../adr/0005-accountprofile-bc-userprofile-aggregate-design.md), [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | ✅ Switch live — `ProfileController` in `Areas/AccountProfile`; legacy deleted                                                  |
-| **Catalog**                                                                      | [ADR-0007](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)                                                                                 | ✅ Switch live — `ProductController`/`CategoryController`/`TagController`/`ImageController` in `Areas/Catalog`; legacy deleted  |
-| **Currencies**                                                                   | [ADR-0008](../adr/0008-supporting-currencies-bc-design.md)                                                                                                  | ✅ Switch live — `CurrencyController` in `Areas/Currencies`; legacy deleted                                                     |
-| **Shared domain primitives** (`TypedId<T>`, `Price`, `Money`, `DomainException`) | [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md)                                                                            | ✅ Complete                                                                                                                     |
-| **Supporting/TimeManagement**                                                    | [ADR-0009](../adr/0009-supporting-timemanagement-bc-design.md)                                                                                              | ✅ Switch complete — `JobManagementController` in `Areas/Jobs`; `CurrencyRateSyncTask` uses new BC                              |
-| **Inventory/Availability**                                                       | [ADR-0011](../adr/0011-inventory-availability-bc-design.md)                                                                                                 | ✅ Switch live — `StockController` in `Areas/Inventory`; legacy deleted                                                         |
-| **Presale/Checkout (Slice 1 + 2)**                                               | [ADR-0012](../adr/0012-presale-checkout-bc-design.md)                                                                                                       | ✅ Switch live — Slice 2 complete; EC-001 decision documented                                                                   |
-| **Messaging infrastructure**                                                     | [ADR-0010](../adr/0010-in-memory-message-broker-for-cross-bc-communication.md)                                                                              | ✅ Active — all BCs integrated; Order Placement Saga (Option A) live                                                            |
-| **Sales/Orders**                                                                 | [ADR-0014](../adr/0014-sales-orders-bc-design.md)                                                                                                           | ✅ Switch live — `OrderController` in `Areas/Sales`; legacy deleted                                                             |
-| **Sales/Payments**                                                               | [ADR-0015](../adr/0015-sales-payments-bc-design.md)                                                                                                         | ✅ Switch live — `PaymentController` in `Areas/Sales`; legacy deleted                                                           |
-| **Sales/Coupons (Slice 1 + 2)**                                                  | [ADR-0016](../adr/0016-sales-coupons-bc-design.md)                                                                                                          | ✅ Switch live — rules engine, `CouponApplicationRecord` audit, `CouponController` in `Areas/Sales`; legacy deleted             |
-| **Sales/Fulfillment (Slice 1 + 2)**                                              | [ADR-0017](../adr/0017-sales-fulfillment-bc-design.md)                                                                                                      | ✅ Switch live — `RefundController` + `ShipmentController` in `Areas/Sales`; legacy deleted                                     |
-| **Supporting/Communication**                                                     | [ADR-0018](../adr/0018-supporting-communication-bc-design.md)                                                                                               | ✅ Complete — 7 handlers, `LoggingNotificationService` stub, `AddCommunicationServices()` DI                                    |
-| **Backoffice**                                                                   | [ADR-0020](../adr/0020-backoffice-bc-design.md)                                                                                                             | ✅ Switch live — 9 services, 9 controllers, 21 views in `Areas/Backoffice`; 58 unit tests                                       |
-| **Per-BC DbContext interfaces**                                                  | [ADR-0013](../adr/0013-per-bc-dbcontext-interfaces.md)                                                                                                      | ✅ Complete — 10 interfaces, 27 repos updated, DI aliases registered                                                            |
+| **Identity / IAM**                                                               | [ADR-0019](../adr/0019/0019-identity-iam-bc-design.md)                                                                                                      | ✅ Switch complete — `Context` → `DbContext`, `Domain.Model.ApplicationUser` deleted, legacy controllers/services/repos deleted |
+| **AccountProfile**                                                               | [ADR-0005](../adr/0005/0005-accountprofile-bc-userprofile-aggregate-design.md), [ADR-0006](../adr/0006/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | ✅ Switch live — `ProfileController` in `Areas/AccountProfile`; legacy deleted                                                  |
+| **Catalog**                                                                      | [ADR-0007](../adr/0007/0007-catalog-bc-product-category-tag-aggregate-design.md)                                                                            | ✅ Switch live — `ProductController`/`CategoryController`/`TagController`/`ImageController` in `Areas/Catalog`; legacy deleted  |
+| **Currencies**                                                                   | [ADR-0008](../adr/0008/0008-supporting-currencies-bc-design.md)                                                                                            | ✅ Switch live — `CurrencyController` in `Areas/Currencies`; legacy deleted                                                     |
+| **Shared domain primitives** (`TypedId<T>`, `Price`, `Money`, `DomainException`) | [ADR-0006](../adr/0006/0006-typedid-and-value-objects-as-shared-domain-primitives.md)                                                                       | ✅ Complete                                                                                                                     |
+| **Supporting/TimeManagement**                                                    | [ADR-0009](../adr/0009/0009-supporting-timemanagement-bc-design.md)                                                                                         | ✅ Switch complete — `JobManagementController` in `Areas/Jobs`; `CurrencyRateSyncTask` uses new BC                              |
+| **Inventory/Availability**                                                       | [ADR-0011](../adr/0011/0011-inventory-availability-bc-design.md)                                                                                            | ✅ Switch live — `StockController` in `Areas/Inventory`; legacy deleted                                                         |
+| **Presale/Checkout (Slice 1 + 2)**                                               | [ADR-0012](../adr/0012/0012-presale-checkout-bc-design.md)                                                                                                  | ✅ Switch live — Slice 2 complete; EC-001 decision documented                                                                   |
+| **Messaging infrastructure**                                                     | [ADR-0010](../adr/0010/0010-in-memory-message-broker-for-cross-bc-communication.md)                                                                         | ✅ Active — all BCs integrated; Order Placement Saga (Option A) live                                                            |
+| **Sales/Orders**                                                                 | [ADR-0014](../adr/0014/0014-sales-orders-bc-design.md)                                                                                                      | ✅ Switch live — `OrderController` in `Areas/Sales`; legacy deleted                                                             |
+| **Sales/Payments**                                                               | [ADR-0015](../adr/0015/0015-sales-payments-bc-design.md)                                                                                                    | ✅ Switch live — `PaymentController` in `Areas/Sales`; legacy deleted                                                           |
+| **Sales/Coupons (Slice 1 + 2)**                                                  | [ADR-0016](../adr/0016/0016-sales-coupons-bc-design.md)                                                                                                     | ✅ Switch live — rules engine, `CouponApplicationRecord` audit, `CouponController` in `Areas/Sales`; legacy deleted             |
+| **Sales/Fulfillment (Slice 1 + 2)**                                              | [ADR-0017](../adr/0017/0017-sales-fulfillment-bc-design.md)                                                                                                 | ✅ Switch live — `RefundController` + `ShipmentController` in `Areas/Sales`; legacy deleted                                     |
+| **Supporting/Communication**                                                     | [ADR-0018](../adr/0018/0018-supporting-communication-bc-design.md)                                                                                          | ✅ Complete — 7 handlers, `LoggingNotificationService` stub, `AddCommunicationServices()` DI                                    |
+| **Backoffice**                                                                   | [ADR-0020](../adr/0020/0020-backoffice-bc-design.md)                                                                                                        | ✅ Switch live — 9 services, 9 controllers, 21 views in `Areas/Backoffice`; 58 unit tests                                       |
+| **Per-BC DbContext interfaces**                                                  | [ADR-0013](../adr/0013/0013-per-bc-dbcontext-interfaces.md)                                                                                                 | ✅ Complete — 10 interfaces, 27 repos updated, DI aliases registered                                                            |
 
 ---
 
@@ -247,9 +247,9 @@ The parallel-change migration is complete. Every BC has been implemented and swi
 | Task                                                                                                    | ADR                                                                          | Status                                                                                                                                                       |
 | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **`Context.cs` removal** — empty legacy `DbContext`; blocked by EF migration history                    | —                                                                            | ⬜ Deferred — cannot remove until old EF migrations are consolidated; test infra `BaseTest<T>` depends on it                                                 |
-| **Storefront §3 — category strip** (`ByCategory` query + view + UI strip)                               | [ADR-0012](../adr/0012-presale-checkout-bc-design.md)                        | ✅ Done — `ICatalogNavigationService` injected in `StorefrontController`; category badge strip in `Index.cshtml`                                             |
+| **Storefront §3 — category strip** (`ByCategory` query + view + UI strip)                               | [ADR-0012](../adr/0012/0012-presale-checkout-bc-design.md)                   | ✅ Done — `ICatalogNavigationService` injected in `StorefrontController`; category badge strip in `Index.cshtml`                                             |
 | **Chunked upload V2 (TUS)** — replace V1 `UploadSessionStore` with `tusdotnet` + `tus-js-client`        | —                                                                            | ⬜ Not started — V1 (`ChunkedUploadService`) is live                                                                                                         |
-| **Frontend error pipeline phases**                                                                      | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete                                                                                                                                        |
+| **Frontend error pipeline phases**                                                                      | [ADR-0021](../adr/0021/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete                                                                                                                                    |
 | **`IOrderExistenceChecker` contract deduplication** — defined in both Coupons and Fulfillment Contracts | —                                                                            | ✅ Done — interface fully deleted; `Application/Sales/Shared/` folder removed; replaced by `IModuleClient.SendAsync(new OrderExistsQuery(...))` (2026-05-10) |
 
 ---
@@ -260,29 +260,29 @@ All BCs have accepted ADRs. No coverage gaps remain.
 
 | BC                           | ADR                                                              |
 | ---------------------------- | ---------------------------------------------------------------- |
-| **Supporting/Communication** | [ADR-0018](../adr/0018-supporting-communication-bc-design.md) ✅ |
-| **Identity / IAM**           | [ADR-0019](../adr/0019-identity-iam-bc-design.md) ✅             |
-| **Backoffice**               | [ADR-0020](../adr/0020-backoffice-bc-design.md) ✅               |
-| **Currencies**               | [ADR-0008](../adr/0008-supporting-currencies-bc-design.md) ✅    |
+| **Supporting/Communication** | [ADR-0018](../adr/0018/0018-supporting-communication-bc-design.md) ✅ |
+| **Identity / IAM**           | [ADR-0019](../adr/0019/0019-identity-iam-bc-design.md) ✅             |
+| **Backoffice**               | [ADR-0020](../adr/0020/0020-backoffice-bc-design.md) ✅               |
+| **Currencies**               | [ADR-0008](../adr/0008/0008-supporting-currencies-bc-design.md) ✅    |
 
 ---
 
 ## References
 
-- [ADR-0001 — Project Overview and Technology Stack](../adr/0001-project-overview-and-technology-stack.md)
-- [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
-- [ADR-0005 — AccountProfile BC: UserProfile Aggregate Design](../adr/0005-accountprofile-bc-userprofile-aggregate-design.md)
-- [ADR-0006 — Strongly-Typed IDs and Self-Validating Value Objects as Shared Domain Primitives](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md)
-- [ADR-0007 — Catalog BC: Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
-- [ADR-0008 — Supporting/Currencies BC: Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
-- [ADR-0009 — Supporting/TimeManagement BC: Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
-- [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013-per-bc-dbcontext-interfaces.md)
-- [ADR-0014 — Sales/Orders BC: Order and OrderItem Aggregate Design](../adr/0014-sales-orders-bc-design.md)
-- [ADR-0015 — Sales/Payments BC Design](../adr/0015-sales-payments-bc-design.md)
-- [ADR-0016 — Sales/Coupons BC Design](../adr/0016-sales-coupons-bc-design.md)
-- [ADR-0017 — Sales/Fulfillment BC Design](../adr/0017-sales-fulfillment-bc-design.md)
-- [ADR-0018 — Supporting/Communication BC: Customer Notification Design](../adr/0018-supporting-communication-bc-design.md)
-- [ADR-0019 — Identity/IAM BC: Standalone Design and Atomic Switch Plan](../adr/0019-identity-iam-bc-design.md)
-- [ADR-0020 — Backoffice BC: Admin Aggregation and Reporting Design](../adr/0020-backoffice-bc-design.md)
-- [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md)
-- [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 16
+- [ADR-0001 — Project Overview and Technology Stack](../adr/0001/0001-project-overview-and-technology-stack.md)
+- [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002/0002-post-event-storming-architectural-evolution-strategy.md)
+- [ADR-0005 — AccountProfile BC: UserProfile Aggregate Design](../adr/0005/0005-accountprofile-bc-userprofile-aggregate-design.md)
+- [ADR-0006 — Strongly-Typed IDs and Self-Validating Value Objects as Shared Domain Primitives](../adr/0006/0006-typedid-and-value-objects-as-shared-domain-primitives.md)
+- [ADR-0007 — Catalog BC: Product, Category and Tag Aggregate Design](../adr/0007/0007-catalog-bc-product-category-tag-aggregate-design.md)
+- [ADR-0008 — Supporting/Currencies BC: Currency and CurrencyRate Aggregate Design](../adr/0008/0008-supporting-currencies-bc-design.md)
+- [ADR-0009 — Supporting/TimeManagement BC: Scheduled and Deferred Job Design](../adr/0009/0009-supporting-timemanagement-bc-design.md)
+- [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013/0013-per-bc-dbcontext-interfaces.md)
+- [ADR-0014 — Sales/Orders BC: Order and OrderItem Aggregate Design](../adr/0014/0014-sales-orders-bc-design.md)
+- [ADR-0015 — Sales/Payments BC Design](../adr/0015/0015-sales-payments-bc-design.md)
+- [ADR-0016 — Sales/Coupons BC Design](../adr/0016/0016-sales-coupons-bc-design.md)
+- [ADR-0017 — Sales/Fulfillment BC Design](../adr/0017/0017-sales-fulfillment-bc-design.md)
+- [ADR-0018 — Supporting/Communication BC: Customer Notification Design](../adr/0018/0018-supporting-communication-bc-design.md)
+- [ADR-0019 — Identity/IAM BC: Standalone Design and Atomic Switch Plan](../adr/0019/0019-identity-iam-bc-design.md)
+- [ADR-0020 — Backoffice BC: Admin Aggregation and Reporting Design](../adr/0020/0020-backoffice-bc-design.md)
+- [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](../adr/0021/0021-frontend-error-pipeline-and-js-migration-strategy.md)
+- [`.github/instructions/dotnet.instructions.md`](../../.github/instructions/dotnet.instructions.md) § 16

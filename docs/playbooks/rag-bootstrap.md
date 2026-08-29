@@ -351,7 +351,7 @@ Polish/German query returns wrong doc?
 
 ## Reference
 
-- [ADR-0027 — RAG pipeline architecture](../adr/0027/0027-rag-pipeline.md)
+- [ADR-0027 — RAG pipeline architecture](../adr/0027/0027-rag-pipeline-design.md)
 - [ADR-0028 — Remote multitenant RAG ingest](../adr/0028/0028-remote-multitenant-rag-ingest.md)
 - [ADR-0028 Amendment 4 — Per-collection config gap](../adr/0028/amendments/0028-004-per-collection-config-gap.md) (KNOWN GAP)
 - [docs/rag/rag-architecture.md](../rag/rag-architecture.md)

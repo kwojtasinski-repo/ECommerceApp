@@ -1,6 +1,6 @@
 # Roadmap: Sales/Orders BC — Atomic Switch
 
-> ADR: [ADR-0014](../adr/0014-sales-orders-bc-design.md) — Sales/Orders BC Design
+> ADR: [ADR-0014](../adr/0014/0014-sales-orders-bc-design.md) — Sales/Orders BC Design
 > Status: ✅ Switch live — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved ✅ API tiered access ✅ Nav links ✅ All acceptance criteria met
 > **Blocks**: Sales/Payments atomic switch · Presale/Checkout Slice 2 · Sales/Coupons · Sales/Fulfillment
 
@@ -23,7 +23,7 @@ All layers are implemented and tested. The two remaining gate items before the a
 
 ## Gate conditions
 
-DB migration must be approved per [migration policy](../../.github/instructions/migration-policy.md)
+DB migration must be approved per [migration policy](../../.github/instructions/migration-policy.instructions.md)
 before any controller migration or atomic switch:
 
 1. **`InitSalesSchema`** — ✅ generated and **approved**. Creates `sales.Orders`, `sales.OrderItems`, `sales.OrderEvents` with `Status nvarchar(30)` column and indexes.
@@ -93,7 +93,7 @@ before any controller migration or atomic switch:
 
 ### Step 4 — API replacement + tiered access model ✅ Done
 
-> **Design agreed 2026-03-22** — see [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md).
+> **Design agreed 2026-03-22** — see [ADR-0025](../adr/0025/0025-api-tiered-access-trusted-purchase-policy.md).
 > Implementation completed 2026-03-25. All gate conditions met.
 >
 > **Gate conditions — all ✅:**
@@ -234,4 +234,4 @@ before any controller migration or atomic switch:
 
 ---
 
-*Last reviewed: 2026-05-31 · ADRs: [ADR-0014](../adr/0014-sales-orders-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md), [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md)*
+*Last reviewed: 2026-05-31 · ADRs: [ADR-0014](../adr/0014/0014-sales-orders-bc-design.md), [ADR-0024](../adr/0024/0024-controller-routing-strategy.md), [ADR-0025](../adr/0025/0025-api-tiered-access-trusted-purchase-policy.md)*

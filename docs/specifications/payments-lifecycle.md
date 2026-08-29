@@ -3,7 +3,8 @@
 > Domain: Sales/Payments
 > Status: Draft
 > Last verified: 2026-06-05
-> Governing ADR: [docs/adr/0015/0015-sales-payments-bc-design.md](docs/adr/0015/0015-sales-payments-bc-design.md)
+> Governing ADR: [0015/0015-sales-payments-bc-design.md](../adr/0015/0015-sales-payments-bc-design.md)
+> Visual flow: [payments-lifecycle.md](../../assets/diagrams/flows/payments-lifecycle.md)
 
 ---
 

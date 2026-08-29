@@ -224,14 +224,14 @@ CreateMap<UserProfileId, int>().ConvertUsing(x => x.Value);
 ## References
 
 - Related ADRs:
-  - [ADR-0001 — Project Overview and Technology Stack](./0001-project-overview-and-technology-stack.md)
-  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
-  - [ADR-0005 — AccountProfile BC UserProfile Aggregate Design](./0005-accountprofile-bc-userprofile-aggregate-design.md)
-  - [ADR-0007 — Catalog BC Product, Category, and Tag Aggregate Design](./0007-catalog-bc-product-category-tag-aggregate-design.md)
-  - [ADR-0011 — Inventory/Availability BC StockItem Aggregate Design](./0011-inventory-availability-bc-design.md)
+  - [ADR-0001 — Project Overview and Technology Stack](../0001/0001-project-overview-and-technology-stack.md)
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
+  - [ADR-0005 — AccountProfile BC UserProfile Aggregate Design](../0005/0005-accountprofile-bc-userprofile-aggregate-design.md)
+  - [ADR-0007 — Catalog BC Product, Category, and Tag Aggregate Design](../0007/0007-catalog-bc-product-category-tag-aggregate-design.md)
+  - [ADR-0011 — Inventory/Availability BC StockItem Aggregate Design](../0011/0011-inventory-availability-bc-design.md)
 - Instruction files:
-  - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
-  - [`.github/instructions/efcore-instructions.md`](../../.github/instructions/efcore-instructions.md)
+  - [`.github/instructions/dotnet.instructions.md`](../../../.github/instructions/dotnet.instructions.md)
+  - [`.github/instructions/efcore.instructions.md`](../../../.github/instructions/efcore.instructions.md)
 - Issues / PRs: <!-- link -->
 - Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 

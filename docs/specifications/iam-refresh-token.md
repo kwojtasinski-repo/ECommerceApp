@@ -3,8 +3,9 @@
 > Domain: Customers (Identity and Access)
 > Status: Draft
 > Last verified: 2026-06-05
-> Governing ADR: [docs/adr/0019/README.md](docs/adr/0019/README.md)
-> Related roadmap context: [docs/roadmap/iam-refresh-token.md](docs/roadmap/iam-refresh-token.md)
+> Governing ADR: [0019/README.md](../adr/0019/README.md)
+> Related roadmap context: [iam-refresh-token.md](../roadmap/iam-refresh-token.md)
+> Visual flow: [iam-refresh-token.md](../../assets/diagrams/flows/iam-refresh-token.md)
 
 ---
 

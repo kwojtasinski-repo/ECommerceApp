@@ -3,7 +3,8 @@
 > Domain: Inventory/Availability
 > Status: Draft
 > Last verified: 2026-06-05
-> Governing ADR: [docs/adr/0011/0011-inventory-availability-bc-design.md](docs/adr/0011/0011-inventory-availability-bc-design.md)
+> Governing ADR: [0011/0011-inventory-availability-bc-design.md](../adr/0011/0011-inventory-availability-bc-design.md)
+> Visual flow: [inventory-reservation-release.md](../../assets/diagrams/flows/inventory-reservation-release.md)
 
 ---
 

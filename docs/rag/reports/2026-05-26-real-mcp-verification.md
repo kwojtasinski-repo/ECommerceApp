@@ -9,9 +9,9 @@ transports** (STDIO via host, STDIO via docker, HTTP Streamable / SSE) and
 query battery.
 
 Raw outputs:
-- [.rag/real_mcp_check.out.txt](.rag/real_mcp_check.out.txt)
-- [.rag/compare_servers.out.txt](.rag/compare_servers.out.txt)
-- [tools/rag/vuln_probe_results.json](tools/rag/vuln_probe_results.json)
+- [.rag/real_mcp_check.out.txt](../../../.rag/real_mcp_check.out.txt)
+- [.rag/compare_servers.out.txt](../../../.rag/compare_servers.out.txt)
+- [tools/rag/vuln_probe_results.json](../../../tools/rag/vuln_probe_results.json)
 
 ---
 
@@ -120,7 +120,7 @@ the literal string `"adr"`/`"path"` in the legitimate response). **All 72
 adversarial probes are leak-free; no traceback / no absolute paths / no
 internal type names leaked in any error response.**
 
-Full machine-readable: [tools/rag/vuln_probe_results.json](tools/rag/vuln_probe_results.json).
+Full machine-readable: [tools/rag/vuln_probe_results.json](../../../tools/rag/vuln_probe_results.json).
 
 ---
 
@@ -151,7 +151,7 @@ Observations:
 - Both servers consistently surface the **right ADR cluster** for every
   query (e.g. Q4 → ADR-0028 + `.github/context/known-issues.md`).
 
-Full transcript: [.rag/compare_servers.out.txt](.rag/compare_servers.out.txt).
+Full transcript: [.rag/compare_servers.out.txt](../../../.rag/compare_servers.out.txt).
 
 ---
 

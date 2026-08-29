@@ -3,7 +3,8 @@
 > Domain: Sales/Coupons
 > Status: Draft
 > Last verified: 2026-06-05
-> Governing ADR: [docs/adr/0016/0016-sales-coupons-bc-design.md](docs/adr/0016/0016-sales-coupons-bc-design.md)
+> Governing ADR: [0016/0016-sales-coupons-bc-design.md](../adr/0016/0016-sales-coupons-bc-design.md)
+> Visual flow: [coupons-apply-revert.md](../../assets/diagrams/flows/coupons-apply-revert.md)
 
 ---
 

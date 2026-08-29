@@ -436,7 +436,7 @@ public partial class Context : IOrderDbContext { }
 
 ## 10. DI Registration
 
-> Rules: see [`dotnet-instructions.md §13`](../../.github/instructions/dotnet-instructions.md).
+> Rules: see [`dotnet-instructions.md §13`](../../.github/instructions/dotnet.instructions.md).
 > Register in the layer's `DependencyInjection.cs` — never in `Startup.cs` / `Program.cs`.
 > New BC registrations are additive; remove old ones only after the atomic switch.
 

@@ -100,7 +100,7 @@ app.UseMiddleware<ApiKeyMiddleware>();
 app.MapControllers();
 ```
 
-**New file:** [tools/rag-dotnet/src/RagTools.Mcp/Middleware/BadRequestEnvelopeMiddleware.cs](tools/rag-dotnet/src/RagTools.Mcp/Middleware/BadRequestEnvelopeMiddleware.cs) — same shape and conventions as the existing [ApiKeyMiddleware](tools/rag-dotnet/src/RagTools.Mcp/Middleware/ApiKeyMiddleware.cs). Registered first so it sees the most exceptions (including from API-key path).
+**New file:** [tools/rag-dotnet/src/RagTools.Mcp/Middleware/BadRequestEnvelopeMiddleware.cs](../../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/BadRequestEnvelopeMiddleware.cs) — same shape and conventions as the existing [ApiKeyMiddleware](../../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/ApiKeyMiddleware.cs). Registered first so it sees the most exceptions (including from API-key path).
 
 ---
 
@@ -144,8 +144,8 @@ return McpToolGuard.RunAsync(logger, nameof(X), async ct =>
 
 Boilerplate dropped: 32 lines → 12 lines across the four tools, single source of truth for the error envelope, **scoped to MCP only** (called only from `[McpServerTool]` methods — never reached by controllers).
 
-**New file:** [tools/rag-dotnet/src/RagTools.Mcp/Tools/McpToolGuard.cs](tools/rag-dotnet/src/RagTools.Mcp/Tools/McpToolGuard.cs)
-**Updated:** [tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs](tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs)
+**New file:** [tools/rag-dotnet/src/RagTools.Mcp/Tools/McpToolGuard.cs](../../../tools/rag-dotnet/src/RagTools.Mcp/Tools/McpToolGuard.cs)
+**Updated:** [tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs](../../../tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs)
 
 ---
 

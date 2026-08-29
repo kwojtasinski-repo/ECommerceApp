@@ -171,13 +171,13 @@ namespace ECommerceApp.Infrastructure.Repositories;
 ## References
 
 - Related ADRs:
-  - [ADR-0001 — ECommerceApp Project Overview and Technology Stack](./0001-project-overview-and-technology-stack.md)
-  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
+  - [ADR-0001 — ECommerceApp Project Overview and Technology Stack](../0001/0001-project-overview-and-technology-stack.md)
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../0002/0002-post-event-storming-architectural-evolution-strategy.md)
   - Planned: ADR-0009 — Bounded context autonomy enforcement policy
 - Instruction files:
-  - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 17
+  - [`.github/instructions/dotnet-instructions.md`](../../../.github/instructions/dotnet.instructions.md) § 17
 - Architecture map:
-  - [`docs/architecture/bounded-context-map.md`](../architecture/bounded-context-map.md)
+  - [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md)
 - Issues / PRs: <!-- link to PR when raised -->
 - Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 
