@@ -171,13 +171,17 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                 return CouponApplicationResult.Failed(rulesResult.FailureReason);
             }
 
-            var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
-                .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
-                .ToList();
-
             Coupon coupon;
             try
             {
+                // Building the targets is itself domain validation — scope type, target id and name
+                // length are all guarded by CouponScopeTarget.Create — so it belongs inside the
+                // catch. Outside it, a bad posted value escapes as an unhandled exception instead of
+                // a failed result.
+                var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
+                    .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
+                    .ToList();
+
                 coupon = Coupon.CreateWithRules(dto.Code, dto.Description, rulesResult.RulesJson, scopeTargetsForValidation);
             }
             catch (DomainException ex)
@@ -343,15 +347,20 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                 return CouponUpdateResult.ValidationFailed(rulesResult.FailureReason);
             }
 
-            var scopeTargets = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
-                .Select(t => CouponScopeTarget.Create(coupon.Id, t.ScopeType, t.TargetId, t.TargetName))
-                .ToList();
-            var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
-                .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
-                .ToList();
-
+            List<CouponScopeTarget> scopeTargets;
             try
             {
+                // Building the targets is itself domain validation — scope type, target id and name
+                // length are all guarded by CouponScopeTarget.Create — so it belongs inside the
+                // catch. Outside it, a bad posted value escapes as an unhandled exception instead of
+                // a failed result.
+                scopeTargets = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
+                    .Select(t => CouponScopeTarget.Create(coupon.Id, t.ScopeType, t.TargetId, t.TargetName))
+                    .ToList();
+                var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
+                    .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
+                    .ToList();
+
                 coupon.Update(dto.Code, dto.Description);
                 coupon.UpdateRules(rulesResult.RulesJson, scopeTargetsForValidation);
             }

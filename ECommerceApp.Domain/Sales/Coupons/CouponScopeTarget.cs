@@ -27,6 +27,14 @@ namespace ECommerceApp.Domain.Sales.Coupons
                 throw new DomainException("TargetId must be positive.");
             }
 
+            // Mirrors the nvarchar(200) TargetName column. Without this the snapshot name is only
+            // bounded by the database, so a hand-posted admin form surfaces as an unhandled
+            // DbUpdateException instead of a validation error.
+            if (targetName is not null && targetName.Length > 200)
+            {
+                throw new DomainException("TargetName must not exceed 200 characters.");
+            }
+
             return new CouponScopeTarget
             {
                 CouponId = couponId,

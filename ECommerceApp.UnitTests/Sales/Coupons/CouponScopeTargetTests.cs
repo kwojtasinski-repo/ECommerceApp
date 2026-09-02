@@ -61,6 +61,25 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             act.Should().Throw<DomainException>().WithMessage("*TargetId*positive*");
         }
 
+        [Fact]
+        public void Create_TargetNameLongerThanTwoHundred_ShouldThrowDomainException()
+        {
+            var act = () => CouponScopeTarget.Create(
+                new CouponId(1), "per-product", targetId: 42, targetName: new string('x', 201));
+
+            act.Should().Throw<DomainException>().WithMessage("*TargetName*200*");
+        }
+
+        [Fact]
+        public void Create_TargetNameAtTwoHundred_ShouldSucceed()
+        {
+            var name = new string('x', 200);
+
+            var target = CouponScopeTarget.Create(new CouponId(1), "per-product", targetId: 42, targetName: name);
+
+            target.TargetName.Should().Be(name);
+        }
+
         // ── UpdateTargetName ──────────────────────────────────────────────────
 
         [Fact]
