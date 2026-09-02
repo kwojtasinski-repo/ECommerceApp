@@ -37,9 +37,17 @@ namespace ECommerceApp.Web.E2E.PageObjects
             await _page.GetByRole(AriaRole.Link, new() { Name = "Zapłać za zamówienie" }).ClickAsync();
             await _page.WaitForURLAsync("**/Sales/Payments/Create/**");
 
+            // The Payment row this page waits for is created asynchronously by
+            // Sales.Payments.Handlers.OrderPlacedHandler reacting to the OrderPlaced outbox message, not
+            // synchronously with order placement — so this has always been a poll, not a one-shot check.
+            // 10x250ms (2.5s) was tuned against a private InMemory Outbox with nothing else competing for
+            // it. On the shared SQL Server Outbox (phase 22) every concurrently running test's messages
+            // sit in the same queue, so dispatch of any one message can legitimately take longer; budget
+            // matches OutboxDispatchWatcher's own default timeout for the same pipeline elsewhere in this
+            // suite instead of the old private-store number.
             int? lastStatus = null;
             var lastBody = string.Empty;
-            for (var attempt = 0; attempt < 10; attempt++)
+            for (var attempt = 0; attempt < 80; attempt++)
             {
                 var response = await _page.ReloadAsync();
                 lastStatus = response?.Status;

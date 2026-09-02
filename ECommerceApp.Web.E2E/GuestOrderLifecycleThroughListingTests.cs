@@ -33,7 +33,7 @@ namespace ECommerceApp.Web.E2E
             var services = factory.StartKestrelHost();
             await E2ESeed.CustomerAsync(services);
             await E2ESeed.AdminAsync(services);
-            var productIds = await E2ESeed.LifecycleProductsAsync(services);
+            var products = await E2ESeed.LifecycleProductsWithNamesAsync(services);
 
             await using var customerContext = await _browserFixture.Browser.NewContextAsync();
             await using var adminContext = await _browserFixture.Browser.NewContextAsync();
@@ -49,8 +49,10 @@ namespace ECommerceApp.Web.E2E
                 customerPage,
                 adminPage,
                 factory.ServerAddress,
-                productIds[0],
-                productIds[1]);
+                products[0].Id,
+                products[1].Id,
+                products[0].Name,
+                products[1].Name);
 
             result.PaymentConfirmed.ShouldBeTrue();
             result.FinalShipmentStatus.ShouldBe("Delivered");

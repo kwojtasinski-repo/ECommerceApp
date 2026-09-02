@@ -1,6 +1,8 @@
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
+using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Identity.IAM;
 using ECommerceApp.Shared.TestInfrastructure;
 using ECommerceApp.Web;
 using Microsoft.AspNetCore.Hosting;
@@ -8,6 +10,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,25 +36,40 @@ namespace ECommerceApp.Web.E2E.Infrastructure
     /// </summary>
     public sealed class PlaywrightWebApplicationFactory : CustomWebApplicationFactory<Startup>
     {
+        private readonly string _connectionString;
         private IHost _kestrelHost;
+
+        public PlaywrightWebApplicationFactory(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public PlaywrightWebApplicationFactory()
+            : this(PlaywrightSqlFixture.ConnectionString ?? throw new InvalidOperationException(
+                "PlaywrightSqlFixture must be initialized before creating a Playwright web application factory."))
+        {
+        }
 
         public string ServerAddress { get; private set; } = default!;
 
         /// <summary>
         /// Runs inside the base factory's own <c>ConfigureServices</c> callback, before it builds its
-        /// provider and seeds IAM. That ordering matters: <c>IamDbContext</c> is registered with a plain
-        /// <c>AddDbContext</c>, so <see cref="BcDbContextTestSetup.ReplaceAllBcDbContextsWithInMemory"/>
-        /// re-points it at a fresh InMemory store like any other context — which is also what gives each
-        /// factory its own isolated IAM data. Doing this from a *second*
-        /// <c>ConfigureServices</c> callback — which runs after the base has already seeded — left the
-        /// seeded users (including <c>test@test</c>) stranded in a store the running host never opens.
+        /// provider and seeds IAM. That ordering matters: doing this from a *second*
+        /// <c>ConfigureServices</c> callback — which runs after the base has already seeded — would leave
+        /// the seeded users (including <c>test@test</c>) stranded in a store the running host never opens.
+        /// Bounded-context DbContexts are left pointed at the real connection string passed to this
+        /// factory (phase 22) — only <see cref="IamDbContext"/> is re-pointed at a fresh InMemory store
+        /// below, for the reason explained there.
         /// </summary>
         protected override void OverrideServicesImplementation(IServiceCollection services)
         {
-            BcDbContextTestSetup.ReplaceAllBcDbContextsWithInMemory(services);
-            BcDbContextTestSetup.MakeAllBcDbContextsTransient(services);
-            BcDbContextTestSetup.ReplaceDbContextMigratorsWithNoOp(services);
-            BcDbContextTestSetup.EnsureAllBcDbContextsCreated(services);
+            // The base factory points IamDbContext at a fixed InMemory database name
+            // ("InMemoryIamDatabase"), which EF Core's InMemory provider treats as one store shared by
+            // every DbContext in the process using that name. IAM isn't part of this phase's SQL Server
+            // migration, so it stays on InMemory — but each factory needs its own store, otherwise two
+            // factories seeding the same fixed test users (e2e-admin@example.com etc.) concurrently race
+            // on the same underlying change tracker and throw identity-map conflicts.
+            services.ReplaceDbContextWithInMemory<IamDbContext>($"InMemoryIamDatabase_{Guid.NewGuid():N}");
 
             var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ICategoryService));
             if (descriptor != null)
@@ -59,6 +77,14 @@ namespace ECommerceApp.Web.E2E.Infrastructure
                 services.Remove(descriptor);
             }
 
+            foreach (var databaseInitializer in services
+                .Where(d => d.ServiceType == typeof(IDatabaseInitializer))
+                .ToList())
+            {
+                services.Remove(databaseInitializer);
+            }
+
+            services.AddScoped<IDatabaseInitializer, PlaywrightDatabaseInitializer>();
             services.AddScoped<ICategoryService, NullCategoryService>();
         }
 
@@ -80,6 +106,20 @@ namespace ECommerceApp.Web.E2E.Infrastructure
                     webHostBuilder
                         .UseKestrel()
                         .UseUrls("http://127.0.0.1:0")
+                            .ConfigureAppConfiguration((_, configuration) =>
+                            {
+                                configuration.AddInMemoryCollection(new Dictionary<string, string>
+                                {
+                                    ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                                    ["Database:RunMigrationsOnStart"] = "true",
+                                    // Production default is 10s (MessagingOptions.OutboxPollInterval);
+                                    // on the shared E2E database the Outbox accumulates rows from every
+                                    // other test class, and a 10s cadence leaves too few poll cycles
+                                    // inside a test's timeout to reliably catch its own message. Same
+                                    // override SqlServerE2EWebApplicationFactory uses for E2E.Backend.
+                                    ["MessagingOptions:OutboxPollInterval"] = "00:00:00.100"
+                                });
+                            })
                         // ECommerceApp.Web's wwwroot is only physically present next to its own build
                         // output, not copied into this test project's output directory (only its DLL and
                         // a Static Web Assets *manifest* are). JsVersionProvider and other code that reads
@@ -99,6 +139,7 @@ namespace ECommerceApp.Web.E2E.Infrastructure
                         .UseStartup<Startup>();
 
                     ConfigureWebHost(webHostBuilder);
+                    webHostBuilder.UseSetting("ConnectionStrings:DefaultConnection", _connectionString);
                     webHostBuilder.UseEnvironment("Development");
                 });
 
@@ -141,6 +182,29 @@ namespace ECommerceApp.Web.E2E.Infrastructure
             }
 
             base.Dispose(disposing);
+        }
+    }
+
+    internal sealed class PlaywrightDatabaseInitializer : IDatabaseInitializer
+    {
+        private readonly IEnumerable<IDbContextMigrator> _migrators;
+
+        public PlaywrightDatabaseInitializer(IEnumerable<IDbContextMigrator> migrators)
+        {
+            _migrators = migrators;
+        }
+
+        public async Task Initialize()
+        {
+            foreach (var migrator in _migrators)
+            {
+                if (migrator.ContextName == "IamDbContext")
+                {
+                    continue;
+                }
+
+                await migrator.MigrateAsync();
+            }
         }
     }
 

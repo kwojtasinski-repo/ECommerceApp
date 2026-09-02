@@ -12,17 +12,20 @@ namespace ECommerceApp.Web.E2E
     public sealed class CouponRuleBuilderTests
     {
         private readonly PlaywrightBrowserFixture _browserFixture;
+        private readonly PlaywrightSqlFixture _sqlFixture;
 
-        public CouponRuleBuilderTests(PlaywrightBrowserFixture browserFixture)
+        public CouponRuleBuilderTests(PlaywrightBrowserFixture browserFixture, PlaywrightSqlFixture sqlFixture)
         {
             _browserFixture = browserFixture;
+            _sqlFixture = sqlFixture;
         }
 
         [Fact]
         public async Task Builder_OrderTotalPercentage_PersistsCanonicalRules()
         {
-            using var factory = new PlaywrightWebApplicationFactory();
-            var services = factory.StartKestrelHost();
+            var factory = _sqlFixture;
+            using var scope = factory.Services.CreateScope();
+            var services = scope.ServiceProvider;
             await E2ESeed.AdminAsync(services);
             await using var context = await _browserFixture.Browser.NewContextAsync();
             var page = await context.NewPageAsync();
@@ -35,6 +38,9 @@ namespace ECommerceApp.Web.E2E
 
             var coupon = await services.GetRequiredService<ICouponRepository>().GetByCodeAsync("E2E-RULE-15");
             coupon.ShouldNotBeNull();
+            // Positive proof this ran against a real SQL Server, not InMemory: InMemory never populates
+            // rowversion columns, so this assertion cannot pass under the provider phase 22 replaced.
+            coupon.Version.ShouldNotBeNull();
             var rules = CouponRuleDefinition.ParseList(coupon.RulesJson);
             rules.Count.ShouldBe(2);
             rules.Single(r => r.Name == "percentage-off").Parameters["percent"].ShouldBe("15");
@@ -43,8 +49,9 @@ namespace ECommerceApp.Web.E2E
         [Fact]
         public async Task Builder_PerProductScope_PersistsRuleAndTarget()
         {
-            using var factory = new PlaywrightWebApplicationFactory();
-            var services = factory.StartKestrelHost();
+            var factory = _sqlFixture;
+            using var scope = factory.Services.CreateScope();
+            var services = scope.ServiceProvider;
             await E2ESeed.AdminAsync(services);
             var productIds = await E2ESeed.BasketProductsAsync(services);
             await using var context = await _browserFixture.Browser.NewContextAsync();
@@ -69,8 +76,9 @@ namespace ECommerceApp.Web.E2E
         [Fact]
         public async Task Builder_RequiredParameter_BlocksSubmission()
         {
-            using var factory = new PlaywrightWebApplicationFactory();
-            var services = factory.StartKestrelHost();
+            var factory = _sqlFixture;
+            using var scope = factory.Services.CreateScope();
+            var services = scope.ServiceProvider;
             await E2ESeed.AdminAsync(services);
             await using var context = await _browserFixture.Browser.NewContextAsync();
             var page = await context.NewPageAsync();
@@ -86,8 +94,9 @@ namespace ECommerceApp.Web.E2E
         [Fact]
         public async Task Builder_ZeroAmount_ShowsServerValidation()
         {
-            using var factory = new PlaywrightWebApplicationFactory();
-            var services = factory.StartKestrelHost();
+            var factory = _sqlFixture;
+            using var scope = factory.Services.CreateScope();
+            var services = scope.ServiceProvider;
             await E2ESeed.AdminAsync(services);
             await using var context = await _browserFixture.Browser.NewContextAsync();
             var page = await context.NewPageAsync();
@@ -105,8 +114,9 @@ namespace ECommerceApp.Web.E2E
         [Fact]
         public async Task Builder_TamperedCategory_DerivesCategoryFromRegistry()
         {
-            using var factory = new PlaywrightWebApplicationFactory();
-            var services = factory.StartKestrelHost();
+            var factory = _sqlFixture;
+            using var scope = factory.Services.CreateScope();
+            var services = scope.ServiceProvider;
             await E2ESeed.AdminAsync(services);
             await using var context = await _browserFixture.Browser.NewContextAsync();
             var page = await context.NewPageAsync();

@@ -59,7 +59,8 @@ namespace ECommerceApp.Web.E2E
             // races the request and the result depends on timing rather than on behaviour.
             await page.WaitForURLAsync(url => !url.Contains("/Edit/"));
 
-            var updated = await services.GetRequiredService<ICouponRepository>().GetByCodeAsync("E2E-EDIT-DISCOUNT");
+            using var assertScope = services.CreateScope();
+            var updated = await assertScope.ServiceProvider.GetRequiredService<ICouponRepository>().GetByCodeAsync("E2E-EDIT-DISCOUNT");
             CouponRuleDefinition.ParseList(updated.RulesJson)
                 .Single(rule => rule.Name == "percentage-off").Parameters["percent"].ShouldBe("25");
         }
@@ -89,7 +90,8 @@ namespace ECommerceApp.Web.E2E
             await page.Locator("#couponEditForm button[type='submit']").ClickAsync();
             await page.WaitForURLAsync(url => !url.Contains("/Edit/"));
 
-            var target = (await services.GetRequiredService<IScopeTargetRepository>()
+            using var assertScope = services.CreateScope();
+            var target = (await assertScope.ServiceProvider.GetRequiredService<IScopeTargetRepository>()
                 .GetByScopeTypeAndTargetIdAsync("per-product", productIds[0])).Single();
             target.ScopeType.Value.ShouldBe("per-product");
             target.TargetId.ShouldBe(productIds[0]);

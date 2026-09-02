@@ -6,3 +6,4 @@ using Xunit;
 // class that needs it into one collection and serialize the suite. An assembly fixture is injected
 // into any test class constructor while leaving each class its own collection.
 [assembly: AssemblyFixture(typeof(PlaywrightBrowserFixture))]
+[assembly: AssemblyFixture(typeof(PlaywrightSqlFixture))]

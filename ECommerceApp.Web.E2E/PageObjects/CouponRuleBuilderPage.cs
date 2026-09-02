@@ -31,6 +31,19 @@ namespace ECommerceApp.Web.E2E.PageObjects
         public async Task SelectScopeAsync(string ruleName)
         {
             await _page.SelectOptionAsync("#Rules_Scope_Name", ruleName);
+            if (ruleName != "per-product" && ruleName != "per-category" && ruleName != "per-tag")
+            {
+                return;
+            }
+
+            var response = await _page.WaitForResponseAsync(response => response.Url.Contains("/Sales/Coupon/ScopeTargets"));
+            if (!response.Ok)
+            {
+                throw new System.InvalidOperationException(
+                    $"Scope target request failed with HTTP {(int)response.Status}: {await response.TextAsync()}");
+            }
+
+            await _page.WaitForFunctionAsync("() => document.getElementById('scopeTargetPicker')?.hidden || document.getElementById('scopeTargetSelect')?.dataset.loaded === 'true'");
         }
 
         public async Task SelectDiscountAsync(string ruleName)

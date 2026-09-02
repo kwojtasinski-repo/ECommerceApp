@@ -40,7 +40,7 @@ this repo runs the broker **synchronously** on purpose, for easy assertions — 
 | Class | Lifetime | Purpose |
 |---|---|---|
 | `PlaywrightBrowserFixture` | `[assembly: AssemblyFixture(...)]`, one per test run | Owns the expensive `IPlaywright`/`IBrowser` (Chromium, headless). Never create a second one. Deliberately **not** an `ICollectionFixture`: a collection is xunit's unit of parallelism, so sharing it that way would force every browser test into one collection and serialize the suite. |
-| `PlaywrightWebApplicationFactory` | `using var`, one per **test**, never a fixture | Hosts `ECommerceApp.Web` on a real, dynamically-allocated Kestrel port. InMemory DB for all BC DbContexts, `ICategoryService` stubbed (known EF InMemory / `CategoryName` value-object limitation — do not try to "fix" this by touching Catalog code), **real** `IMessageBroker` + `BackgroundMessageDispatcher` + `OutboxPollerService` (short `OutboxPollInterval`, see `appsettings.test.json`). |
+| `PlaywrightWebApplicationFactory` | `using var`, one per **test**, never a fixture (except `CouponRuleBuilderTests`, which instead takes the assembly-shared `PlaywrightSqlFixture`) | Hosts `ECommerceApp.Web` on a real, dynamically-allocated Kestrel port. Bounded-context DbContexts run on a **real SQL Server** container (`PlaywrightSqlFixture`, one `MsSqlContainer` per `dotnet test` run) — isolation is "shared database, unique identifiers per test," so give any new fixed literal (coupon code, product/category name) a GUID suffix like `E2ESeed` already does. `IamDbContext` is the one exception, still a private InMemory store per factory (see `OverrideServicesImplementation`'s XML doc). `ICategoryService` is stubbed (`NullCategoryService`) for a reason unrelated to the database — do not remove it. **Real** `IMessageBroker` + `BackgroundMessageDispatcher` + `OutboxPollerService`, with `MessagingOptions:OutboxPollInterval` overridden to 100ms in `StartKestrelHost()`'s config (the 10s production default leaves too few poll cycles inside a test timeout once the shared Outbox has other tests' rows in it). |
 | `OutboxDispatchWatcher` | Constructed per use (not a singleton, not a static helper) | Polls `IOutboxRepository.GetSinceAsync` until a specific message type/predicate reaches `OutboxStatus.Dispatched`, or throws `TimeoutException` with the candidates it actually saw. |
 
 ## Non-negotiable rule: only use `StartKestrelHost()`
@@ -54,9 +54,10 @@ var address = _factory.ServerAddress;         // e.g. http://127.0.0.1:53214
 In this repo's .NET 10 `Microsoft.AspNetCore.Mvc.Testing`, `WebApplicationFactory.StartServer()`
 unconditionally expects a `TestServer` — it cannot be redirected to the real Kestrel host (verified:
 overriding `CreateHost` to call `UseKestrel()` throws `InvalidCastException`). Touching those
-inherited members lazily builds a **second, completely independent** TestServer-backed host with
-its own InMemory database that Playwright never talks to. Any assertion made through it will
-silently diverge from what the browser actually did. `StartKestrelHost()` and `ServerAddress` are
+inherited members lazily builds a **second, completely independent** TestServer-backed host that
+Playwright never talks to — including its own separate database wiring, not the SQL Server
+connection string `StartKestrelHost()` passes to the real Kestrel host. Any assertion made through
+it will silently diverge from what the browser actually did. `StartKestrelHost()` and `ServerAddress` are
 the only supported entry points — this is documented on the class itself too.
 
 ## Template
@@ -82,8 +83,11 @@ namespace ECommerceApp.Web.E2E
         [Fact]
         public async Task {{Method}}_{{Conditions}}_{{ExpectedResult}}()
         {
-            // Own host per test: own Kestrel port, own IAM and bounded-context InMemory databases.
-            // This is what makes the classes safe to run in parallel — do not hoist it into a fixture.
+            // Own host per test: own Kestrel port, own private IAM store. Bounded-context data lives on
+            // the shared SQL Server container (PlaywrightSqlFixture) — safe to run in parallel because
+            // isolation comes from unique identifiers (see E2ESeed), not from a private database per test.
+            // Do not hoist this into a fixture unless the test genuinely needs the assembly-shared host
+            // (see CouponRuleBuilderTests for that pattern instead).
             using var factory = new PlaywrightWebApplicationFactory();
             factory.StartKestrelHost();
             await using var context = await _browserFixture.Browser.NewContextAsync();

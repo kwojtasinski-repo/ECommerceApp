@@ -150,7 +150,9 @@ namespace ECommerceApp.Web.E2E.Scenarios
                 baseAddress,
                 firstProductId,
                 secondProductId,
-                useStorefrontListing: false);
+                useStorefrontListing: false,
+                firstProductName: null,
+                secondProductName: null);
         }
 
         public async Task<OrderLifecycleResult> ExecuteThroughStorefrontListingAsync(
@@ -158,7 +160,9 @@ namespace ECommerceApp.Web.E2E.Scenarios
             IPage adminPage,
             string baseAddress,
             int firstProductId,
-            int secondProductId)
+            int secondProductId,
+            string firstProductName,
+            string secondProductName)
         {
             return await ExecuteAsync(
                 customerPage,
@@ -166,7 +170,9 @@ namespace ECommerceApp.Web.E2E.Scenarios
                 baseAddress,
                 firstProductId,
                 secondProductId,
-                useStorefrontListing: true);
+                useStorefrontListing: true,
+                firstProductName,
+                secondProductName);
         }
 
         private async Task<OrderLifecycleResult> ExecuteAsync(
@@ -175,23 +181,27 @@ namespace ECommerceApp.Web.E2E.Scenarios
             string baseAddress,
             int firstProductId,
             int secondProductId,
-            bool useStorefrontListing)
+            bool useStorefrontListing,
+            string firstProductName,
+            string secondProductName)
         {
             StorefrontPage storefront = await StorefrontPage.NavigateAsync(customerPage, baseAddress);
             IProductDetailsPage firstProduct = useStorefrontListing
-                ? await storefront.OpenProductAsync("E2E Lifecycle Product A")
+                ? await storefront.OpenProductAsync(firstProductName)
                 : await storefront.OpenProductAsync(firstProductId);
             await firstProduct.AddToCartAsync(firstProductId, 2);
 
             storefront = await StorefrontPage.NavigateAsync(customerPage, baseAddress);
             IProductDetailsPage secondProduct = useStorefrontListing
-                ? await storefront.OpenProductAsync("E2E Lifecycle Product B")
+                ? await storefront.OpenProductAsync(secondProductName)
                 : await storefront.OpenProductAsync(secondProductId);
             await secondProduct.AddToCartAsync(secondProductId, 3);
 
             ICartPage cart = await CartPage.NavigateAsync(customerPage, baseAddress);
-            cart = await cart.ShouldContainProductAsync("E2E Lifecycle Product A", 2);
-            await cart.ShouldContainProductAsync("E2E Lifecycle Product B", 3);
+            var firstCartName = useStorefrontListing ? firstProductName : "E2E Lifecycle Product A";
+            var secondCartName = useStorefrontListing ? secondProductName : "E2E Lifecycle Product B";
+            cart = await cart.ShouldContainProductAsync(firstCartName, 2);
+            await cart.ShouldContainProductAsync(secondCartName, 3);
 
             IPlaceOrderPage orderForm = await cart.ProceedToOrderAsync();
             orderForm = await orderForm.FillCustomerAsync();

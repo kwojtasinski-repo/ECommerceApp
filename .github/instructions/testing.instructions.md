@@ -93,15 +93,30 @@ Browser E2E tests (Playwright) — `ECommerceApp.Web.E2E`
 - Always host through `PlaywrightWebApplicationFactory.StartKestrelHost()` / `.ServerAddress`.
   Never use the inherited `Services`/`CreateClient()`/`Server` — they build a second, disconnected
   TestServer-backed host with its own InMemory database (see the class's own XML doc for why).
+- Since phase 22, bounded-context DbContexts run on a **real SQL Server** container
+  (`PlaywrightSqlFixture`, an assembly fixture that starts one `MsSqlContainer` per `dotnet test`
+  invocation, destroyed in `DisposeAsync`) — not InMemory. Isolation is "one database, unique
+  identifiers per test": seed helpers (`E2ESeed`) give coupon codes, category names, and product names
+  a per-call GUID suffix rather than relying on an empty database. `IamDbContext` is the one exception —
+  it stays on a private InMemory store per `PlaywrightWebApplicationFactory` instance (see
+  `OverrideServicesImplementation`'s XML doc), because the base `CustomWebApplicationFactory` registers
+  it under a fixed InMemory name that would otherwise be shared process-wide across every factory.
 - Share the browser process via the assembly fixture (`[assembly: AssemblyFixture(typeof(
   PlaywrightBrowserFixture))]`, declared in `AssemblyFixtureConfiguration.cs`); take
   `PlaywrightBrowserFixture` as a constructor argument. Never launch a second `IBrowser`/`IPlaywright`
   per test class, and do not reintroduce a shared `[Collection]` for it — a collection is xunit's unit
   of parallelism, so that would serialize the whole suite.
 - This project runs test collections in parallel (`xunit.runner.json`, capped at 4 threads). One test
-  class = one collection, so put slow flows in their own class. Each test constructs its **own**
-  `PlaywrightWebApplicationFactory` (own port, own IAM + bounded-context InMemory databases) and its
-  own `BrowserContext`; never share a factory across tests via `IClassFixture`/`ICollectionFixture`.
+  class = one collection, so put slow flows in their own class. Two patterns for getting a factory, both
+  valid — pick based on whether the test needs constructor-level scoping:
+  - Most classes construct their **own** `PlaywrightWebApplicationFactory()` per test (own Kestrel port,
+    own private IAM store, shared SQL Server connection string read from
+    `PlaywrightSqlFixture.ConnectionString`).
+  - `CouponRuleBuilderTests` instead takes `PlaywrightSqlFixture` as a constructor argument and uses its
+    `Services`/`ServerAddress`, sharing the ONE Kestrel host `PlaywrightSqlFixture` builds once for the
+    whole assembly — use this only when a test genuinely needs the assembly-shared host, not by default.
+  Never share a per-test `PlaywrightWebApplicationFactory` across tests via `IClassFixture`/
+  `ICollectionFixture`.
 
 CI
 - CI must run unit and integration tests on PRs.

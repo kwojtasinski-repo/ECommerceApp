@@ -10,15 +10,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.E2E.Infrastructure
 {
     /// <summary>
-    /// Seeds the data a browser test needs into one <see cref="PlaywrightWebApplicationFactory"/>'s
-    /// own host. Every factory owns a private IAM database and private InMemory bounded-context
-    /// databases, so the fixed emails and product names below never collide between tests, including
-    /// when test classes run in parallel.
+    /// Seeds the data a browser test needs against the real SQL Server database shared by every
+    /// <see cref="PlaywrightWebApplicationFactory"/> instance in the run (Phase 22's isolation model:
+    /// one database, unique identifiers per test). Each factory still gets its own private InMemory IAM
+    /// store (see <see cref="PlaywrightWebApplicationFactory.OverrideServicesImplementation"/>), so the
+    /// fixed emails below are safe to reuse across factories via the idempotent look-up-or-create checks
+    /// in <see cref="AdminAsync"/>/<see cref="CustomerAsync"/>. Product and category names are not
+    /// idempotent — every call creates new rows — so they carry a per-call GUID suffix instead.
     /// </summary>
     internal static class E2ESeed
     {
@@ -96,13 +100,26 @@ namespace ECommerceApp.Web.E2E.Infrastructure
             }
         }
 
-        public static Task<IReadOnlyList<int>> LifecycleProductsAsync(IServiceProvider services) =>
+        public static async Task<IReadOnlyList<int>> LifecycleProductsAsync(IServiceProvider services) =>
+            (await LifecycleProductsWithNamesAsync(services)).Select(p => p.Id).ToList();
+
+        public static Task<IReadOnlyList<(int Id, string Name)>> LifecycleProductsWithNamesAsync(IServiceProvider services) =>
             ProductsAsync(services, "E2E Lifecycle Category", "E2E Lifecycle Product A", "E2E Lifecycle Product B");
 
-        public static Task<IReadOnlyList<int>> BasketProductsAsync(IServiceProvider services) =>
+        public static async Task<IReadOnlyList<int>> BasketProductsAsync(IServiceProvider services) =>
+            (await BasketProductsWithNamesAsync(services)).Select(p => p.Id).ToList();
+
+        public static Task<IReadOnlyList<(int Id, string Name)>> BasketProductsWithNamesAsync(IServiceProvider services) =>
             ProductsAsync(services, "E2E Basket Category", "E2E Basket Product A", "E2E Basket Product B");
 
-        private static async Task<IReadOnlyList<int>> ProductsAsync(
+        /// <summary>
+        /// Product names carry a per-call GUID suffix, same as the category name above: on the shared
+        /// database every test class that seeds "basket"/"lifecycle" products contributes rows with the
+        /// same base name, and the storefront looks products up by name-text match. A fixed name across
+        /// many calls resolves to several matching cards and Playwright throws a strict-mode violation
+        /// (multiple elements matched) instead of clicking the one this test just created.
+        /// </summary>
+        private static async Task<IReadOnlyList<(int Id, string Name)>> ProductsAsync(
             IServiceProvider services,
             string categoryName,
             string firstProductName,
@@ -110,25 +127,26 @@ namespace ECommerceApp.Web.E2E.Infrastructure
         {
             using var scope = services.CreateScope();
             var categoryRepository = scope.ServiceProvider.GetRequiredService<ICategoryRepository>();
-            var categoryId = await categoryRepository.AddAsync(Category.Create(categoryName));
+            var categoryId = await categoryRepository.AddAsync(Category.Create($"{categoryName} {Guid.NewGuid():N}"));
             var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
             var stockRepository = scope.ServiceProvider.GetRequiredService<IStockSnapshotRepository>();
 
-            var productIds = new List<int>();
+            var suffix = Guid.NewGuid().ToString("N");
+            var products = new List<(int Id, string Name)>();
             foreach (var product in new[]
             {
-                (Name: firstProductName, Price: 19.99m),
-                (Name: secondProductName, Price: 29.99m)
+                (Name: $"{firstProductName} {suffix}", Price: 19.99m),
+                (Name: $"{secondProductName} {suffix}", Price: 29.99m)
             })
             {
                 var productId = await productService.AddProduct(new CreateProductDto(
                     product.Name, product.Price, "E2E product", categoryId.Value, new List<int>()));
                 await productService.PublishProduct(productId);
                 await stockRepository.AddAsync(StockSnapshot.Create(productId, 100, DateTime.UtcNow));
-                productIds.Add(productId);
+                products.Add((productId, product.Name));
             }
 
-            return productIds;
+            return products;
         }
     }
 }
