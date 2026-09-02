@@ -53,6 +53,16 @@ A new rule appears in the admin rule builder automatically once registered — t
 from `ICouponService.GetRuleCatalog()`, which reads the registry. No view needs editing.
 `coupon-oversize-guard` is excluded from that catalog because it is auto-injected, not admin-selectable.
 
+`RulesJson` is an **internal representation**, not an admin-facing input. Nobody types rule JSON: the
+form binds a typed `CouponRulesFormDto` and `CouponService` produces the JSON, taking each rule's
+category from the registry descriptor rather than from the posted payload.
+
+The one thing a new rule still needs by hand is **Polish display text** — add its name and every
+parameter key to `ECommerceApp.Web/Areas/Sales/CouponRuleDisplayNames.cs`. The schema's `Label` stays
+English and developer-facing; translation belongs to the presentation layer.
+`CouponRuleDisplayNamesTests` walks the real registry and fails the build if an entry is missing, so a
+new rule cannot reach the admin as raw kebab-case.
+
 When adding a rule, add its `CouponRuleNames` constant, evaluator, optional async evaluator,
 validator and parameter schema, registration in `Rules/Extensions.cs`, and focused unit tests. If the rule changes the
 database model or cross-BC messages, update the amendment/ADR and the conformance checklist rather
