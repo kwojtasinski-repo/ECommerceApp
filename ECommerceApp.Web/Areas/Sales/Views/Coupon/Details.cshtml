@@ -1,13 +1,10 @@
 @model ECommerceApp.Application.Sales.Coupons.ViewModels.CouponDetailVm
 @using ECommerceApp.Domain.Sales.Coupons
 @using ECommerceApp.Web.Areas.Sales
-@using System.Collections.Generic
 @using System.Linq
 @{
     ViewData["Title"] = "Szczegóły kuponu";
-    var rules = string.IsNullOrWhiteSpace(Model.RulesJson)
-        ? new List<CouponRuleDefinition>()
-        : CouponRuleDefinition.ParseList(Model.RulesJson);
+    var rules = Model.Rules;
 }
 
 <div class="container mt-4" style="max-width:700px;">

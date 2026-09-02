@@ -4,7 +4,7 @@
 @using System.Linq
 @using ECommerceApp.Application.Sales.Coupons.ViewModels
 @using ECommerceApp.Web.Areas.Sales
-@model ECommerceApp.Application.Sales.Coupons.DTOs.CreateCouponDto
+@model ECommerceApp.Application.Sales.Coupons.DTOs.CouponRulesFormDto
 @{
     var catalog = ViewBag.RuleCatalog as CouponRuleCatalogVm;
     var camelCaseJson = new JsonSerializerOptions
@@ -18,12 +18,23 @@
         ?? new List<CouponRuleCatalogRuleVm>();
     var discountRules = catalog?.Categories.FirstOrDefault(c => c.Category == ECommerceApp.Domain.Sales.Coupons.CouponRuleCategory.Discount)?.Rules
         ?? new List<CouponRuleCatalogRuleVm>();
+    var selectedTargets = ViewData["ScopeTargets"] as List<ECommerceApp.Application.Sales.Coupons.DTOs.ScopeTargetDto>
+        ?? new List<ECommerceApp.Application.Sales.Coupons.DTOs.ScopeTargetDto>();
+    var initialState = new
+    {
+        scope = Model?.Scope,
+        discount = Model?.Discount,
+        constraints = Model?.Constraints ?? new List<ECommerceApp.Application.Sales.Coupons.DTOs.RuleSelectionDto>(),
+        scopeTargets = selectedTargets
+    };
+    var initialStateJson = JsonSerializer.Serialize(initialState, camelCaseJson);
 }
 
 <div id="couponRuleBuilder"
      data-catalog='@Html.Raw(catalogJson)'
      data-parameter-labels='@Html.Raw(parameterLabelsJson)'
      data-target-url="@ViewBag.ScopeTargetUrl"
+    data-initial-state='@Html.Raw(initialStateJson)'
      data-target-placeholder="-- wybierz element --"
      data-remove-label="Usuń">
     <h3 class="h5">Reguły kuponu</h3>

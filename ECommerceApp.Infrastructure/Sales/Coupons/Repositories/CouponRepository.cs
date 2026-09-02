@@ -50,6 +50,21 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
+        public async Task UpdateWithVersionAsync(Coupon coupon, byte[] originalVersion, CancellationToken ct = default)
+        {
+            _context.Coupons.Update(coupon);
+
+            // The tracked entity already carries the version just read from the database, so EF would
+            // compare the row against itself and never detect anything. Point the concurrency check at
+            // the version the edit actually started from.
+            if (originalVersion is not null)
+            {
+                _context.Entry(coupon).Property(c => c.Version).OriginalValue = originalVersion;
+            }
+
+            await _context.SaveChangesAsync(ct);
+        }
+
         public async Task AddAsync(Coupon coupon, CancellationToken ct = default)
         {
             await _context.Coupons.AddAsync(coupon, ct);

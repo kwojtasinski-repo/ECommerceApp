@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.AccountProfile.Options;
 using ECommerceApp.Application.Constants;
+using ECommerceApp.Application.Sales.Coupons;
 using ECommerceApp.Infrastructure.AccountProfile;
 using ECommerceApp.Infrastructure.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
@@ -29,6 +30,7 @@ namespace ECommerceApp.Infrastructure
             services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
             services.Configure<RetryPolicyOptions>(configuration.GetSection(RetryPolicyOptions.SectionName));
             services.Configure<GuestProfileCleanupOptions>(configuration.GetSection(GuestProfileCleanupOptions.SectionName));
+            services.Configure<CouponsOptions>(configuration.GetSection(CouponsOptions.SectionName));
             services.AddDatabase(configuration);
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);

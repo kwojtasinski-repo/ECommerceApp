@@ -19,6 +19,7 @@ multi-coupon stacking strategy, and Catalog name sync.
 | example-implementation/apply-coupon-flow.md | ApplyCouponAsync multi-coupon stacking: Rule A + Rule B | Implementing coupon application |
 | example-implementation/new-coupon-rule-guide.md | How to add a new ICouponRule evaluator | Extending the rules engine |
 | example-implementation/coupon-evaluation-context.md | CouponEvaluationContext structure and usage | Writing rule evaluators |
+| rule-authoring-flow.md | Generated Create/Edit builder and persistence flow | Reviewing rule authoring |
 
 ## Key rules
 - Max coupons per order: default 5, hard ceiling 10 (`CouponsOptions.MaxCouponsPerOrder`) — see also copilot-instructions.md §7

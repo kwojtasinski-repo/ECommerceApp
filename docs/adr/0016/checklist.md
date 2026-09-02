@@ -40,3 +40,7 @@
 - [ ] `CouponsOptions.MaxCouponsPerOrder` default is 5, hard ceiling 10
 - [ ] No FK from `CouponScopeTarget.TargetId` to Catalog tables — cross-BC boundary
 - [ ] `CouponApplicationRecord.CouponUsedId` has no DB FK constraint — plain `int` audit reference; survives `CouponUsed` deletion
+- [x] Create and Edit author rules through the generated builder, not a raw-JSON form field
+- [x] Rule categories are derived from `ICouponRuleRegistry`; parameter schemas drive the builder and validators remain server-side authority
+- [x] Create and Edit share canonical map/validate/`SerializeList` logic; `RulesJson` is internal-only
+- [x] Edit round-trips `Coupon.Version`, reports concurrency conflicts, and reconciles scope-target rows without orphans

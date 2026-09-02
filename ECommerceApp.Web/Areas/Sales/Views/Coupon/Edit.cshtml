@@ -1,20 +1,24 @@
 @model ECommerceApp.Application.Sales.Coupons.DTOs.UpdateCouponDto
 @{
     ViewData["Title"] = "Edytuj kupon";
+    ViewData["ScopeTargets"] = Model.ScopeTargets;
 }
 
 <div class="container mt-4" style="max-width:600px;">
     <h2><i class="fa-solid fa-ticket me-2"></i>Edytuj kupon</h2>
 
-    <form method="post">
+    <form id="couponEditForm" method="post">
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
+        <input asp-for="Version" type="hidden" />
 
         <div class="mb-3">
             <label asp-for="Code" class="form-label">Kod</label>
             <input asp-for="Code" class="form-control" required />
             <span asp-validation-for="Code" class="text-danger"></span>
         </div>
+
+        <partial name="_RuleBuilder" model="Model.Rules" />
 
         <div class="mb-3">
             <label asp-for="Description" class="form-label">Opis</label>
@@ -31,4 +35,15 @@
 
 @section PreScripts {
     <partial name="_ValidationScriptsPartial" />
+}
+
+@section Scripts {
+    <script src="~/js/coupon-rule-builder.js" asp-append-version="true"></script>
+    <script>
+        require(["coupon-rule-builder"], function (builder) {
+            var root = document.getElementById("couponRuleBuilder");
+            builder.initialize(root);
+            root.dataset.ready = "true";
+        });
+    </script>
 }

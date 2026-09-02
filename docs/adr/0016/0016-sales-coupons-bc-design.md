@@ -1,7 +1,7 @@
 ﻿# ADR-0016: Sales/Coupons BC
 
 ## Status
-Accepted — amended by §10; Slice 2 implementation is in progress.
+Accepted — amended by §10; Slice 2 rule authoring is complete.
 
 ## Date
 2026-03-12
@@ -26,6 +26,12 @@ audit data; and `OrderPriceAdjusted` price events. The currently implemented app
 caps a reduction at the effective order price and rejects a fixed amount that exceeds the original
 order total.
 
+Coupon rules are authored through the generated Web builder. The builder is projected from
+`ICouponRuleRegistry` descriptors and parameter schemas; server-side validators and the registry
+remain authoritative. `RulesJson` is an internal persistence/evaluation representation and is not
+accepted as a Web form contract. Create and Edit share the same map, validate, and canonical
+serialization path. Edit uses optimistic concurrency and reconciles scope-target rows as a set.
+
 Amendment §10 has precedence over conflicting text in this ADR: the oversize guard is automatically
 added for fixed-amount rules, can be bypassed through `CouponEvaluationContext.BypassOversizeGuard`,
 and Catalog name-change messages update display-only scope-target names. The amendment's
@@ -36,6 +42,7 @@ Implementation detail is intentionally kept in the companion documents:
 - [Apply coupon flow](example-implementation/apply-coupon-flow.md)
 - [New coupon rule guide](example-implementation/new-coupon-rule-guide.md)
 - [Coupon evaluation context](example-implementation/coupon-evaluation-context.md)
+- [Rule authoring flow](rule-authoring-flow.md)
 
 ## Consequences
 - Coupons and Orders have explicit ownership and a one-way integration boundary.

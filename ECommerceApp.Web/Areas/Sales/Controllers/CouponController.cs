@@ -1,9 +1,12 @@
 using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Services;
+using ECommerceApp.Application.Sales.Coupons.Results;
 using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Domain.Sales.Coupons;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -113,15 +116,81 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             var coupon = await _couponService.GetCouponAsync(id);
             if (coupon is null)
                 return NotFound();
-            return View(new UpdateCouponDto { Id = coupon.Id, Code = coupon.Code, Description = coupon.Description });
+            await PopulateRuleBuilderAsync();
+            return View(new UpdateCouponDto
+            {
+                Id = coupon.Id,
+                Code = coupon.Code,
+                Description = coupon.Description,
+                Rules = ToRulesForm(coupon.Rules),
+                ScopeTargets = coupon.ScopeTargets.ToList(),
+                Version = coupon.Version
+            });
         }
 
         [HttpPost]
         public async Task<IActionResult> Edit(UpdateCouponDto dto)
         {
-            if (!await _couponService.UpdateCouponAsync(dto))
+            var result = await _couponService.UpdateCouponAsync(dto);
+            if (result.Outcome == CouponUpdateOutcome.NotFound)
+            {
                 return NotFound();
-            return RedirectToAction(nameof(Index));
+            }
+
+            if (result.Outcome == CouponUpdateOutcome.ConcurrencyConflict)
+            {
+                ModelState.AddModelError(string.Empty, "Kupon został zmieniony przez inną osobę. Odśwież formularz i spróbuj ponownie.");
+                var current = await _couponService.GetCouponAsync(dto.Id);
+                if (current is null)
+                {
+                    return NotFound();
+                }
+
+                dto.Code = current.Code;
+                dto.Description = current.Description;
+                dto.Rules = ToRulesForm(current.Rules);
+                dto.ScopeTargets = current.ScopeTargets.ToList();
+                dto.Version = current.Version;
+            }
+            else if (result.Outcome == CouponUpdateOutcome.ValidationFailed)
+            {
+                ModelState.AddModelError(string.Empty, result.FailureReason);
+            }
+            else
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            await PopulateRuleBuilderAsync();
+            return View(dto);
+        }
+
+        private static CouponRulesFormDto ToRulesForm(IEnumerable<CouponRuleDefinition> rules)
+        {
+            var form = new CouponRulesFormDto();
+            foreach (var rule in rules)
+            {
+                var selection = new RuleSelectionDto
+                {
+                    Name = rule.Name,
+                    Parameters = new System.Collections.Generic.Dictionary<string, string>(rule.Parameters)
+                };
+
+                if (rule.Category == CouponRuleCategory.Scope)
+                {
+                    form.Scope = selection;
+                }
+                else if (rule.Category == CouponRuleCategory.Discount)
+                {
+                    form.Discount = selection;
+                }
+                else if (rule.Category == CouponRuleCategory.Constraint)
+                {
+                    form.Constraints.Add(selection);
+                }
+            }
+
+            return form;
         }
 
         [HttpGet]

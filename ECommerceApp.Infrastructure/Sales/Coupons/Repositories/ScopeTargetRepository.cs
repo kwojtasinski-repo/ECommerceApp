@@ -24,9 +24,23 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IReadOnlyList<CouponScopeTarget>> GetByCouponIdAsync(
+            int couponId, CancellationToken ct = default)
+        {
+            return await _db.CouponScopeTargets
+                .Where(t => t.CouponId == new CouponId(couponId))
+                .ToListAsync(ct);
+        }
+
         public async Task AddRangeAsync(IReadOnlyList<CouponScopeTarget> targets, CancellationToken ct = default)
         {
             await _db.CouponScopeTargets.AddRangeAsync(targets, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        public async Task DeleteRangeAsync(IReadOnlyList<CouponScopeTarget> targets, CancellationToken ct = default)
+        {
+            _db.CouponScopeTargets.RemoveRange(targets);
             await _db.SaveChangesAsync(ct);
         }
 

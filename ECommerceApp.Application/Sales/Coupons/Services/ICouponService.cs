@@ -14,7 +14,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         Task<CouponApplicationResult> CreateCouponAsync(CreateCouponDto dto, CancellationToken ct = default);
         Task<CouponListVm> GetCouponsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default);
         Task<CouponDetailVm> GetCouponAsync(int id, CancellationToken ct = default);
-        Task<bool> UpdateCouponAsync(UpdateCouponDto dto, CancellationToken ct = default);
+        Task<CouponUpdateResult> UpdateCouponAsync(UpdateCouponDto dto, CancellationToken ct = default);
         Task<bool> DeleteCouponAsync(int id, CancellationToken ct = default);
         CouponRuleCatalogVm GetRuleCatalog();
         Task<CouponRulePipelineResult> SimulateCouponAsync(string couponCode, CouponEvaluationContext context, CancellationToken ct = default);

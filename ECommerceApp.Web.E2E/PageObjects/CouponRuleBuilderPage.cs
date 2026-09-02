@@ -53,6 +53,13 @@ namespace ECommerceApp.Web.E2E.PageObjects
             await _page.Locator("input[name='Code']").FillAsync(code);
             await _page.Locator("input[name='Description']").FillAsync(description);
             await _page.Locator("#couponCreateForm button[type='submit']").ClickAsync();
+
+            // ClickAsync returns once the click is dispatched, not once the POST has been handled.
+            // Without this wait a caller that asserts against the database races the request and the
+            // test passes or fails depending on timing. Both outcomes navigate — a success redirects
+            // to Index, a validation failure re-renders Create — so waiting for the load to settle is
+            // correct for either.
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
 
         public ILocator ValidationSummary() => _page.Locator("#validationSummary");

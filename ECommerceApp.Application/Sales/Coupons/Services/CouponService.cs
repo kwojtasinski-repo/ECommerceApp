@@ -11,6 +11,7 @@ using ECommerceApp.Application.Sales.Coupons.Rules;
 using ECommerceApp.Application.Sales.Coupons.ViewModels;
 using ECommerceApp.Domain.Sales.Coupons;
 using ECommerceApp.Domain.Shared;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Application.Sales.Coupons.Services
 {
@@ -164,34 +165,12 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                 return CouponApplicationResult.Failed($"Coupon code '{dto.Code}' already exists.");
             }
 
-            // Only the mapping is guarded — it is the one step that rejects client input by throwing.
-            // Persistence stays outside, so an EF InvalidOperationException surfaces as a real failure
-            // instead of being reported to the admin as a coupon validation message.
-            List<CouponRuleDefinition> rules;
-            try
+            var rulesResult = MapValidateAndSerialize(dto.Rules);
+            if (!rulesResult.Success)
             {
-                rules = MapRules(dto.Rules);
-            }
-            catch (UnknownCouponRuleException ex)
-            {
-                return CouponApplicationResult.Failed(ex.Message);
+                return CouponApplicationResult.Failed(rulesResult.FailureReason);
             }
 
-            var validationErrors = new List<string>();
-            foreach (var rule in rules)
-            {
-                if (_ruleRegistry.TryGetRule(rule.Name, out var descriptor) && descriptor.ParameterValidator != null)
-                {
-                    validationErrors.AddRange(descriptor.ParameterValidator.Validate(rule.Parameters));
-                }
-            }
-
-            if (validationErrors.Count > 0)
-            {
-                return CouponApplicationResult.Failed(string.Join(" ", validationErrors));
-            }
-
-            var rulesJson = CouponRuleDefinition.SerializeList(rules);
             var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
                 .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
                 .ToList();
@@ -199,7 +178,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             Coupon coupon;
             try
             {
-                coupon = Coupon.CreateWithRules(dto.Code, dto.Description, rulesJson, scopeTargetsForValidation);
+                coupon = Coupon.CreateWithRules(dto.Code, dto.Description, rulesResult.RulesJson, scopeTargetsForValidation);
             }
             catch (DomainException ex)
             {
@@ -219,7 +198,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             return CouponApplicationResult.Applied();
         }
 
-        private List<CouponRuleDefinition> MapRules(CouponRulesFormDto form)
+        private (bool Success, string FailureReason, string RulesJson) MapValidateAndSerialize(CouponRulesFormDto form)
         {
             var selections = new List<(RuleSelectionDto Selection, CouponRuleCategory Category)>
             {
@@ -242,7 +221,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
 
                 if (!_ruleRegistry.TryGetRule(item.Selection.Name, out var descriptor))
                 {
-                    throw new UnknownCouponRuleException(item.Selection.Name);
+                    return (false, new UnknownCouponRuleException(item.Selection.Name).Message, null);
                 }
 
                 rules.Add(new CouponRuleDefinition(
@@ -251,7 +230,21 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                     item.Selection.Parameters ?? new Dictionary<string, string>()));
             }
 
-            return rules;
+            var validationErrors = new List<string>();
+            foreach (var rule in rules)
+            {
+                if (_ruleRegistry.TryGetRule(rule.Name, out var descriptor) && descriptor.ParameterValidator != null)
+                {
+                    validationErrors.AddRange(descriptor.ParameterValidator.Validate(rule.Parameters));
+                }
+            }
+
+            if (validationErrors.Count > 0)
+            {
+                return (false, string.Join(" ", validationErrors), null);
+            }
+
+            return (true, string.Empty, CouponRuleDefinition.SerializeList(rules));
         }
 
         public CouponRuleCatalogVm GetRuleCatalog()
@@ -314,21 +307,89 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                 Code = coupon.Code.Value,
                 Description = coupon.Description.Value,
                 Status = coupon.Status.ToString(),
-                RulesJson = coupon.RulesJson
+                RulesJson = coupon.RulesJson,
+                Rules = coupon.GetRules(),
+                ScopeTargets = (await _scopeTargets.GetByCouponIdAsync(coupon.Id.Value, ct))
+                    .Select(t => new ScopeTargetDto
+                    {
+                        ScopeType = t.ScopeType.Value,
+                        TargetId = t.TargetId,
+                        TargetName = t.TargetName
+                    }).ToList(),
+                Version = coupon.Version
             };
         }
 
-        public async Task<bool> UpdateCouponAsync(UpdateCouponDto dto, CancellationToken ct = default)
+        public async Task<CouponUpdateResult> UpdateCouponAsync(UpdateCouponDto dto, CancellationToken ct = default)
         {
             var coupon = await _coupons.GetByIdAsync(dto.Id, ct);
             if (coupon is null)
             {
-                return false;
+                return CouponUpdateResult.NotFound();
             }
 
-            coupon.Update(dto.Code, dto.Description);
-            await _coupons.UpdateAsync(coupon, ct);
-            return true;
+            // A stored version with no version posted back means the form did not round-trip it, so we
+            // cannot tell whether anyone else has written since. Treat that as a conflict rather than
+            // letting an unguarded request silently overwrite the row.
+            if (coupon.Version is { Length: > 0 }
+                && (dto.Version is null || !dto.Version.SequenceEqual(coupon.Version)))
+            {
+                return CouponUpdateResult.ConcurrencyConflict();
+            }
+
+            var rulesResult = MapValidateAndSerialize(dto.Rules);
+            if (!rulesResult.Success)
+            {
+                return CouponUpdateResult.ValidationFailed(rulesResult.FailureReason);
+            }
+
+            var scopeTargets = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
+                .Select(t => CouponScopeTarget.Create(coupon.Id, t.ScopeType, t.TargetId, t.TargetName))
+                .ToList();
+            var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
+                .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
+                .ToList();
+
+            try
+            {
+                coupon.Update(dto.Code, dto.Description);
+                coupon.UpdateRules(rulesResult.RulesJson, scopeTargetsForValidation);
+            }
+            catch (DomainException ex)
+            {
+                return CouponUpdateResult.ValidationFailed(ex.Message);
+            }
+
+            // Rules and scope targets are three separate SaveChanges across two repositories. Without a
+            // transaction, a failure after the delete leaves a scoped coupon with no targets at all —
+            // a state Coupon.ValidateRuleComposition rejects, i.e. an unusable coupon.
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                try
+                {
+                    var existingTargets = await _scopeTargets.GetByCouponIdAsync(coupon.Id.Value, ct);
+                    await _coupons.UpdateWithVersionAsync(coupon, dto.Version, ct);
+
+                    if (existingTargets.Count > 0)
+                    {
+                        await _scopeTargets.DeleteRangeAsync(existingTargets, ct);
+                    }
+
+                    if (scopeTargets.Count > 0)
+                    {
+                        await _scopeTargets.AddRangeAsync(scopeTargets, ct);
+                    }
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return CouponUpdateResult.ConcurrencyConflict();
+                }
+
+                await transaction.CommitAsync(CancellationToken.None);
+            }
+
+            return CouponUpdateResult.Updated();
         }
 
         public async Task<bool> DeleteCouponAsync(int id, CancellationToken ct = default)

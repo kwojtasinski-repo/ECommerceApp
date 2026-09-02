@@ -10,6 +10,7 @@ using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Presale.Checkout.Services;
+using ECommerceApp.Application.Sales.Coupons;
 using ECommerceApp.Application.Sales.Coupons.Services;
 using ECommerceApp.Application.Sales.Fulfillment.Services;
 using ECommerceApp.Application.Sales.Payments.Services;
@@ -32,6 +33,7 @@ namespace ECommerceApp.Application
             // Register with class defaults; Infrastructure will override from appsettings.
             services.Configure<CacheOptions>(_ => { });
             services.Configure<GuestProfileCleanupOptions>(_ => { });
+            services.Configure<CouponsOptions>(_ => { });
             services.AddFilesStore();
             services.AddErrorHandling();
             services.AddNbpClient();

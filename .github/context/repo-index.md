@@ -8,7 +8,7 @@
 > For confirmed bugs → see [`known-issues.md`](./known-issues.md)
 > For documentation lookup → see [`.github/instructions/docs-index.instructions.md`](../instructions/docs-index.instructions.md)
 
-_Last updated: 2026-06-05_
+_Last updated: 2026-09-02_
 
 ---
 
@@ -21,7 +21,7 @@ _Last updated: 2026-06-05_
 | **Razor views (.cshtml)** | 127                            |
 | **JavaScript modules**    | 12                             |
 | **Identity Razor Pages**  | 14                             |
-| **ADRs**                  | 26                             |
+| **ADRs**                  | 32                             |
 | **DbContexts**            | 12 (1 legacy + 11 per-BC)      |
 | **DB migration folders**  | 12                             |
 | **HTTP scenario files**   | 10                             |
@@ -98,6 +98,11 @@ Each BC has code in up to 4 layers. "Legacy" means old flat code that coexists a
 | ADR             | `docs/adr/0015`                                    |                                                                  |
 
 ### Sales / Coupons
+
+Rule authoring is complete through the generated Create/Edit builder. `RulesJson` is internal-only;
+the registry supplies categories, schemas drive parameter controls, and the shared service path
+maps, validates, and serializes both Create and Edit. Edit also carries rowversion and reconciles
+scope targets.
 
 | Layer           | Path                                                                                                    | Key files                                                                  |
 | --------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
