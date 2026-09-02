@@ -12,7 +12,6 @@ using AwesomeAssertions;
 using Moq;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -56,10 +55,53 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _scopeTargets = new Mock<IScopeTargetRepository>();
             _pipeline = new Mock<ICouponRulePipeline>();
             _options = new CouponsOptions { MaxCouponsPerOrder = 5 };
+            _ruleRegistry
+                .Setup(x => x.TryGetRule(It.IsAny<string>(), out It.Ref<CouponRuleDescriptor>.IsAny))
+                .Returns((string name, out CouponRuleDescriptor descriptor) =>
+                {
+                    var category = name switch
+                    {
+                        "order-total" or "per-product" or "per-category" or "per-tag" => CouponRuleCategory.Scope,
+                        "percentage-off" or "fixed-amount-off" => CouponRuleCategory.Discount,
+                        _ => CouponRuleCategory.Constraint
+                    };
+                    descriptor = category == CouponRuleCategory.Constraint && name != "min-order-value"
+                        ? null
+                        : new CouponRuleDescriptor(name, category, null, null, null, null);
+                    return descriptor != null;
+                });
         }
 
         private static string BuildRulesJson(params CouponRuleDefinition[] rules)
-            => JsonSerializer.Serialize(rules);
+            => CouponRuleDefinition.SerializeList(rules);
+
+        private static CouponRulesFormDto BuildRulesForm(params CouponRuleDefinition[] rules)
+        {
+            var form = new CouponRulesFormDto();
+            foreach (var rule in rules)
+            {
+                var selection = new RuleSelectionDto
+                {
+                    Name = rule.Name,
+                    Parameters = new Dictionary<string, string>(rule.Parameters)
+                };
+
+                if (rule.Category == CouponRuleCategory.Scope)
+                {
+                    form.Scope = selection;
+                }
+                else if (rule.Category == CouponRuleCategory.Discount)
+                {
+                    form.Discount = selection;
+                }
+                else
+                {
+                    form.Constraints.Add(selection);
+                }
+            }
+
+            return form;
+        }
 
         private static Coupon CreateRuleBasedCoupon(int id = 1, string code = "SAVE15")
         {
@@ -159,7 +201,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             {
                 Code = "SAVE15",
                 Description = "15% off",
-                RulesJson = BuildRulesJson(
+                Rules = BuildRulesForm(
                     new CouponRuleDefinition("order-total", CouponRuleCategory.Scope, new Dictionary<string, string>()),
                     new CouponRuleDefinition("percentage-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["percent"] = "15" })),
                 ScopeTargets = new List<ScopeTargetDto>()
@@ -186,8 +228,9 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             {
                 Code = "UI-FORMAT",
                 Description = "10% off",
-                RulesJson = "[{\"Name\":\"order-total\",\"Category\":\"Scope\",\"Parameters\":{}}," +
-                            "{\"Name\":\"percentage-off\",\"Category\":\"Discount\",\"Parameters\":{\"percent\":\"10\"}}]",
+                Rules = BuildRulesForm(
+                    new CouponRuleDefinition("order-total", CouponRuleCategory.Scope, new Dictionary<string, string>()),
+                    new CouponRuleDefinition("percentage-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["percent"] = "10" })),
                 ScopeTargets = new List<ScopeTargetDto>()
             };
             SetupCouponLookup(dto.Code, null);
@@ -202,20 +245,23 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         }
 
         [Fact]
-        public async Task CreateCouponAsync_MalformedJson_ShouldReturnFriendlyMessageNotParserOutput()
+        public async Task CreateCouponAsync_UnknownRule_ShouldReturnFriendlyMessageNotParserOutput()
         {
             var dto = new CreateCouponDto
             {
                 Code = "BROKEN",
                 Description = "desc",
-                RulesJson = "{ this is not json ]"
+                Rules = new CouponRulesFormDto
+                {
+                    Discount = new RuleSelectionDto { Name = "unknown-rule" }
+                }
             };
             SetupCouponLookup(dto.Code, null);
 
             var result = await CreateSlice1Service().CreateCouponAsync(dto, TestContext.Current.CancellationToken);
 
             result.Success.Should().BeFalse();
-            result.FailureReason.Should().Be("RulesJson is not valid JSON.");
+            result.FailureReason.Should().Contain("Unknown coupon rule");
             _coupons.Verify(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -234,7 +280,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             {
                 Code = "MISSING-AMOUNT",
                 Description = "desc",
-                RulesJson = BuildRulesJson(
+                Rules = BuildRulesForm(
                     new CouponRuleDefinition(CouponRuleNames.OrderTotal, CouponRuleCategory.Scope, new Dictionary<string, string>()),
                     new CouponRuleDefinition(CouponRuleNames.FixedAmountOff, CouponRuleCategory.Discount, new Dictionary<string, string>()))
             };
@@ -255,7 +301,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             {
                 Code = "PROD15",
                 Description = "15% off product",
-                RulesJson = BuildRulesJson(
+                Rules = BuildRulesForm(
                     new CouponRuleDefinition("per-product", CouponRuleCategory.Scope, new Dictionary<string, string>()),
                     new CouponRuleDefinition("percentage-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["percent"] = "15" })),
                 ScopeTargets = new List<ScopeTargetDto>
@@ -285,7 +331,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             {
                 Code = "INVALID",
                 Description = "desc",
-                RulesJson = BuildRulesJson(
+                Rules = BuildRulesForm(
                     new CouponRuleDefinition("percentage-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["percent"] = "15" })),
                 ScopeTargets = new List<ScopeTargetDto>()
             };

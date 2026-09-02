@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.Json;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Messages;
@@ -165,14 +164,17 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                 return CouponApplicationResult.Failed($"Coupon code '{dto.Code}' already exists.");
             }
 
+            // Only the mapping is guarded — it is the one step that rejects client input by throwing.
+            // Persistence stays outside, so an EF InvalidOperationException surfaces as a real failure
+            // instead of being reported to the admin as a coupon validation message.
             List<CouponRuleDefinition> rules;
             try
             {
-                rules = CouponRuleDefinition.ParseList(dto.RulesJson);
+                rules = MapRules(dto.Rules);
             }
-            catch (JsonException)
+            catch (UnknownCouponRuleException ex)
             {
-                return CouponApplicationResult.Failed("RulesJson is not valid JSON.");
+                return CouponApplicationResult.Failed(ex.Message);
             }
 
             var validationErrors = new List<string>();
@@ -180,8 +182,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             {
                 if (_ruleRegistry.TryGetRule(rule.Name, out var descriptor) && descriptor.ParameterValidator != null)
                 {
-                    var parameters = rule.Parameters ?? new Dictionary<string, string>();
-                    validationErrors.AddRange(descriptor.ParameterValidator.Validate(parameters));
+                    validationErrors.AddRange(descriptor.ParameterValidator.Validate(rule.Parameters));
                 }
             }
 
@@ -190,6 +191,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                 return CouponApplicationResult.Failed(string.Join(" ", validationErrors));
             }
 
+            var rulesJson = CouponRuleDefinition.SerializeList(rules);
             var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
                 .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
                 .ToList();
@@ -197,7 +199,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             Coupon coupon;
             try
             {
-                coupon = Coupon.CreateWithRules(dto.Code, dto.Description, dto.RulesJson, scopeTargetsForValidation);
+                coupon = Coupon.CreateWithRules(dto.Code, dto.Description, rulesJson, scopeTargetsForValidation);
             }
             catch (DomainException ex)
             {
@@ -215,6 +217,41 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             }
 
             return CouponApplicationResult.Applied();
+        }
+
+        private List<CouponRuleDefinition> MapRules(CouponRulesFormDto form)
+        {
+            var selections = new List<(RuleSelectionDto Selection, CouponRuleCategory Category)>
+            {
+                (form?.Scope, CouponRuleCategory.Scope),
+                (form?.Discount, CouponRuleCategory.Discount)
+            };
+
+            if (form?.Constraints != null)
+            {
+                selections.AddRange(form.Constraints.Select(selection => (selection, CouponRuleCategory.Constraint)));
+            }
+
+            var rules = new List<CouponRuleDefinition>();
+            foreach (var item in selections)
+            {
+                if (item.Selection == null)
+                {
+                    continue;
+                }
+
+                if (!_ruleRegistry.TryGetRule(item.Selection.Name, out var descriptor))
+                {
+                    throw new UnknownCouponRuleException(item.Selection.Name);
+                }
+
+                rules.Add(new CouponRuleDefinition(
+                    descriptor.Name,
+                    descriptor.Category,
+                    item.Selection.Parameters ?? new Dictionary<string, string>()));
+            }
+
+            return rules;
         }
 
         public CouponRuleCatalogVm GetRuleCatalog()

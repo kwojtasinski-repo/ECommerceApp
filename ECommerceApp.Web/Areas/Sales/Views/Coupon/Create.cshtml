@@ -3,10 +3,10 @@
     ViewData["Title"] = "Dodaj kupon";
 }
 
-<div class="container mt-4" style="max-width:600px;">
+<div class="container mt-4" style="max-width:760px;">
     <h2><i class="fa-solid fa-ticket me-2"></i>Dodaj kupon</h2>
 
-    <form method="post">
+    <form id="couponCreateForm" method="post">
         @Html.AntiForgeryToken()
 
         <div asp-validation-summary="All" class="alert alert-danger" id="validationSummary"></div>
@@ -23,12 +23,7 @@
             <span asp-validation-for="Description" class="text-danger"></span>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="RulesJson" class="form-label">Reguły (JSON)</label>
-            <textarea asp-for="RulesJson" class="form-control" rows="5" required
-                      placeholder='[{"Name":"percentage-off","Category":"Discount","Parameters":{"percent":"10"}}]'></textarea>
-            <span asp-validation-for="RulesJson" class="text-danger"></span>
-        </div>
+        <partial name="_RuleBuilder" model="Model" />
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">Dodaj</button>
@@ -39,5 +34,16 @@
 
 @section PreScripts {
     <partial name="_ValidationScriptsPartial" />
+}
+
+@section Scripts {
+    <script src="~/js/coupon-rule-builder.js" asp-append-version="true"></script>
+    <script>
+        require(["coupon-rule-builder"], function (builder) {
+            var root = document.getElementById("couponRuleBuilder");
+            builder.initialize(root);
+            root.dataset.ready = "true";
+        });
+    </script>
 }
 

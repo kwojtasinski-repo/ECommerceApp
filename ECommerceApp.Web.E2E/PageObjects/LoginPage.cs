@@ -52,7 +52,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
             return await ValidationSummary().CountAsync() > 0;
         }
 
-        private ILocator EmailInput() => _page.Locator("input[type='email']");
+        private ILocator EmailInput() => _page.Locator("#Input_Email");
         private ILocator PasswordInput() => _page.Locator("#Input_Password");
         private ILocator SubmitButton() => _page.Locator("#account button[type='submit']");
         private ILocator ValidationSummary() => _page.Locator("#account .validation-summary-errors");

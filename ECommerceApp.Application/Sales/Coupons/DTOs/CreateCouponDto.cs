@@ -6,7 +6,7 @@ namespace ECommerceApp.Application.Sales.Coupons.DTOs
     {
         public string Code { get; set; }
         public string Description { get; set; }
-        public string RulesJson { get; set; }
+        public CouponRulesFormDto Rules { get; set; } = new();
         public List<ScopeTargetDto> ScopeTargets { get; set; } = new();
     }
 

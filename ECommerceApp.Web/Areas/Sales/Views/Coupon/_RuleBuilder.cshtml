@@ -1,0 +1,77 @@
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using System.Collections.Generic
+@using System.Linq
+@using ECommerceApp.Application.Sales.Coupons.ViewModels
+@using ECommerceApp.Web.Areas.Sales
+@model ECommerceApp.Application.Sales.Coupons.DTOs.CreateCouponDto
+@{
+    var catalog = ViewBag.RuleCatalog as CouponRuleCatalogVm;
+    var camelCaseJson = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter() }
+    };
+    var catalogJson = JsonSerializer.Serialize(catalog, camelCaseJson);
+    var parameterLabelsJson = JsonSerializer.Serialize(CouponRuleDisplayNames.ParameterLabels);
+    var scopeRules = catalog?.Categories.FirstOrDefault(c => c.Category == ECommerceApp.Domain.Sales.Coupons.CouponRuleCategory.Scope)?.Rules
+        ?? new List<CouponRuleCatalogRuleVm>();
+    var discountRules = catalog?.Categories.FirstOrDefault(c => c.Category == ECommerceApp.Domain.Sales.Coupons.CouponRuleCategory.Discount)?.Rules
+        ?? new List<CouponRuleCatalogRuleVm>();
+}
+
+<div id="couponRuleBuilder"
+     data-catalog='@Html.Raw(catalogJson)'
+     data-parameter-labels='@Html.Raw(parameterLabelsJson)'
+     data-target-url="@ViewBag.ScopeTargetUrl"
+     data-target-placeholder="-- wybierz element --"
+     data-remove-label="Usuń">
+    <h3 class="h5">Reguły kuponu</h3>
+    <div class="mb-3">
+        <label class="form-label" for="Rules_Scope_Name">Zakres</label>
+        <select class="form-select rule-select" id="Rules_Scope_Name" name="Rules.Scope.Name" data-slot="scope" required>
+            <option value="">-- wybierz zakres --</option>
+            @foreach (var rule in scopeRules)
+            {
+                <option value="@rule.Name">@CouponRuleDisplayNames.ForRule(rule.Name)</option>
+            }
+        </select>
+        <div class="rule-parameters" data-parameters="scope"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="Rules_Discount_Name">Rabaty</label>
+        <select class="form-select rule-select" id="Rules_Discount_Name" name="Rules.Discount.Name" data-slot="discount" required>
+            <option value="">-- wybierz rabat --</option>
+            @foreach (var rule in discountRules)
+            {
+                <option value="@rule.Name">@CouponRuleDisplayNames.ForRule(rule.Name)</option>
+            }
+        </select>
+        <div class="rule-parameters" data-parameters="discount"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="constraintRuleSelect">Ograniczenia</label>
+        <div class="input-group">
+            <select class="form-select" id="constraintRuleSelect">
+                <option value="">-- opcjonalne ograniczenie --</option>
+                @foreach (var category in catalog?.Categories.Where(c => c.Category == ECommerceApp.Domain.Sales.Coupons.CouponRuleCategory.Constraint) ?? Enumerable.Empty<CouponRuleCatalogCategoryVm>())
+                {
+                    foreach (var rule in category.Rules)
+                    {
+                        <option value="@rule.Name">@CouponRuleDisplayNames.ForRule(rule.Name)</option>
+                    }
+                }
+            </select>
+            <button type="button" class="btn btn-outline-secondary" id="addConstraint">Dodaj</button>
+        </div>
+        <div id="constraintRules" class="mt-2"></div>
+    </div>
+    <div id="scopeTargetPicker" class="mb-3" hidden>
+        <label class="form-label" for="scopeTargetSelect">Element zakresu</label>
+        <select class="form-select" id="scopeTargetSelect">
+            <option value="">-- wybierz element --</option>
+        </select>
+        <div id="scopeTargetFields"></div>
+        <span class="text-danger" data-target-validation></span>
+    </div>
+</div>
