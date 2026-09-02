@@ -82,7 +82,13 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         {
             if (scopeType == "per-product")
             {
-                var products = await _productService.GetAllProducts(10, 1, query ?? string.Empty);
+                // #scopeTargetSelect is a plain <select>, not a paginated/searchable combobox (see
+                // coupon-rule-builder.js's loadTargets): it's populated once with whatever this call
+                // returns and offers no "next page" affordance, so a small page size silently makes every
+                // product past it permanently unreachable from this picker. Real SQL Server testing (and
+                // this endpoint's page size in particular) is what surfaced this — InMemory tests never
+                // seeded more than a handful of products, so it always fit on page 1.
+                var products = await _productService.GetAllProducts(500, 1, query ?? string.Empty);
                 return Json(products.Products.Select(p => new { id = p.Id, name = p.Name }));
             }
 

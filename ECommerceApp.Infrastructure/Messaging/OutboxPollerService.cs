@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,17 +46,41 @@ namespace ECommerceApp.Infrastructure.Messaging
 
         private async Task PollAsync(CancellationToken ct)
         {
+            IReadOnlyList<OutboxMessage> candidates;
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
-                var options = scope.ServiceProvider.GetRequiredService<IOptions<ECommerceApp.Application.Constants.RetryPolicyOptions>>();
-                var now = DateTime.UtcNow;
+                candidates = await outboxRepository.GetDueAsync(batchSize: 50, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "OutboxPollerService error fetching due messages");
+                return;
+            }
 
-                var candidates = await outboxRepository.GetDueAsync(batchSize: 50, ct);
-
-                foreach (var message in candidates)
+            // Each message gets its own scope and its own try/catch: a concurrency conflict (another
+            // poller instance claimed the same row first — expected when multiple hosts share one
+            // Outbox table, as the E2E suite does) must not abort the rest of the batch. Previously one
+            // failing message stopped every message behind it in the same 50-row poll.
+            foreach (var message in candidates)
+            {
+                if (ct.IsCancellationRequested)
                 {
+                    return;
+                }
+
+                try
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
+                    var options = scope.ServiceProvider.GetRequiredService<IOptions<ECommerceApp.Application.Constants.RetryPolicyOptions>>();
+                    var now = DateTime.UtcNow;
+
                     if (message.Status == OutboxStatus.Running)
                     {
                         _logger.LogWarning(
@@ -72,13 +97,14 @@ namespace ECommerceApp.Infrastructure.Messaging
                     var dispatcher = scope.ServiceProvider.GetRequiredService<OutboxDispatcher>();
                     await dispatcher.DispatchAsync(message, ct);
                 }
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "OutboxPollerService error");
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "OutboxPollerService error dispatching message (id={Id})", message.Id);
+                }
             }
         }
     }

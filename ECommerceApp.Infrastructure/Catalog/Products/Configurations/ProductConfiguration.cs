@@ -17,10 +17,18 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .HasConversion(x => x.Value, v => new ProductId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(p => p.Name)
-                   .HasConversion(x => x.Value, v => new ProductName(v))
-                   .HasMaxLength(150)
-                   .IsRequired();
+            // OwnsOne, not HasConversion — same reason as Description/Tag.Name below: EF Core cannot
+            // translate a query that dots into .Value on a HasConversion-mapped value object (confirmed
+            // empirically on SQL Server for both this and ProductId; see ProductRepository.ApplySearch).
+            // HasConversion only translates the whole converted property, not member access on it.
+            builder.OwnsOne(p => p.Name, n =>
+            {
+                n.Property(x => x.Value)
+                 .HasColumnName("Name")
+                 .HasMaxLength(150)
+                 .IsRequired();
+            });
+            builder.Navigation(p => p.Name).IsRequired();
 
             builder.Property(p => p.Cost)
                    .HasConversion(x => x.Amount, v => new Price(v))

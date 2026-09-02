@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Sales.Coupons;
+using ECommerceApp.Domain.Sales.Coupons.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
             string scopeType, int targetId, CancellationToken ct = default)
         {
             return await _db.CouponScopeTargets
-                .Where(t => t.ScopeType.Value == scopeType && t.TargetId == targetId)
+                .Where(t => t.ScopeType == new CouponScopeType(scopeType) && t.TargetId == targetId)
                 .ToListAsync(ct);
         }
 

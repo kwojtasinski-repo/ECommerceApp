@@ -57,42 +57,70 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         {
             if (pageNo < 1) pageNo = 1;
 
-            return await _context.Products
-                .AsNoTracking()
-                .Where(p => string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString))
-                .OrderBy(p => p.Id.Value)
+            var query = ApplySearch(_context.Products.AsNoTracking(), searchString);
+            return await query
+                .OrderBy(p => p.Id)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
         }
 
         public async Task<int> CountAsync(string searchString)
-            => await _context.Products
-                .AsNoTracking()
-                .CountAsync(p => string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString));
+            => await ApplySearch(_context.Products.AsNoTracking(), searchString).CountAsync();
 
         public async Task<List<Product>> GetPublishedAsync(int pageSize, int pageNo, string searchString, int? categoryId = null)
         {
             if (pageNo < 1) pageNo = 1;
 
-            return await _context.Products
-                .AsNoTracking()
+            var query = _context.Products.AsNoTracking().Where(p => p.Status == ProductStatus.Published);
+            if (categoryId.HasValue)
+            {
+                var typedCategoryId = new CategoryId(categoryId.Value);
+                query = query.Where(p => p.CategoryId == typedCategoryId);
+            }
+
+            query = ApplySearch(query, searchString);
+            return await query
                 .Include(p => p.Images)
-                .Where(p => p.Status == ProductStatus.Published
-                         && (!categoryId.HasValue || p.CategoryId == new CategoryId(categoryId.Value))
-                         && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)))
-                .OrderBy(p => p.Id.Value)
+                .OrderBy(p => p.Id)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
         }
 
         public async Task<int> CountPublishedAsync(string searchString, int? categoryId = null)
-            => await _context.Products
-                .AsNoTracking()
-                .CountAsync(p => p.Status == ProductStatus.Published
-                              && (!categoryId.HasValue || p.CategoryId == new CategoryId(categoryId.Value))
-                              && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)));
+        {
+            var query = _context.Products.AsNoTracking().Where(p => p.Status == ProductStatus.Published);
+            if (categoryId.HasValue)
+            {
+                var typedCategoryId = new CategoryId(categoryId.Value);
+                query = query.Where(p => p.CategoryId == typedCategoryId);
+            }
+
+            return await ApplySearch(query, searchString).CountAsync();
+        }
+
+        /// <summary>
+        /// <see cref="Product.Name"/> is mapped with <c>HasConversion</c> (a plain scalar column);
+        /// <see cref="Product.Description"/> is mapped with <c>OwnsOne</c> (an owned-type navigation with
+        /// its own shadow property). EF Core cannot translate a single boolean expression that OR-combines
+        /// a predicate over each — confirmed empirically on SQL Server (<c>InvalidOperationException</c>:
+        /// "could not be translated"), regardless of whether it's written as <c>.Contains()</c> or
+        /// <c>EF.Functions.Like()</c>. Two separately-mapped queries unioned server-side avoids the mixed
+        /// expression tree entirely: each side only ever touches one of the two mapping styles.
+        /// </summary>
+        private static IQueryable<Product> ApplySearch(IQueryable<Product> query, string searchString)
+        {
+            if (string.IsNullOrEmpty(searchString))
+            {
+                return query;
+            }
+
+            var pattern = "%" + searchString + "%";
+            var byName = query.Where(p => EF.Functions.Like(p.Name.Value, pattern));
+            var byDescription = query.Where(p => EF.Functions.Like(p.Description.Value, pattern));
+            return byName.Union(byDescription);
+        }
 
         public async Task<List<Product>> GetPublishedByTagAsync(int tagId, int pageSize, int pageNo)
         {
@@ -103,7 +131,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .Include(p => p.Images)
                 .Where(p => p.Status == ProductStatus.Published
                          && p.ProductTags.Any(pt => pt.TagId == tagIdTyped))
-                .OrderBy(p => p.Id.Value)
+                .OrderBy(p => p.Id)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
