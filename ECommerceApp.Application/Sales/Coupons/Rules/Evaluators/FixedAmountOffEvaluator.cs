@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class FixedAmountOffEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class FixedAmountOffEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         public string RuleName => CouponRuleNames.FixedAmountOff;
 
@@ -28,5 +28,10 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'amount' is required and must be a positive decimal.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("amount", CouponRuleParameterType.Decimal, true, null, 0m, null, "Amount")
+        };
     }
 }

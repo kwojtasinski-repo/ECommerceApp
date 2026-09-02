@@ -3,7 +3,6 @@ using ECommerceApp.Domain.Shared;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace ECommerceApp.Domain.Sales.Coupons
 {
@@ -104,10 +103,7 @@ namespace ECommerceApp.Domain.Sales.Coupons
         {
             try
             {
-                JsonSerializerOptions enumStringOptions = new();
-                enumStringOptions.Converters.Add(new JsonStringEnumConverter());
-                return JsonSerializer.Deserialize<List<CouponRuleDefinition>>(rulesJson, enumStringOptions)
-                       ?? [];
+                return CouponRuleDefinition.ParseList(rulesJson);
             }
             catch (JsonException)
             {

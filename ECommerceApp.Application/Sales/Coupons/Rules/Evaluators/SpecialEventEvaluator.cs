@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class SpecialEventEvaluator : IAsyncCouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class SpecialEventEvaluator : IAsyncCouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         private readonly ISpecialEventCache _specialEventCache;
 
@@ -42,5 +42,10 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'eventCode' is required.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("eventCode", CouponRuleParameterType.String, true, null, null, null, "Event code")
+        };
     }
 }

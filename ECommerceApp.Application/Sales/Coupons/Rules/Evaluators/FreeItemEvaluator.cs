@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class FreeItemEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class FreeItemEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         public string RuleName => CouponRuleNames.FreeItem;
 
@@ -34,5 +34,11 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'quantity' must be a positive integer when provided.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("productId", CouponRuleParameterType.Int, true, null, 1m, null, "Product"),
+            new CouponRuleParameter("quantity", CouponRuleParameterType.Int, false, "1", 1m, null, "Quantity")
+        };
     }
 }

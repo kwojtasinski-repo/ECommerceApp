@@ -1,16 +1,26 @@
 using ECommerceApp.Domain.Sales.Coupons;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class PercentageOffEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class PercentageOffEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
+        private readonly CouponsOptions _options;
+
+        public PercentageOffEvaluator(CouponsOptions options)
+        {
+            _options = options;
+        }
+
         public string RuleName => CouponRuleNames.PercentageOff;
 
         public CouponRuleEvaluationResult Evaluate(CouponEvaluationContext context, IReadOnlyDictionary<string, string> parameters)
         {
             if (!parameters.TryGetValue("percent", out var raw))
-                raw = "10"; // defaults-when-missing convention
+            {
+                raw = _options.DefaultDiscountPercent.ToString(CultureInfo.InvariantCulture);
+            }
 
             if (!decimal.TryParse(raw, out var percent) || percent <= 0 || percent > 100)
                 return CouponRuleEvaluationResult.Fail("Invalid 'percent' parameter.");
@@ -28,6 +38,14 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                     errors.Add("'percent' must be a decimal between 0 (exclusive) and 100 (inclusive).");
             }
             return errors;
+        }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters()
+        {
+            return new[]
+            {
+                new CouponRuleParameter("percent", CouponRuleParameterType.Decimal, false, _options.DefaultDiscountPercent.ToString(CultureInfo.InvariantCulture), 0m, 100m, "Percentage off")
+            };
         }
     }
 }

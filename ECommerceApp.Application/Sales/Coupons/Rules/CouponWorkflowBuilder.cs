@@ -15,12 +15,13 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
             CouponRuleCategory category,
             ICouponRuleEvaluator syncEvaluator,
             IAsyncCouponRuleEvaluator asyncEvaluator = null,
-            ICouponRuleParameterValidator parameterValidator = null)
+            ICouponRuleParameterValidator parameterValidator = null,
+            ICouponRuleParameterSchema parameterSchema = null)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Rule name is required.", nameof(name));
 
-            _rules.Add(new CouponRuleDescriptor(name, category, syncEvaluator, asyncEvaluator, parameterValidator));
+            _rules.Add(new CouponRuleDescriptor(name, category, syncEvaluator, asyncEvaluator, parameterValidator, parameterSchema));
             return this;
         }
 
@@ -36,6 +37,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
                     CouponRuleNames.OversizeGuard,
                     CouponRuleCategory.Constraint,
                     evaluator,
+                    null,
                     null,
                     null));
             }

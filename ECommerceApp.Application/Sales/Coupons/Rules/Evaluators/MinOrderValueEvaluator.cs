@@ -1,17 +1,24 @@
 using ECommerceApp.Domain.Sales.Coupons;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class MinOrderValueEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class MinOrderValueEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
+        private readonly CouponsOptions _options;
+
+        public MinOrderValueEvaluator(CouponsOptions options)
+        {
+            _options = options;
+        }
+
         public string RuleName => CouponRuleNames.MinOrderValue;
 
         public CouponRuleEvaluationResult Evaluate(CouponEvaluationContext context, IReadOnlyDictionary<string, string> parameters)
         {
-            // defaults-when-missing convention — fallback to 100 (from CouponsOptions.DefaultMinOrderValue)
             parameters.TryGetValue("minValue", out var raw);
-            var minValue = decimal.TryParse(raw, out var v) ? v : 100m;
+            var minValue = decimal.TryParse(raw, out var v) ? v : _options.DefaultMinOrderValue;
 
             return context.OriginalTotal >= minValue
                 ? CouponRuleEvaluationResult.Pass()
@@ -24,6 +31,14 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
             if (parameters.TryGetValue("minValue", out var raw) && (!decimal.TryParse(raw, out var v) || v < 0))
                 errors.Add("'minValue' must be a non-negative decimal when provided.");
             return errors;
+        }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters()
+        {
+            return new[]
+            {
+                new CouponRuleParameter("minValue", CouponRuleParameterType.Decimal, false, _options.DefaultMinOrderValue.ToString(CultureInfo.InvariantCulture), 0m, null, "Minimum order value")
+            };
         }
     }
 }

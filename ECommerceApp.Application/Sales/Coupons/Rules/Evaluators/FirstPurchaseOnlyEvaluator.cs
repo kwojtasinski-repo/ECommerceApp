@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class FirstPurchaseOnlyEvaluator : IAsyncCouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class FirstPurchaseOnlyEvaluator : IAsyncCouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         private readonly ICompletedOrderCounter _completedOrderCounter;
 
@@ -34,5 +34,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
             // No parameters required — uses zero-parameter convention
             return System.Array.Empty<string>();
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => System.Array.Empty<CouponRuleParameter>();
     }
 }

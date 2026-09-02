@@ -16,6 +16,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         Task<CouponDetailVm> GetCouponAsync(int id, CancellationToken ct = default);
         Task<bool> UpdateCouponAsync(UpdateCouponDto dto, CancellationToken ct = default);
         Task<bool> DeleteCouponAsync(int id, CancellationToken ct = default);
+        CouponRuleCatalogVm GetRuleCatalog();
         Task<CouponRulePipelineResult> SimulateCouponAsync(string couponCode, CouponEvaluationContext context, CancellationToken ct = default);
     }
 }

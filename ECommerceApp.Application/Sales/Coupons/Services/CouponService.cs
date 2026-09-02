@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.Json;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Messages;
@@ -25,6 +26,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         private readonly ICouponRulePipeline _pipeline;
         private readonly CouponsOptions _options;
         private readonly ICouponApplicationRecordRepository _applicationRecords;
+        private readonly ICouponRuleRegistry _ruleRegistry;
 
         public CouponService(
             ICouponRepository coupons,
@@ -35,7 +37,8 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             IScopeTargetRepository scopeTargets,
             ICouponRulePipeline pipeline,
             CouponsOptions options,
-            ICouponApplicationRecordRepository applicationRecords)
+            ICouponApplicationRecordRepository applicationRecords,
+            ICouponRuleRegistry ruleRegistry)
         {
             _coupons = coupons;
             _couponUsed = couponUsed;
@@ -46,6 +49,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             _pipeline = pipeline;
             _options = options;
             _applicationRecords = applicationRecords;
+            _ruleRegistry = ruleRegistry;
         }
 
         public async Task<CouponApplyResult> ApplyCouponAsync(string couponCode, CouponEvaluationContext context, CancellationToken ct = default)
@@ -161,6 +165,31 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
                 return CouponApplicationResult.Failed($"Coupon code '{dto.Code}' already exists.");
             }
 
+            List<CouponRuleDefinition> rules;
+            try
+            {
+                rules = CouponRuleDefinition.ParseList(dto.RulesJson);
+            }
+            catch (JsonException)
+            {
+                return CouponApplicationResult.Failed("RulesJson is not valid JSON.");
+            }
+
+            var validationErrors = new List<string>();
+            foreach (var rule in rules)
+            {
+                if (_ruleRegistry.TryGetRule(rule.Name, out var descriptor) && descriptor.ParameterValidator != null)
+                {
+                    var parameters = rule.Parameters ?? new Dictionary<string, string>();
+                    validationErrors.AddRange(descriptor.ParameterValidator.Validate(parameters));
+                }
+            }
+
+            if (validationErrors.Count > 0)
+            {
+                return CouponApplicationResult.Failed(string.Join(" ", validationErrors));
+            }
+
             var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
                 .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))
                 .ToList();
@@ -186,6 +215,32 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             }
 
             return CouponApplicationResult.Applied();
+        }
+
+        public CouponRuleCatalogVm GetRuleCatalog()
+        {
+            var categories = new[]
+            {
+                CouponRuleCategory.Scope,
+                CouponRuleCategory.Discount,
+                CouponRuleCategory.Constraint
+            };
+
+            return new CouponRuleCatalogVm
+            {
+                Categories = categories.Select(category => new CouponRuleCatalogCategoryVm
+                {
+                    Category = category,
+                    Rules = _ruleRegistry.GetRulesByCategory(category)
+                        .Where(descriptor => descriptor.Name != CouponRuleNames.OversizeGuard)
+                        .Select(descriptor => new CouponRuleCatalogRuleVm
+                        {
+                            Name = descriptor.Name,
+                            RequiresScopeTargets = category == CouponRuleCategory.Scope && descriptor.Name != CouponRuleNames.OrderTotal,
+                            Parameters = descriptor.ParameterSchema?.GetParameters() ?? new List<CouponRuleParameter>()
+                        }).ToList()
+                }).ToList()
+            };
         }
 
         public async Task<CouponListVm> GetCouponsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)

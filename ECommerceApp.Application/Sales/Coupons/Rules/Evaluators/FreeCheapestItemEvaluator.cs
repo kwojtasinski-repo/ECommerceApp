@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class FreeCheapestItemEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class FreeCheapestItemEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         public string RuleName => CouponRuleNames.FreeCheapestItem;
 
@@ -43,5 +43,10 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'maxFreeUnits' must be a positive integer when provided.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("maxFreeUnits", CouponRuleParameterType.Int, false, "1", 1m, null, "Maximum free units")
+        };
     }
 }

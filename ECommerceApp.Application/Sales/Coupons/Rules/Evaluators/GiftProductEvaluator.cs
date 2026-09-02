@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class GiftProductEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class GiftProductEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         // Note: Tier 1 (sync) checks the cart for the gift product presence.
         // Tier 2 (async) would perform the stock check — see GiftProductAsyncEvaluator.
@@ -41,5 +41,11 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'quantity' must be a positive integer when provided.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("productId", CouponRuleParameterType.Int, true, null, 1m, null, "Product"),
+            new CouponRuleParameter("quantity", CouponRuleParameterType.Int, false, "1", 1m, null, "Quantity")
+        };
     }
 }

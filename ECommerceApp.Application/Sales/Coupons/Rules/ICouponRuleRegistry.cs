@@ -10,19 +10,22 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
         public ICouponRuleEvaluator SyncEvaluator { get; }
         public IAsyncCouponRuleEvaluator AsyncEvaluator { get; }
         public ICouponRuleParameterValidator ParameterValidator { get; }
+        public ICouponRuleParameterSchema ParameterSchema { get; }
 
         public CouponRuleDescriptor(
             string name,
             CouponRuleCategory category,
             ICouponRuleEvaluator syncEvaluator,
             IAsyncCouponRuleEvaluator asyncEvaluator,
-            ICouponRuleParameterValidator parameterValidator)
+            ICouponRuleParameterValidator parameterValidator,
+            ICouponRuleParameterSchema parameterSchema)
         {
             Name = name;
             Category = category;
             SyncEvaluator = syncEvaluator;
             AsyncEvaluator = asyncEvaluator;
             ParameterValidator = parameterValidator;
+            ParameterSchema = parameterSchema;
         }
     }
 

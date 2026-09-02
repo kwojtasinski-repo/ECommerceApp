@@ -5,6 +5,7 @@ using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Coupons.Results;
 using ECommerceApp.Application.Sales.Coupons.Rules;
+using ECommerceApp.Application.Sales.Coupons.Rules.Evaluators;
 using ECommerceApp.Application.Sales.Coupons.Services;
 using ECommerceApp.Domain.Sales.Coupons;
 using AwesomeAssertions;
@@ -173,6 +174,77 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             // Assert
             result.Success.Should().BeTrue();
             _coupons.Verify(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateCouponAsync_StringCategoryJson_AsShownInTheUi_ShouldSucceed()
+        {
+            // Arrange — verbatim the format the admin is shown in Areas/Sales/Views/Coupon/Create.cshtml.
+            // Category is a string here; BuildRulesJson elsewhere in this file emits it as a number, so
+            // without this test the string form goes completely unexercised.
+            var dto = new CreateCouponDto
+            {
+                Code = "UI-FORMAT",
+                Description = "10% off",
+                RulesJson = "[{\"Name\":\"order-total\",\"Category\":\"Scope\",\"Parameters\":{}}," +
+                            "{\"Name\":\"percentage-off\",\"Category\":\"Discount\",\"Parameters\":{\"percent\":\"10\"}}]",
+                ScopeTargets = new List<ScopeTargetDto>()
+            };
+            SetupCouponLookup(dto.Code, null);
+            _coupons.Setup(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+            // Act
+            var result = await CreateSlice1Service().CreateCouponAsync(dto, TestContext.Current.CancellationToken);
+
+            // Assert
+            result.Success.Should().BeTrue();
+            _coupons.Verify(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateCouponAsync_MalformedJson_ShouldReturnFriendlyMessageNotParserOutput()
+        {
+            var dto = new CreateCouponDto
+            {
+                Code = "BROKEN",
+                Description = "desc",
+                RulesJson = "{ this is not json ]"
+            };
+            SetupCouponLookup(dto.Code, null);
+
+            var result = await CreateSlice1Service().CreateCouponAsync(dto, TestContext.Current.CancellationToken);
+
+            result.Success.Should().BeFalse();
+            result.FailureReason.Should().Be("RulesJson is not valid JSON.");
+            _coupons.Verify(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateCouponAsync_MissingRequiredParameter_ShouldFailBeforePersistence()
+        {
+            var descriptor = new CouponRuleDescriptor(
+                CouponRuleNames.FixedAmountOff,
+                CouponRuleCategory.Discount,
+                new FixedAmountOffEvaluator(),
+                null,
+                new FixedAmountOffEvaluator(),
+                new FixedAmountOffEvaluator());
+            _ruleRegistry.Setup(x => x.TryGetRule(CouponRuleNames.FixedAmountOff, out descriptor)).Returns(true);
+            var dto = new CreateCouponDto
+            {
+                Code = "MISSING-AMOUNT",
+                Description = "desc",
+                RulesJson = BuildRulesJson(
+                    new CouponRuleDefinition(CouponRuleNames.OrderTotal, CouponRuleCategory.Scope, new Dictionary<string, string>()),
+                    new CouponRuleDefinition(CouponRuleNames.FixedAmountOff, CouponRuleCategory.Discount, new Dictionary<string, string>()))
+            };
+            SetupCouponLookup(dto.Code, null);
+
+            var result = await CreateSlice1Service().CreateCouponAsync(dto, TestContext.Current.CancellationToken);
+
+            result.Success.Should().BeFalse();
+            result.FailureReason.Should().Contain("amount");
+            _coupons.Verify(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -510,7 +582,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var txMock = new Mock<IOutboxTransaction>();
             txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-            return new CouponService(_coupons.Object, _couponUsed.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object, _scopeTargets.Object, _pipeline.Object, _options, _applicationRecords.Object);
+            return new CouponService(_coupons.Object, _couponUsed.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object, _scopeTargets.Object, _pipeline.Object, _options, _applicationRecords.Object, _ruleRegistry.Object);
         }
 
         // ══════════════════════════════════════════════════════════════════════

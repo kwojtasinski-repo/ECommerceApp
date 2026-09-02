@@ -24,6 +24,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private readonly Mock<IScopeTargetRepository> _scopeTargets;
         private readonly Mock<ICouponRulePipeline> _pipeline;
         private readonly Mock<ICouponApplicationRecordRepository> _applicationRecords;
+        private readonly Mock<ICouponRuleRegistry> _ruleRegistry;
         private readonly CouponsOptions _options;
 
         public CouponServiceTests()
@@ -36,6 +37,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _scopeTargets = new Mock<IScopeTargetRepository>();
             _pipeline = new Mock<ICouponRulePipeline>();
             _applicationRecords = new Mock<ICouponApplicationRecordRepository>();
+            _ruleRegistry = new Mock<ICouponRuleRegistry>();
             _options = new CouponsOptions();
         }
 
@@ -45,7 +47,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var txMock = new Mock<IOutboxTransaction>();
             txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
-            return new CouponService(_coupons.Object, _couponUsed.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object, _scopeTargets.Object, _pipeline.Object, _options, _applicationRecords.Object);
+            return new CouponService(_coupons.Object, _couponUsed.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object, _scopeTargets.Object, _pipeline.Object, _options, _applicationRecords.Object, _ruleRegistry.Object);
         }
 
         private static Coupon CreateAvailableCoupon(int id = 1, string code = "SAVE10")

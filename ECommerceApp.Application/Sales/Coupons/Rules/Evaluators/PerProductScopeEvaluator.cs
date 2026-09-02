@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class PerProductScopeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class PerProductScopeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         public string RuleName => CouponRuleNames.PerProduct;
 
@@ -26,5 +26,10 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'productId' is required and must be a positive integer.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("productId", CouponRuleParameterType.Int, true, null, 1m, null, "Product")
+        };
     }
 }

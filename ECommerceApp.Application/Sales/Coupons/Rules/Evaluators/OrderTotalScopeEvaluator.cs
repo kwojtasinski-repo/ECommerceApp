@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class OrderTotalScopeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class OrderTotalScopeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         public string RuleName => CouponRuleNames.OrderTotal;
 
@@ -18,5 +18,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
             // No parameters required for order-total scope
             return System.Array.Empty<string>();
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => System.Array.Empty<CouponRuleParameter>();
     }
 }

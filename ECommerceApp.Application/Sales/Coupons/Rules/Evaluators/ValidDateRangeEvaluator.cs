@@ -5,7 +5,7 @@ using System.Globalization;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class ValidDateRangeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class ValidDateRangeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         public string RuleName => CouponRuleNames.ValidDateRange;
 
@@ -52,5 +52,11 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("validFrom", CouponRuleParameterType.Date, false, null, null, null, "Valid from"),
+            new CouponRuleParameter("validTo", CouponRuleParameterType.Date, false, null, null, null, "Valid to")
+        };
     }
 }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class MaxUsesPerUserEvaluator : IAsyncCouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class MaxUsesPerUserEvaluator : IAsyncCouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         private readonly ICouponUsedRepository _couponUsedRepo;
 
@@ -39,5 +39,10 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'maxUsesPerUser' must be a positive integer when provided.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("maxUsesPerUser", CouponRuleParameterType.Int, false, "1", 1m, null, "Maximum uses per user")
+        };
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
 {
-    public sealed class PerTagScopeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator
+    public sealed class PerTagScopeEvaluator : ICouponRuleEvaluator, ICouponRuleParameterValidator, ICouponRuleParameterSchema
     {
         public string RuleName => CouponRuleNames.PerTag;
 
@@ -26,5 +26,10 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules.Evaluators
                 errors.Add("'tagId' is required and must be a positive integer.");
             return errors;
         }
+
+        public IReadOnlyList<CouponRuleParameter> GetParameters() => new[]
+        {
+            new CouponRuleParameter("tagId", CouponRuleParameterType.Int, true, null, 1m, null, "Tag")
+        };
     }
 }

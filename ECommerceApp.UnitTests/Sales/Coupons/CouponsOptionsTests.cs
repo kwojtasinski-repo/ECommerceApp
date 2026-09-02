@@ -35,16 +35,26 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         }
 
         [Fact]
+        public void DefaultDiscountPercent_ShouldBe10()
+        {
+            var options = new CouponsOptions();
+
+            options.DefaultDiscountPercent.Should().Be(10m);
+        }
+
+        [Fact]
         public void Options_ShouldBeConfigurable()
         {
             var options = new CouponsOptions
             {
                 MaxCouponsPerOrder = 3,
-                DefaultMinOrderValue = 50m
+                DefaultMinOrderValue = 50m,
+                DefaultDiscountPercent = 25m
             };
 
             options.MaxCouponsPerOrder.Should().Be(3);
             options.DefaultMinOrderValue.Should().Be(50m);
+            options.DefaultDiscountPercent.Should().Be(25m);
         }
     }
 }
