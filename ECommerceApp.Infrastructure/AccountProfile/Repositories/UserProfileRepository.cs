@@ -78,7 +78,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
                 .Where(p => string.IsNullOrEmpty(searchString) ||
                             p.FirstName.Contains(searchString) ||
                             p.LastName.Contains(searchString))
-                .OrderBy(p => p.Id)
+                .OrderBy(p => p.Id.Value)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -106,7 +106,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
                             (string.IsNullOrEmpty(searchString) ||
                              p.FirstName.Contains(searchString) ||
                              p.LastName.Contains(searchString)))
-                .OrderBy(p => p.Id)
+                .OrderBy(p => p.Id.Value)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

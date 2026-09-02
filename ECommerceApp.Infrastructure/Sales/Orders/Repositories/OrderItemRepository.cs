@@ -109,7 +109,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         {
             var query = _context.OrderItems.AsNoTracking();
             return await query
-                .OrderBy(oi => oi.Id)
+                .OrderBy(oi => oi.Id.Value)
                 .Skip(pageSize * (pageNo - 1))
                 .Take(pageSize)
                 .ToListAsync(ct);
