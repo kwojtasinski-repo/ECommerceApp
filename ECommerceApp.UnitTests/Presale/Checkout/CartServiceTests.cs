@@ -21,6 +21,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         private readonly IMemoryCache _cache;
         private readonly Mock<ICatalogClient> _catalog;
         private readonly Mock<ICartRequirements> _requirements;
+        private readonly Mock<IStockSnapshotRepository> _stockSnapshotRepo;
         private readonly CartService _service;
 
         public CartServiceTests()
@@ -29,14 +30,23 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cache = new MemoryCache(new MemoryCacheOptions());
             _catalog = new Mock<ICatalogClient>();
             _requirements = new Mock<ICartRequirements>();
+            _stockSnapshotRepo = new Mock<IStockSnapshotRepository>();
             _catalog
                 .Setup(c => c.GetProductsByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<CatalogProductSummary>());
             _requirements.Setup(r => r.MaxQuantityPerOrderLine).Returns(10);
-            _service = new CartService(_cartRepo.Object, _cache, _catalog.Object, _requirements.Object);
+            SetupStockSnapshot(1, 100);
+            _service = new CartService(_cartRepo.Object, _cache, _catalog.Object, _requirements.Object, _stockSnapshotRepo.Object);
         }
 
         public void Dispose() => _cache.Dispose();
+
+        private void SetupStockSnapshot(int productId, int availableQuantity)
+        {
+            _stockSnapshotRepo
+                .Setup(r => r.FindByProductIdAsync(It.Is<PresaleProductId>(id => id.Value == productId), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StockSnapshot.Create(productId, availableQuantity, DateTime.UtcNow));
+        }
 
         private void SetupCartLines(string userId, IReadOnlyList<CartLine> lines)
         {
@@ -219,6 +229,40 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             // Assert
             result.Should().BeOfType<AddToCartResult.QuantityExceeded>()
                 .Which.MaxAllowed.Should().Be(10);
+            _cartRepo.Verify(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task AddToCartAsync_ExceedsAvailableStock_ShouldReturnOutOfStock()
+        {
+            // Arrange
+            SetupCartLines(new List<CartLine>());
+            SetupStockSnapshot(1, availableQuantity: 2);
+
+            // Act
+            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3), TestContext.Current.CancellationToken);
+
+            // Assert
+            result.Should().BeOfType<AddToCartResult.Unavailable>()
+                .Which.AvailableQuantity.Should().Be(2);
+            _cartRepo.Verify(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task AddToCartAsync_NoStockSnapshot_ShouldReturnOutOfStock()
+        {
+            // Arrange
+            SetupCartLines(new List<CartLine>());
+            _stockSnapshotRepo
+                .Setup(r => r.FindByProductIdAsync(It.Is<PresaleProductId>(id => id.Value == 99), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StockSnapshot)null!);
+
+            // Act
+            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 99, 1), TestContext.Current.CancellationToken);
+
+            // Assert
+            result.Should().BeOfType<AddToCartResult.Unavailable>()
+                .Which.AvailableQuantity.Should().Be(0);
             _cartRepo.Verify(r => r.UpsertAsync(It.IsAny<CartLine>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 

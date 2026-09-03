@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
 using ECommerceApp.Application.Presale.Checkout.Results;
@@ -85,6 +86,35 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             var orders = await orderService.GetOrdersByUserIdAsync(userId, CancellationToken);
             orders.ShouldNotBeEmpty();
             orders.ShouldContain(o => o.Id == success.OrderId);
+        }
+
+        [Fact]
+        public async Task PlaceOrderAsync_ExceedsRealInventoryStock_ReturnsFailedAndDoesNotCreateOrder()
+        {
+            var userId = "co-user-lowstock";
+            var presaleUserId = new PresaleUserId(userId);
+
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            // Presale's own cached snapshot says plenty is available (matches how a stale/optimistic
+            // cache could look) — the real Inventory-side StockItem is what should actually gate this.
+            await SeedStockSnapshotAsync(productId, qty: 100, CancellationToken);
+
+            var stockService = GetRequiredService<IStockService>();
+            await stockService.InitializeStockAsync(productId, initialQuantity: 1, CancellationToken);
+
+            var cartService = GetRequiredService<ICartService>();
+            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 5), CancellationToken);
+
+            var initiateResult = await _service.InitiateAsync(presaleUserId, CancellationToken);
+            initiateResult.ShouldBeOfType<InitiateCheckoutResult.Completed>();
+
+            var result = await _service.PlaceOrderAsync(presaleUserId, CustomerId, CurrencyId, DefaultCustomer, CancellationToken);
+
+            result.ShouldBeOfType<CheckoutResult.OrderFailed>();
+
+            var orderService = GetRequiredService<IOrderService>();
+            var orders = await orderService.GetOrdersByUserIdAsync(userId, CancellationToken);
+            orders.ShouldBeEmpty();
         }
 
         // ── InitiateAsync ─────────────────────────────────────────────────

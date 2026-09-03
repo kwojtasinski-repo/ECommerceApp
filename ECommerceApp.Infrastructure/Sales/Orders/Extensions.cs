@@ -32,6 +32,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddScoped<ICustomerExistenceChecker, CustomerExistenceChecker>();
             services.AddScoped<IOrderCustomerResolver, OrderCustomerResolver>();
             services.AddScoped<IOrderProductResolver, OrderProductResolver>();
+            services.AddScoped<IStockAvailabilityChecker, StockAvailabilityChecker>();
             services.AddScoped<IOrderUserResolver, OrderUserResolverAdapter>();
             services.AddScoped<IQueryHandler<OrderExistsQuery, bool>, OrderExistsQueryHandler>();
             services.AddScoped<IQueryHandler<CompletedOrderCountQuery, int>, CompletedOrderCountQueryHandler>();

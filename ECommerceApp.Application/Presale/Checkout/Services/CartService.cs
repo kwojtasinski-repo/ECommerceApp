@@ -18,23 +18,38 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         private readonly IMemoryCache _cache;
         private readonly ICatalogClient _catalog;
         private readonly ICartRequirements _requirements;
+        private readonly IStockSnapshotRepository _stockSnapshotRepo;
 
-        public CartService(ICartLineRepository cartRepo, IMemoryCache cache, ICatalogClient catalog, ICartRequirements requirements)
+        public CartService(
+            ICartLineRepository cartRepo,
+            IMemoryCache cache,
+            ICatalogClient catalog,
+            ICartRequirements requirements,
+            IStockSnapshotRepository stockSnapshotRepo)
         {
             _cartRepo = cartRepo;
             _cache = cache;
             _catalog = catalog;
             _requirements = requirements;
+            _stockSnapshotRepo = stockSnapshotRepo;
         }
 
         public async Task<AddToCartResult> AddToCartAsync(AddToCartDto dto, CancellationToken ct = default)
         {
             var cart = await GetCartAsync(new PresaleUserId(dto.UserId), ct);
             var existingQty = cart?.Lines.FirstOrDefault(l => l.ProductId == dto.ProductId)?.Quantity ?? 0;
-            if (existingQty + dto.Quantity > _requirements.MaxQuantityPerOrderLine)
+            var requestedTotal = existingQty + dto.Quantity;
+            if (requestedTotal > _requirements.MaxQuantityPerOrderLine)
                 return AddToCartResult.LimitExceeded(_requirements.MaxQuantityPerOrderLine);
 
-            var line = CartLine.Create(dto.UserId, dto.ProductId, existingQty + dto.Quantity);
+            // Advisory only — this reads Presale's own local stock cache (kept in sync via
+            // StockAvailabilityChangedHandler), never Inventory directly. The binding check still
+            // happens later, at checkout (SoftReservationService.HoldAsync) and at order placement.
+            var snapshot = await _stockSnapshotRepo.FindByProductIdAsync(dto.ProductId, ct);
+            if (snapshot is null || requestedTotal > snapshot.AvailableQuantity)
+                return AddToCartResult.OutOfStock(snapshot?.AvailableQuantity ?? 0);
+
+            var line = CartLine.Create(dto.UserId, dto.ProductId, requestedTotal);
             await _cartRepo.UpsertAsync(line, ct);
             await RefreshCacheAsync(new PresaleUserId(dto.UserId), ct);
             return AddToCartResult.Added();

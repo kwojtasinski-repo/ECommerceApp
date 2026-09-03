@@ -4,7 +4,9 @@ using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,6 +17,12 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         public CartServiceTests(ITestOutputHelper output) : base(output) { }
 
         private const string TestUserId = "cart-test-user-001";
+
+        private async Task SeedStockSnapshotAsync(int productId, int availableQty, CancellationToken ct = default)
+        {
+            var snapshotRepo = GetRequiredService<IStockSnapshotRepository>();
+            await snapshotRepo.AddAsync(StockSnapshot.Create(productId, availableQty, DateTime.UtcNow), ct);
+        }
 
         // ── GetCartAsync ─────────────────────────────────────────────────
 
@@ -59,6 +67,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task AddToCartAsync_ExistingItem_ShouldIncrementQuantity()
         {
+            await SeedStockSnapshotAsync(10, availableQty: 100, CancellationToken);
             await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 3), CancellationToken);
 
             var result = await _service.AddToCartAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2), CancellationToken);
@@ -68,6 +77,19 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             cart.ShouldNotBeNull();
             cart.Lines.Count.ShouldBe(1);
             cart.Lines[0].Quantity.ShouldBe(5); // 3 + 2
+        }
+
+        [Fact]
+        public async Task AddToCartAsync_ExceedsAvailableStock_ShouldReturnUnavailableAndNotChangeCart()
+        {
+            await SeedStockSnapshotAsync(11, availableQty: 2, CancellationToken);
+
+            var result = await _service.AddToCartAsync(new AddToCartDto(TestUserId, ProductId: 11, Quantity: 3), CancellationToken);
+
+            result.ShouldBeOfType<AddToCartResult.Unavailable>()
+                .AvailableQuantity.ShouldBe(2);
+            var cart = await _service.GetCartAsync(new PresaleUserId(TestUserId), CancellationToken);
+            cart.ShouldBeNull();
         }
 
         // ── RemoveAsync ──────────────────────────────────────────────────

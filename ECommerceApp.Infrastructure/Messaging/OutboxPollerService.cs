@@ -18,15 +18,18 @@ namespace ECommerceApp.Infrastructure.Messaging
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<OutboxPollerService> _logger;
         private readonly MessagingOptions _messagingOptions;
+        private readonly OutboxWakeSignal _wakeSignal;
 
         public OutboxPollerService(
             IServiceScopeFactory scopeFactory,
             ILogger<OutboxPollerService> logger,
-            MessagingOptions messagingOptions)
+            MessagingOptions messagingOptions,
+            OutboxWakeSignal wakeSignal)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
             _messagingOptions = messagingOptions;
+            _wakeSignal = wakeSignal;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -35,7 +38,11 @@ namespace ECommerceApp.Infrastructure.Messaging
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    await Task.Delay(_messagingOptions.OutboxPollInterval, stoppingToken);
+                    // Waits for either a writer's wake-up signal or the periodic interval, whichever
+                    // comes first — closes the perceived latency between "message enqueued" and "message
+                    // dispatched" without giving up the timer as a fallback (zombie recovery, missed
+                    // wake-ups, etc. all still rely on it firing regardless of signals).
+                    await _wakeSignal.WaitAsync(_messagingOptions.OutboxPollInterval, stoppingToken);
                     await PollAsync(stoppingToken);
                 }
             }

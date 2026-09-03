@@ -25,13 +25,21 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         private readonly Mock<IOrderItemRepository> _orderItemRepo = new();
         private readonly Mock<ICustomerExistenceChecker> _customerChecker = new();
         private readonly Mock<IOrderCustomerResolver> _customerResolver = new();
+        private readonly Mock<IStockAvailabilityChecker> _stockChecker = new();
         private readonly Mock<IOrdersUnitOfWork> _uow = new();
         private readonly Mock<IOutboxWriter> _outboxWriter = new();
         private readonly Mock<IImageUrlBuilder> _urlBuilder = new();
 
+        public OrderServiceTests()
+        {
+            _stockChecker
+                .Setup(c => c.FindInsufficientAsync(It.IsAny<IReadOnlyList<OrderPlacedItem>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<int>());
+        }
+
         private OrderService CreateService()
             => new(_orderRepo.Object, _orderItemRepo.Object, _customerChecker.Object,
-                _customerResolver.Object, _uow.Object, _outboxWriter.Object, _urlBuilder.Object);
+                _customerResolver.Object, _stockChecker.Object, _uow.Object, _outboxWriter.Object, _urlBuilder.Object);
 
         private static OrderCustomer CreateCustomer() => new(
             "Jan", "Kowalski", "jan@example.com", "123456789",
@@ -230,6 +238,33 @@ namespace ECommerceApp.UnitTests.Sales.Orders
                 txMock.Object,
                 It.IsAny<CancellationToken>()), Times.Once);
             txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task PlaceOrderFromPresaleAsync_InsufficientStock_ReturnsInsufficientStock_AndDoesNotOpenTransaction()
+        {
+            // Arrange
+            _stockChecker
+                .Setup(c => c.FindInsufficientAsync(It.IsAny<IReadOnlyList<OrderPlacedItem>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<int> { 55 });
+
+            var svc = CreateService();
+            var dto = new PlaceOrderFromPresaleDto(
+                CustomerId: 1,
+                CurrencyId: 1,
+                UserId: "user-1",
+                Customer: new OrderCustomerData("Jan", "Kowalski", "jan@example.com", "123456789",
+                    false, null, null, "Główna", "1", null, "67-100", "Nowa Sól", "PL"),
+                Lines: new List<PlaceOrderLineDto> { new(ProductId: 55, Quantity: 3, UnitPrice: 10m) });
+
+            // Act
+            var result = await svc.PlaceOrderFromPresaleAsync(dto);
+
+            // Assert
+            result.IsSuccess.Should().BeFalse();
+            result.FailureReason.Should().Contain("55");
+            _uow.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _orderRepo.Verify(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

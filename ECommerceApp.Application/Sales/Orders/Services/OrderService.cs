@@ -23,6 +23,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         private readonly IOrderItemRepository _orderItemRepo;
         private readonly ICustomerExistenceChecker _customerChecker;
         private readonly IOrderCustomerResolver _customerResolver;
+        private readonly IStockAvailabilityChecker _stockChecker;
         private readonly IOrdersUnitOfWork _unitOfWork;
         private readonly IOutboxWriter _outboxWriter;
         private readonly IImageUrlBuilder _urlBuilder;
@@ -32,6 +33,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             IOrderItemRepository orderItemRepo,
             ICustomerExistenceChecker customerChecker,
             IOrderCustomerResolver customerResolver,
+            IStockAvailabilityChecker stockChecker,
             IOrdersUnitOfWork unitOfWork,
             IOutboxWriter outboxWriter,
             IImageUrlBuilder urlBuilder)
@@ -40,6 +42,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             _orderItemRepo = orderItemRepo;
             _customerChecker = customerChecker;
             _customerResolver = customerResolver;
+            _stockChecker = stockChecker;
             _unitOfWork = unitOfWork;
             _outboxWriter = outboxWriter;
             _urlBuilder = urlBuilder;
@@ -363,6 +366,19 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 dto.Customer.City,
                 dto.Customer.Country);
 
+            var items = dto.Lines
+                .Select(l => new OrderPlacedItem(l.ProductId, l.Quantity))
+                .ToList();
+
+            // Read-only pre-flight check — narrows the race window before the real reservation
+            // (still async, still Inventory's own OrderPlaced handler, unchanged) confirms it for
+            // real. Rejects the order up front instead of confirming one the warehouse can't fill.
+            var insufficientProductIds = await _stockChecker.FindInsufficientAsync(items, ct);
+            if (insufficientProductIds.Count > 0)
+            {
+                return PlaceOrderResult.InsufficientStock(insufficientProductIds);
+            }
+
             var number = OrderNumber.Generate();
             var order = Order.Create(dto.CustomerId, dto.CurrencyId, dto.UserId, number, customer);
 
@@ -377,10 +393,6 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             }
 
             order.CalculateCost();
-
-            var items = dto.Lines
-                .Select(l => new OrderPlacedItem(l.ProductId, l.Quantity))
-                .ToList();
 
             int orderId;
             var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);

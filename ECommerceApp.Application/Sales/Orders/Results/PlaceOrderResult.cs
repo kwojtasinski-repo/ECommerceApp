@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace ECommerceApp.Application.Sales.Orders.Results
 {
     public sealed record PlaceOrderResult
@@ -29,5 +31,8 @@ namespace ECommerceApp.Application.Sales.Orders.Results
 
         public static PlaceOrderResult PlacementFailed(int orderId)
             => new(false, orderId, null, "Order placement failed during handler fan-out.");
+
+        public static PlaceOrderResult InsufficientStock(IReadOnlyList<int> productIds)
+            => new(false, null, null, $"Insufficient stock for product(s): {string.Join(", ", productIds)}.");
     }
 }

@@ -37,6 +37,7 @@ namespace ECommerceApp.Infrastructure.Messaging
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<MessagingDbContext>>();
 
+            services.AddSingleton<OutboxWakeSignal>();
             services.AddScoped<OutboxDispatcher>();
             services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, OutboxPollerService>());
             services.AddScoped<IOutboxWriter, OutboxWriter>();

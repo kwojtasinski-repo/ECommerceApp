@@ -11,10 +11,12 @@ namespace ECommerceApp.Infrastructure.Messaging
     internal sealed class OutboxWriter : IOutboxWriter
     {
         private readonly MessagingDbContext _messagingContext;
+        private readonly OutboxWakeSignal _wakeSignal;
 
-        public OutboxWriter(MessagingDbContext messagingContext)
+        public OutboxWriter(MessagingDbContext messagingContext, OutboxWakeSignal wakeSignal)
         {
             _messagingContext = messagingContext;
+            _wakeSignal = wakeSignal;
         }
 
         public async Task EnqueueAsync(IMessage message, CancellationToken ct = default)
@@ -25,6 +27,7 @@ namespace ECommerceApp.Infrastructure.Messaging
 
             await EnqueueAsync(message, _messagingContext, ct);
             await scope.CommitAsync(ct);
+            _wakeSignal.Signal();
         }
 
         public async Task EnqueueAsync(IMessage message, IOutboxTransaction transaction, CancellationToken ct = default)
@@ -44,6 +47,12 @@ namespace ECommerceApp.Infrastructure.Messaging
             await using var messagingContext = concrete.Scope.CreateSecondaryContext<MessagingDbContext>();
             messagingContext.Outbox.Add(outboxMessage);
             await messagingContext.SaveChangesAsync(ct);
+
+            // The caller commits the ambient transaction after this returns, so this row isn't durable
+            // yet — a near-immediate wake is still worth it (the caller's own commit is typically the
+            // very next statement) and the poller's periodic timer covers the rare case where the wake
+            // fires before the commit lands.
+            _wakeSignal.Signal();
         }
 
         private static async Task EnqueueAsync(
