@@ -4,19 +4,19 @@ Category: autogen-raw-9pages (re-gather from full-text local extracts of nine Au
 Gathered: 2026-10-14. Method: full read of each local file; no web access used. No synthesis or recommendation.
 
 URL base (every page): `https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/<slug>.html`
-Local files are under `C:\Projekty\ECommerceApp\docs\research\2026-10-14-agent-patterns-bradmurry\analysis\sources-raw\`.
+Local files are under (lokalne kopie tekstu, poza repozytorium; źródła w SOURCES.md).
 
 | # | File | Slug | Lines |
 |---|---|---|---|
-| 33 | 33-autogen-intro.md | intro | 25 |
-| 34 | 34-autogen-concurrent-agents.md | concurrent-agents | 288 |
-| 35 | 35-autogen-sequential-workflow.md | sequential-workflow | 281 |
-| 36 | 36-autogen-group-chat.md | group-chat | 772 |
-| 37 | 37-autogen-handoffs.md | handoffs | 650 |
-| 38 | 38-autogen-mixture-of-agents.md | mixture-of-agents | 445 |
-| 39 | 39-autogen-multi-agent-debate.md | multi-agent-debate | 489 |
-| 40 | 40-autogen-reflection.md | reflection | 401 |
-| 41 | 41-autogen-code-execution-groupchat.md | code-execution-groupchat | 263 |
+| 33 | [33-autogen-intro](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/intro.html) | intro | 25 |
+| 34 | [34-autogen-concurrent-agents](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/concurrent-agents.html) | concurrent-agents | 288 |
+| 35 | [35-autogen-sequential-workflow](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/sequential-workflow.html) | sequential-workflow | 281 |
+| 36 | [36-autogen-group-chat](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/group-chat.html) | group-chat | 772 |
+| 37 | [37-autogen-handoffs](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/handoffs.html) | handoffs | 650 |
+| 38 | [38-autogen-mixture-of-agents](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/mixture-of-agents.html) | mixture-of-agents | 445 |
+| 39 | [39-autogen-multi-agent-debate](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/multi-agent-debate.html) | multi-agent-debate | 489 |
+| 40 | [40-autogen-reflection](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/reflection.html) | reflection | 401 |
+| 41 | [41-autogen-code-execution-groupchat](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/code-execution-groupchat.html) | code-execution-groupchat | 263 |
 
 Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD] Modeling, [IMPL] Implementation.
 "Code-evidenced" = read from the code on the page, not stated in prose. Quotes are verbatim; code quotes are short single lines.
@@ -26,7 +26,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 33: Intro
 
 ### 33-1 Definition of a multi-agent design pattern [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/intro.html, file 33-autogen-intro.md:16-17
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/intro.html, file [33-autogen-intro](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/intro.html):16-17
 - Evidence: "A multi-agent design pattern is a structure that emerges from message protocols: it describes how agents interact with each other to solve problems."
 - Confidence: High - explicit definition.
 
@@ -46,7 +46,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 34: Concurrent Agents
 
 ### 34-1 What the pattern is; three sub-patterns [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/concurrent-agents.html, file 34-autogen-concurrent-agents.md:9-18
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/concurrent-agents.html, file [34-autogen-concurrent-agents](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/concurrent-agents.html):9-18
 - Evidence: "In this section, we explore the use of multiple agents working concurrently. We cover three main patterns:" then "Single Message & Multiple Processors", "Multiple Messages & Multiple Processors", "Direct Messaging".
 - Confidence: High.
 
@@ -101,7 +101,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 35: Sequential Workflow
 
 ### 35-1 What the pattern is [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/sequential-workflow.html, file 35-autogen-sequential-workflow.md:9
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/sequential-workflow.html, file [35-autogen-sequential-workflow](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/sequential-workflow.html):9
 - Evidence: "Sequential Workflow is a multi-agent design pattern where agents respond in a deterministic sequence."; "This pattern is useful for creating deterministic workflows where each agent contributes to a pre-specified sub-task."
 - Confidence: High.
 
@@ -146,7 +146,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 36: Group Chat
 
 ### 36-1 What the pattern is [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/group-chat.html, file 36-autogen-group-chat.md:9-13, 25-28
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/group-chat.html, file [36-autogen-group-chat](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/group-chat.html):9-13, 25-28
 - Evidence: "Group chat is a design pattern where a group of agents share a common thread of messages: they all subscribe and publish to the same topic." / "Group chat is useful for dynamically decomposing a complex task into smaller ones that can be handled by specialized agents with well-defined roles." / "It is also possible to nest group chats into a hierarchy with each participant a recursive group chat."
 - Confidence: High.
 
@@ -215,7 +215,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 37: Handoffs
 
 ### 37-1 What the pattern is and how a handoff is expressed [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/handoffs.html, file 37-autogen-handoffs.md:9-10
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/handoffs.html, file [37-autogen-handoffs](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/handoffs.html):9-10
 - Evidence: "Handoff is a multi-agent design pattern introduced by OpenAI in an experimental project called Swarm. The key idea is to let agent delegate tasks to other agents using a special tool call."
 - Confidence: High.
 
@@ -284,7 +284,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 38: Mixture of Agents
 
 ### 38-1 What the pattern is [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/mixture-of-agents.html, file 38-autogen-mixture-of-agents.md:9-15
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/mixture-of-agents.html, file [38-autogen-mixture-of-agents](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/mixture-of-agents.html):9-15
 - Evidence: "Mixture of Agents is a multi-agent design pattern that models after the feed-forward neural network architecture." / "The pattern consists of two types of agents: worker agents and a single orchestrator agent." / "Messages from the worker agents in a previous layer are concatenated and sent to all the worker agents in the next layer."
 - Confidence: High.
 
@@ -340,7 +340,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 39: Multi-Agent Debate
 
 ### 39-1 What the pattern is [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/multi-agent-debate.html, file 39-autogen-multi-agent-debate.md:9-11
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/multi-agent-debate.html, file [39-autogen-multi-agent-debate](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/multi-agent-debate.html):9-11
 - Evidence: "Multi-Agent Debate is a multi-agent design pattern that simulates a multi-turn interaction where in each turn, agents exchange their responses with each other, and refine their responses based on the responses from other agents."
 - Task domain: "solving math problems from the GSM8K benchmark" (39:13-14).
 - Confidence: High.
@@ -422,7 +422,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 40: Reflection
 
 ### 40-1 What the pattern is [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/reflection.html, file 40-autogen-reflection.md:9-12
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/reflection.html, file [40-autogen-reflection](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/reflection.html):9-12
 - Evidence: "Reflection is a design pattern where an LLM generation is followed by a reflection, which in itself is another LLM generation conditioned on the output of the first one."
 - Confidence: High.
 
@@ -488,7 +488,7 @@ Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD]
 ## PAGE 41: Code Execution (slug: code-execution-groupchat)
 
 ### 41-1 What the pattern is [BP][MOD]
-- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/code-execution-groupchat.html, file 41-autogen-code-execution-groupchat.md:9-15
+- Source: https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/code-execution-groupchat.html, file [41-autogen-code-execution-groupchat](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/code-execution-groupchat.html):9-15
 - Evidence: "In this section we explore creating custom agents to handle code generation and execution." / "We create two agent classes: `Assistant` and `Executor`. The `Assistant` agent writes code and the `Executor` agent executes the code."
 - Provided alternatives: "`AssistantAgent()`, `CodeExecutorAgent()`" (41:9).
 - Confidence: High.

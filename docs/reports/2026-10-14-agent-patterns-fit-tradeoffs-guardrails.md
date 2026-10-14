@@ -252,7 +252,7 @@ Decyzje o **kształcie pracy** (jaki agent, jaki wzorzec, jak głęboko, jaki bu
 
 ### 9.2 Co wspiera ten kierunek (źródła)
 - **Anthropic** (pobrane 2026-10-14): frameworki pomagają zacząć, ale mogą ukrywać prompty i odpowiedzi; zaleca się najpierw używać API bezpośrednio i rozumieć kod frameworka. *To parafraza z podsumowania narzędzia pobierającego, nie dosłowny cytat.* Dodatkowo: „adding complexity only when it demonstrably improves outcomes".
-- **Nasze strony AutoGen** (`sources-raw/33`–`41`) to **przykłady referencyjne**: znaleziono w nich rozbieżności między prozą a kodem (m.in. refleksja bez limitu iteracji w kodzie; group chat „not meant to be used in real applications"). Kopiowanie takich wzorców „jak leci" nie jest bezpieczniejsze niż własna warstwa decyzyjna. Zobacz `analysis/01-cross-source-verification.md` §1 (C7–C12).
+- **Nasze strony AutoGen** ([strony AutoGen, lista w SOURCES.md](../research/2026-10-14-agent-patterns-bradmurry/SOURCES.md)) to **przykłady referencyjne**: znaleziono w nich rozbieżności między prozą a kodem (m.in. refleksja bez limitu iteracji w kodzie; group chat „not meant to be used in real applications"). Kopiowanie takich wzorców „jak leci" nie jest bezpieczniejsze niż własna warstwa decyzyjna. Zobacz `analysis/01-cross-source-verification.md` §1 (C7–C12).
 - **Brad:** jego własny runtime to rozwiązanie jednego autora bez publicznej weryfikacji, więc „ściągnięcie" go nie byłoby bezpieczniejsze.
 
 **Wniosek:** kierunek „własna warstwa decyzyjna zamiast importu frameworka" jest **rozsądną decyzją projektową, niesprzeczną ze źródłami**. To nie dowód, że będzie lepszy: oznacza tylko, że import nie ma przewagi dowodowej.
