@@ -6,11 +6,11 @@ Re-gather from FULL-TEXT local files. No synthesis, no recommendation. All quote
 
 | Key | File (in `analysis/sources-raw/`) | Original URL |
 |---|---|---|
-| [03] | 03-binding-llms-to-fsm-reactive-reducer.md | https://bradmurry.com/software/binding-llms-to-finite-state-machines-using-the-reactive-reducer-pattern/ |
-| [04] | 04-walking-reentrant-hil-fsm.md | https://bradmurry.com/software/walking-a-reentrant-human-in-the-loop-fsm-step-by-step/ |
-| [06] | 06-agents-in-production-intro.md | https://bradmurry.com/software/agents-in-production-intro/ |
-| [07] | 07-self-evolving-agents-intro.md | https://bradmurry.com/software/self-evolving-agents-intro/ (page heading "The Agent That Builds Its Own Tools") |
-| [08] | 08-reactive-reducer-patterns-intro.md | https://bradmurry.com/software/reactive-reducer-patterns-intro/ |
+| [03] | [03-binding-llms-to-fsm-reactive-reducer](https://bradmurry.com/software/binding-llms-to-finite-state-machines-using-the-reactive-reducer-pattern/) | https://bradmurry.com/software/binding-llms-to-finite-state-machines-using-the-reactive-reducer-pattern/ |
+| [04] | [04-walking-reentrant-hil-fsm](https://bradmurry.com/software/walking-a-reentrant-human-in-the-loop-fsm-step-by-step/) | https://bradmurry.com/software/walking-a-reentrant-human-in-the-loop-fsm-step-by-step/ |
+| [06] | [06-agents-in-production-intro](https://bradmurry.com/software/agents-in-production-intro/) | https://bradmurry.com/software/agents-in-production-intro/ |
+| [07] | [07-self-evolving-agents-intro](https://bradmurry.com/software/self-evolving-agents-intro/) | https://bradmurry.com/software/self-evolving-agents-intro/ (page heading "The Agent That Builds Its Own Tools") |
+| [08] | [08-reactive-reducer-patterns-intro](https://bradmurry.com/software/reactive-reducer-patterns-intro/) | https://bradmurry.com/software/reactive-reducer-patterns-intro/ |
 
 Notes: [03]/[04] are first-party articles about the author's "Aegis" FSM runtime (one author, single-source). [06]/[07] state that Parts 1-4 of their series are not in the 18-URL list. Every finding is single-source unless a second key is listed; per the plan, single-source claims are treated as at most Medium until verification, but the Confidence field below records only how explicit the text is (High = explicit in text).
 
@@ -19,7 +19,7 @@ Notes: [03]/[04] are first-party articles about the author's "Aegis" FSM runtime
 # A. Reactive reducer: core rules and mechanism
 
 ## A1. Core idea: context is the single source of truth; the machine advances itself
-- Source: [03] 03-binding-llms-to-fsm-reactive-reducer.md, section "The core idea"; URL above
+- Source: [03] [03-binding-llms-to-fsm-reactive-reducer](https://bradmurry.com/software/binding-llms-to-finite-state-machines-using-the-reactive-reducer-pattern/), section "The core idea"; URL above
 - Evidence: "Context is the single source of truth. Actors (agents, humans, tools, the system) only ever contribute to context. Transitions are pure, guarded conditions over context, re-evaluated after every context change - and the machine advances itself."
 - Confidence: High - explicit definition
 - Layer: Modeling
@@ -73,7 +73,7 @@ Notes: [03]/[04] are first-party articles about the author's "Aegis" FSM runtime
 - Layer: Modeling
 
 ## A10. Three rules of the reactive reducer (series-intro formulation)
-- Source: [08] 08-reactive-reducer-patterns-intro.md, section "The reactive reducer"
+- Source: [08] [08-reactive-reducer-patterns-intro](https://bradmurry.com/software/reactive-reducer-patterns-intro/), section "The reactive reducer"
 - Evidence: "context is the single source of truth."; "Agents advance the machine by writing context - never by requesting a transition."; "A microstep loop fires the first eligible, guard-passing edge until the machine parks."
 - Confidence: High (three rules quoted from three list items)
 - Layer: Modeling
@@ -149,7 +149,7 @@ Notes: [03]/[04] are first-party articles about the author's "Aegis" FSM runtime
 - Layer: Big Picture
 
 ## B10. Budget derived from data, not a counter
-- Source: [04] 04-walking-reentrant-hil-fsm.md, section "Why the loop keeps its history"
+- Source: [04] [04-walking-reentrant-hil-fsm](https://bradmurry.com/software/walking-a-reentrant-human-in-the-loop-fsm-step-by-step/), section "Why the loop keeps its history"
 - Evidence: "The revision budget here is size(context.drafts) < 3. The counter is the data, so it cannot disagree with the history it is counting."
 - Confidence: High
 - Layer: Modeling
@@ -497,7 +497,7 @@ Notes: [03]/[04] are first-party articles about the author's "Aegis" FSM runtime
 # H. Agents in Production intro ([06])
 
 ## H1. Incident framing: model fine, system around it was not
-- Source: [06] 06-agents-in-production-intro.md
+- Source: [06] [06-agents-in-production-intro](https://bradmurry.com/software/agents-in-production-intro/)
 - Evidence: "It did exactly what it was built to do, and it did it twice."; "The model was fine. The system around it was not."
 - Confidence: High
 - Layer: Big Picture
@@ -567,7 +567,7 @@ Notes: [03]/[04] are first-party articles about the author's "Aegis" FSM runtime
 # I. Self-evolving agents ([07])
 
 ## I1. Premise: task + measure of success + power to build tools/workflows
-- Source: [07] 07-self-evolving-agents-intro.md
+- Source: [07] [07-self-evolving-agents-intro](https://bradmurry.com/software/self-evolving-agents-intro/)
 - Evidence: "A self-evolving agent harness lets you point an agent at a general problem and have it create novel solutions by iterating on its own feedback."
 - Confidence: High
 - Layer: Big Picture

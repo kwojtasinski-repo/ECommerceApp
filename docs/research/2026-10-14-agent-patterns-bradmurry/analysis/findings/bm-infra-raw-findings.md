@@ -1,6 +1,6 @@
 # Findings: bm-infra-raw
 
-Re-gather from full-text local files in `analysis/sources-raw/`. All quotes copied verbatim from those files. Layer tags: BP = Big Picture, MOD = Modeling, IMPL = Implementation. Raw-file names abbreviated (e.g. "30-apis" = `30-apis-at-massive-scale.md`).
+Re-gather from full-text local files in `analysis/sources-raw/`. All quotes copied verbatim from those files. Layer tags: BP = Big Picture, MOD = Modeling, IMPL = Implementation. Raw-file names abbreviated (e.g. "30-apis" = [30-apis-at-massive-scale](https://bradmurry.com/software/apis-at-massive-scale/)).
 
 Provenance notes (affect confidence ceiling):
 - 30, 31, 32: full article text pasted by the user 2026-10-14 (raw, as pasted).
@@ -9,7 +9,7 @@ Provenance notes (affect confidence ceiling):
 
 ---
 # PART A. apis-at-massive-scale
-URL: https://bradmurry.com/software/apis-at-massive-scale/ (file `30-apis-at-massive-scale.md`; page heading "API Architecture for Massive Scale")
+URL: https://bradmurry.com/software/apis-at-massive-scale/ (file [30-apis-at-massive-scale](https://bradmurry.com/software/apis-at-massive-scale/); page heading "API Architecture for Massive Scale")
 
 ## A1. Context and requirements (CNN 2020 election)
 - Layer: BP
@@ -120,7 +120,7 @@ Cross-links/dependencies recorded: none to other of the 18 URLs inside this post
 
 ---
 # PART B. devops-contract
-URL: https://bradmurry.com/software/dev-ops-contract/ (file `31-devops-contract.md`; page heading "Devops Contract")
+URL: https://bradmurry.com/software/dev-ops-contract/ (file [31-devops-contract](https://bradmurry.com/software/dev-ops-contract/); page heading "Devops Contract")
 
 ## B1. Problem statement: coupling between software and ops automation
 - Layer: BP
@@ -188,7 +188,7 @@ Cross-links: none. Post does not mention AI/LLM agents.
 
 ---
 # PART C. config-driven-transforms (pt1)
-URL: https://bradmurry.com/software/config-driven-transforms/ (file `32-config-driven-transforms-pt1.md`; page heading "Config Driven Data Transforms (pt1)")
+URL: https://bradmurry.com/software/config-driven-transforms/ (file [32-config-driven-transforms-pt1](https://bradmurry.com/software/config-driven-transforms/); page heading "Config Driven Data Transforms (pt1)")
 
 ## C1. Motivation: move change from code deployment to configuration
 - Layer: BP
@@ -246,7 +246,7 @@ Cross-links: pt1 only; later parts not in this file. No mention of AI/LLM. Relat
 
 ---
 # PART D. sparkctl
-URL: https://bradmurry.com/software/sparkctl/ (file `42-bm-sparkctl.md`; "sparkctl: Config Driven Model Serving for DGX Spark"; dated Jul 13, 2026, last updated Jul 15, 2026)
+URL: https://bradmurry.com/software/sparkctl/ (file [42-bm-sparkctl](https://bradmurry.com/software/sparkctl/); "sparkctl: Config Driven Model Serving for DGX Spark"; dated Jul 13, 2026, last updated Jul 15, 2026)
 
 ## D1. Problem and origin
 - Layer: BP
@@ -362,7 +362,7 @@ Cross-links: references github.com/bradodarb/sparkctl (outside the 18 URLs; not 
 
 ---
 # PART E. ai-annotations
-URL: https://bradmurry.com/software/ai-annotations/ (file `44-bm-ai-annotations.md`; "AI Annotations: Embedding Context in Your Codebase"; Jan 11, 2026)
+URL: https://bradmurry.com/software/ai-annotations/ (file [44-bm-ai-annotations](https://bradmurry.com/software/ai-annotations/); "AI Annotations: Embedding Context in Your Codebase"; Jan 11, 2026)
 
 ## E1. Motivation: persistent context embedded in the codebase
 - Layer: BP
@@ -455,7 +455,7 @@ Cross-links: external spec pages (toon-format/spec, "Full specification") outsid
 
 ---
 # PART F. dsl-ai-partition
-URL: https://bradmurry.com/software/dsl-ai-partition/ (file `43-bm-dsl-ai-partition.md`; "Safe(r) Deterministic AI Code Generation Through DSL Partitioning"; Jan 17, 2026)
+URL: https://bradmurry.com/software/dsl-ai-partition/ (file [43-bm-dsl-ai-partition](https://bradmurry.com/software/dsl-ai-partition/); "Safe(r) Deterministic AI Code Generation Through DSL Partitioning"; Jan 17, 2026)
 
 ## F1. Problem: AI code generation velocity vs risk, non-determinism
 - Layer: BP
@@ -573,7 +573,7 @@ Cross-links: none to the 18 URLs inside the post. Conceptually adjacent (author-
 
 ---
 # PART G. pyflink-intro
-URL: https://bradmurry.com/software/pyflink-intro/ (file `45-bm-pyflink-intro.md`; "PyFlink Series (Intro)"; Jul 15, 2023). Short intro (approx. 75 lines); no agent content.
+URL: https://bradmurry.com/software/pyflink-intro/ (file [45-bm-pyflink-intro](https://bradmurry.com/software/pyflink-intro/); "PyFlink Series (Intro)"; Jul 15, 2023). Short intro (approx. 75 lines); no agent content.
 
 ## G1. Why stream processing: needs list
 - Layer: BP
