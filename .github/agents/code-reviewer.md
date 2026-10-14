@@ -62,6 +62,21 @@ Then load **only the relevant** per-stack instructions based on which files chan
 
 ---
 
+## Review search order
+
+Look for problems in this order — highest-impact classes first. This is **order only**; the rules
+themselves stay in `anti-patterns-*.context.md` and the checklist below.
+
+1. Authorization / IDOR and ids exposed to the UI (GuestAccess / OrderAccess history).
+2. Atomicity and check-then-act races (stock reserve / release).
+3. State machines and idempotency (sagas, outbox / inbox, message handlers).
+4. Bounded-context boundaries.
+5. Time (`TimeProvider`) and old data after migrations.
+6. Frontend (modules, error pipeline).
+7. Style — last, one line.
+
+---
+
 ## Review checklist
 
 ### 1. Anti-pattern scan (BLOCKS MERGE)
@@ -152,6 +167,10 @@ Produce the review in this exact structure:
 - **File**: `<path>`
 - **Line(s)**: <range>
 - **Rule**: <anti-pattern or instruction reference>
+- **Scenario**: <input / situation -> wrong result>
+- **How to prove with a test**: <arrange / act / assert, in words>
+- **Confidence**: <high | med | low — why>
+- **Category**: <bug | risk | style | out-of-scope>
 - **Fix**: <concrete suggestion>
 
 ### [BM-2] ...
@@ -162,13 +181,28 @@ Produce the review in this exact structure:
 - **File**: `<path>`
 - **Suggestion**: <what to improve>
 - **Reference**: <ADR, instruction, or convention>
+- **Scenario**: <input / situation -> wrong result>
+- **How to prove with a test**: <arrange / act / assert, in words>
+- **Confidence**: <high | med | low — why>
+- **Category**: <bug | risk | style | out-of-scope>
 
 ### [ADV-2] ...
+
+(Beyond ~8 advisories: list the first ~8 in full, then collapse the rest into one line, e.g.
+"+ 5 more advisories (style/naming): <ids and titles>".)
+
+## What I'm not sure about
+
+- <at least one item: what you could not verify, or where your confidence is low, and why>
 
 ## Documentation Suggestions
 
 - [ ] <Suggest doc update if applicable — follow pre-edit.instructions.md triggers>
 ```
+
+**Advisory cap:** at most ~8 advisories are written out in full; the rest collapse into one line.
+**BLOCKS MERGE findings are never capped.** The cap does **not** apply to phase-validator /
+stage-validator style runs — there, report every finding in full.
 
 ---
 
@@ -176,6 +210,9 @@ Produce the review in this exact structure:
 
 - **Read before judging** — always read the full changed file, not just the diff.
 - **Be specific** — cite exact line numbers and rule references.
+- **Evidence per finding** — every finding carries Scenario, How to prove with a test, Confidence, and Category; a finding you cannot describe a scenario for is Advisory with low confidence at most.
+- **Always include "What I'm not sure about"** with at least one item — a review with zero doubts is not credible.
+- **Follow the search order** (authz/IDOR first, style last) — it sets reading priority, not new rules.
 - **No false positives** — if you're unsure whether something violates a rule, mark as Advisory, not BLOCKS MERGE.
 - **Never edit code** — you only review and report. Use read-only tools.
 - **Respect legacy naming** — do not flag existing `given_when_should` test names.

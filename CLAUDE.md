@@ -12,6 +12,15 @@ Start at [`.github/instructions/agent-workflow.instructions.md`](.github/instruc
 (front door for task routing) or [`.github/instructions/docs-index.instructions.md`](.github/instructions/docs-index.instructions.md)
 (full routing table).
 
+## GO gate (edits locked until you write `IMPLEMENT`)
+
+Hooks in `.claude/settings.json` deny `Edit`/`Write`/`NotebookEdit` until the human's prompt starts with
+`IMPLEMENT` (optionally `APPROVE IMPLEMENT`); `HOLD`/`STOP` re-lock. If an edit is denied, ask the user and
+do not retry; only after their explicit approval run the `node tools/hooks/gate-cli.mjs grant <sessionId>`
+command printed in the deny message. Writing to `.github/plans/**`, `docs/research/**`, `docs/reports/**` is
+always allowed. A tool's own permission refusal is a separate layer from the gate — see
+[`tools/hooks/README.md`](tools/hooks/README.md). Design and gaps: [ADR-0033](docs/adr/0033/README.md).
+
 ## Frontend / UI work (`ECommerceApp.Web`)
 
 Before adding or changing any button, color, or style in a `.cshtml` view or `wwwroot/css`:

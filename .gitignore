@@ -17,6 +17,8 @@ tools/kg/.load-seed.staged.cypher
 !.vscode/mcp.json
 !.mcp.json
 !.github/hooks/*.json
+!.claude/settings.json
+!tools/hooks/gate.config.json
 !tools/kg/seed/*.json
 !tools/kg/kg-codegen/KgCodegen.Tests/Fixtures/*.json
 # Test-run config for the two newer E2E projects. The older test projects already

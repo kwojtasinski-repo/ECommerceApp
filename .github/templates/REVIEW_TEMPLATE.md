@@ -24,6 +24,14 @@
 ## Findings
 
 - <finding> — <severity: blocks merge / advisory>
+  - **Scenario**: <input / situation -> wrong result>
+  - **How to prove with a test**: <arrange / act / assert, in words>
+  - **Confidence**: <high | med | low — why>
+  - **Category**: <bug | risk | style | out-of-scope>
+
+## What I'm not sure about
+
+- <at least one item>
 
 ## Verdict
 

@@ -51,6 +51,8 @@ Reroute via @planner or provide an APPROVED plan.
 - **Stay inside the plan.** Do NOT add files or steps not in the plan.
 - **One atomic step at a time.** Apply, then re-read the file end-to-end.
 - **Build after each meaningful step** with `dotnet build`. If build red → revert that step, surface the failure.
+- **Bug-fix steps start with the red test.** Run the plan's reproducing test first and confirm it fails for the right reason (read the failure message) before touching production code; the same test must be green after the fix (see `testing.instructions.md` § "Bug fixes: red test first"). If the plan lacks the red test, surface it per the scope-discipline table below — do not silently add it.
+- **Real alternatives → let the user choose.** When a fix has genuinely different options, list 2–3 with one-line trade-offs and wait for the user's choice (same HITL idiom as the checkpoints below); do not pick silently. If the chosen option leaves the plan's file scope, STOP and return to `@planner` for a plan revision.
 - **Do NOT modify tests** unless the plan explicitly says so. Tests changing for a non-behavioral refactor is a red flag.
 - **Do NOT edit `Infrastructure/Migrations/`** — refuse and surface to human.
 - **Do NOT translate Polish UI text.**
@@ -147,6 +149,8 @@ Checks to run:
 | 6   | Test coverage — behavioral change without test update?                                              | **Advisory** — include in report       |
 | 7   | Service Locator — `IServiceProvider` injected just to call `GetService`/`GetRequiredService` instead of constructor injection? (see `dotnet.instructions.md` §13 for the one documented exception) | **Advisory** — include in report       |
 | 8   | Testcontainers placement — new test spins up Testcontainers but lives outside `ECommerceApp.E2E.Backend`? | **Advisory** — include in report       |
+
+When you report a finding, include the evidence fields defined in `code-reviewer.md` (Scenario, How to prove with a test, Confidence, Category) — keep them to a line each here.
 
 **On BLOCKS MERGE:** Output the **BLOCKS MERGE report** (see below) and STOP. Do NOT auto-fix.
 **On Advisory only:** Include advisories in the APPROVED report and continue to HITL 2.

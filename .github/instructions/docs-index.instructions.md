@@ -87,6 +87,7 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 | Design/extend the code-derived KG ontology (modules, endpoints, message-broker flow); mandatory dry-run before writing ontology files | `.github/skills/kg-ontology-designer/SKILL.md` (methodology in [docs/architecture/knowledge-graph-ontology-design.md](../../docs/architecture/knowledge-graph-ontology-design.md); Claude Code variant at `.claude/skills/kg-ontology-designer/SKILL.md`) |
 | Turn a confirmed KG ontology into a phased build of the codegen tool — one phase at a time; requires an explicit ontology path; emits a plan pair, an unattended handoff prompt, or the implementation itself | `.github/skills/kg-implementation-planner/SKILL.md` (methodology in [docs/architecture/kg-implementation-planning/README.md](../../docs/architecture/kg-implementation-planning/README.md); Claude Code variant at `.claude/skills/kg-implementation-planner/SKILL.md`) |
 | Edit an existing `kg-codegen` parser, add a triple, or run the graph build | Read [ADR-0031](../../docs/adr/0031/README.md) and [`tools/kg/kg-codegen/README.md`](../../tools/kg/kg-codegen/README.md) first — the warn-don't-fabricate and no-undeclared-triple rules are non-negotiable, and expected non-matches must stay silent |
+| Change the GO gate (agent edits blocked until the human writes `IMPLEMENT`), add an adapter, or debug a denied edit | Read [ADR-0033](../../docs/adr/0033/README.md) first — fail-open, deny-as-JSON-with-exit-0 and "core names no tool" are verified requirements; code in `tools/hooks/`, adapters in `.claude/hooks/` and `.github/hooks/` |
 | Query the already-built structural graph (10 read-only tools, no raw Cypher) | `.github/skills/ecommerceapp-kg-query/SKILL.md` — enable `ecommerceapp-kg` after Neo4j/load-graph setup; node labels in `.claude/skills/ecommerceapp-kg-query/references/labels.md`, tool contracts in [`docs/reference/kg-mcp-tools.md`](../../docs/reference/kg-mcp-tools.md); Claude Code variant at `.claude/skills/ecommerceapp-kg-query/SKILL.md` |
 
 ## Domain modeling skills
@@ -165,3 +166,12 @@ End-to-end, multi-stage walkthroughs for standing up RAG in a fresh repo. Skills
 |---|---|
 | Read-only audit of a new repo: what's already set up vs. needs bootstrapping | `@setup-discovery` (`.github/agents/setup-discovery.md`) |
 | Create / update business flow specification doc | `@spec-writer` (`.github/agents/spec-writer.md`) |
+
+## Read-only planning-support agents
+
+Optional, read-only, not pipeline stages. Claude Code stubs live in `.claude/agents/` and point at the `.github/agents/` source.
+
+| Need | Agent |
+|---|---|
+| Impact analysis before planning: what a change touches, who sees it, how to check | `@what-if` (`.github/agents/what-if.md`) |
+| End-of-plan check of assumptions against code, before HITL 1 | `@assumption-check` (`.github/agents/assumption-check.md`) |

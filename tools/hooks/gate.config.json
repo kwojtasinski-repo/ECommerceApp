@@ -1,0 +1,22 @@
+{
+  "goTokens": [
+    "IMPLEMENT"
+  ],
+  "revokeTokens": [
+    "HOLD",
+    "STOP"
+  ],
+  "allowedPathGlobs": [
+    ".github/plans/**",
+    "docs/research/**",
+    "docs/reports/**"
+  ],
+  "allowTempDir": true,
+  "markerTtlHours": 12,
+  "bypassEnv": [
+    "CI",
+    "GITHUB_ACTIONS"
+  ],
+  "disableEnv": "ECOMMERCEAPP_GATE",
+  "freshGrantGraceSeconds": 10
+}

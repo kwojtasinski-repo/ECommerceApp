@@ -158,5 +158,7 @@ Load context progressively — never bulk-load everything:
 | Sync context files after ADR change | skill `context-updater` | source-of-truth table in skill |
 | Analyze BC flows (bidirectional) | `/flow-analysis` | matching ADR + `anti-patterns-critical.context.md` |
 | Refactor (structural only) | `/refactor` | `agent-decisions.md` + target file(s) |
+| Impact analysis before planning (read-only, optional) | `@what-if` | the code under change (grep baseline) |
+| Check a finished plan's assumptions before HITL 1 (read-only, optional) | `@assumption-check` | the plan + code it cites |
 
 **Proactive rule**: when a task matches a row above, load and follow that skill or agent automatically — you do not need to be explicitly asked.

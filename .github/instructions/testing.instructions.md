@@ -68,6 +68,13 @@ Unit tests
 - Browser E2E tests should keep workflow mechanics in existing Page Objects or scenario components. Review those abstractions before adding another helper, and do not duplicate browser actions in individual tests.
 - For all integration and E2E levels, maintain a separate backlog of test-data candidates: duplicated builders, unclear defaults, excessive fixture setup, cross-test state, and data that hides the business scenario. Improve data builders only when that makes the scenario clearer or isolation more reliable.
 
+### Bug fixes: red test first
+- A bug fix starts with a test that reproduces the bug. Run it and confirm it is **red for the right reason**: read the failure message and check that it shows the reported wrong behavior, not a compile error, a missing setup, or an unrelated exception.
+- Only then change production code. After the fix the same test, unchanged, must be green. Do not edit the test to make it pass.
+- If the bug cannot be reproduced by a test at any level (for example a pure infrastructure or timing issue), say so explicitly and name what was done instead; do not silently skip the red test.
+- Keep the `Method_Conditions_ExpectedResult` naming; the Conditions part should describe the input state that triggered the bug.
+- Pick the lowest test level that can reproduce the bug (unit before integration before E2E).
+
 Integration tests — two patterns
 
 Pattern 1: Service-level integration tests

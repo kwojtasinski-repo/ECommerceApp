@@ -99,6 +99,31 @@ HUMAN runs git commands
 
 ---
 
+## Optional read-only helpers (not pipeline stages)
+
+Two read-only agents can bracket `@planner`. Neither edits files, neither gates the pipeline, and either may be skipped.
+
+| Helper | Where it slots in | Purpose |
+| ------ | ----------------- | ------- |
+| `@what-if` | **Before** `@planner` | Impact analysis: asks for your 2 predicted affected places, then maps callers/mutators (grep baseline), what changes, who sees it, how to check. |
+| `@assumption-check` | **End of a plan, before HITL 1** | Lists the plan's assumptions with evidence in code and confidence; asks only about low-confidence rows. |
+
+Sources: `.github/agents/what-if.md`, `.github/agents/assumption-check.md` (Claude Code stubs in `.claude/agents/`).
+
+---
+
+## GO gate — edits wait for `IMPLEMENT`
+
+Hooks block the file-edit tools until the human writes the uppercase token `IMPLEMENT` at the start of a prompt (optionally `APPROVE IMPLEMENT`). `APPROVE` alone only accepts a plan. `HOLD` or `STOP` re-locks.
+
+- Before GO, agents may still write to `.github/plans/**`, `docs/research/**`, `docs/reports/**` and the OS temp dir, so `@planner`, research and validation work is not blocked.
+- A denied edit means: ask the human (question tool or plain text), do not retry. After explicit approval in a dialog, unlock with `node tools/hooks/gate-cli.mjs grant <sessionId>` (the deny message prints the exact command). Run it only after real approval.
+- Guardrail, not a wall: shell edits are not gated, everything fails open, CI (`CI`, `GITHUB_ACTIONS`) bypasses, `ECOMMERCEAPP_GATE=off` disables locally.
+- Each tool also has its own permission layer (e.g. Copilot autopilot "no one to approve" is NOT the gate): [`tools/hooks/README.md`](../tools/hooks/README.md) tells every agent how to tell the layers apart and explain it to the user.
+- Details, adapters and known gaps: [ADR-0033](../docs/adr/0033/README.md).
+
+---
+
 ## HITL checkpoints — which are mandatory
 
 | Checkpoint                    | Where                                     | Why                                                                         |
@@ -128,6 +153,8 @@ HUMAN runs git commands
 | `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         | RAG + bounded direct tools (large-file triage) |
 | `@adr-generator`                | 2        | One ADR draft (revision after feedback = +1)                      | RAG (`list_adrs` + `query_docs` + `get_history`) |
 | `@copilot-setup-maintainer`     | n/a      | Per-workflow; audit can iterate per finding                       | RAG + bounded direct tools |
+| `@what-if` _(optional)_         | 3        | One impact analysis pass                                          | Read-only grep/read; `ecommerceapp-kg` optional |
+| `@assumption-check` _(optional)_| 3        | One assumption-check pass                                         | Read-only grep/read; `ecommerceapp-kg` optional |
 | `research-gatherer`             | 3        | One research pass (plan + gather + verify + synthesize)           | RAG + approved external web path as needed |
 
 **Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). Use one relevant MCP family per atomic intent.

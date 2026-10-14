@@ -75,6 +75,11 @@ In this exact order:
 2. <Step>
 3. <Step>
 
+> **Bug-fix plans:** the red test that reproduces the bug is listed first — first entry under
+> "Tests required" and Step 1, before any production-code step (see
+> `testing.instructions.md` § "Bug fixes: red test first"). If the bug cannot be reproduced by a test,
+> say so in "Risks / open questions".
+
 ### Verification commands @verifier will run
 - `dotnet build`
 - `dotnet test ECommerceApp.UnitTests/...`
@@ -125,6 +130,7 @@ Plan APPROVED. Hand off to @implementer with this plan.
 
 - **Read-only tools** — never edit code.
 - **No silent assumptions** — every "I think" → mark as open question.
+- **Bug fix = red test first** — a plan for a bug fix must list the reproducing test before any fix step.
 - **Cite sources** — every constraint references an ADR/instruction/anti-pattern.
 - **Append to `agent-decisions.md`** if you were corrected on something not yet logged.
 - **Polish UI text** — never propose translation without human approval.
