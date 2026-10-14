@@ -145,5 +145,5 @@ Historia git: 200 ostatnich commitów (2026-05-27 do 2026-10-14) do symulacji wi
 ---
 
 ## F. Czego nie opublikowano i dlaczego
-- 43 pliki z pełnym tekstem artykułów (posty bradmurry.com, strony AutoGen): repozytorium jest publiczne, a to cudze treści. Lokalnie są w `analysis/sources-raw/` (nieśledzone); [`analysis/sources-raw/README.md`](analysis/sources-raw/README.md) opisuje sytuację.
+- Pełne teksty 43 artykułów (posty bradmurry.com, strony AutoGen): repozytorium jest publiczne, a to cudze treści, więc zamiast kopii są linki powyżej. Kontekst: [`analysis/sources-raw/README.md`](analysis/sources-raw/README.md).
 - W repozytorium są wyłącznie: krótkie cytaty (≤ 40 słów) w findings z podaniem źródła, własne podsumowania i oceny.
