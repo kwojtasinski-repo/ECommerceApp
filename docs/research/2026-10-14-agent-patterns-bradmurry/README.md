@@ -5,7 +5,7 @@ Workflow: `research-gather` (Faza 1 brief → Faza 2 plan + gatherery → Faza 3
 | Folder / plik | Zawartość |
 |---|---|
 | `planning/` | `research-brief.md`, `research-plan.md`, `sources.md` |
-| `analysis/sources-raw/` | **tylko README**: 43 pliki pełnego tekstu źródeł istnieją wyłącznie lokalnie i nie są w repozytorium (zob. [`SOURCES.md`](SOURCES.md)); pierwotnie: pełny tekst źródeł (wklejone przez użytkownika lub pobrane `curl`em; w nagłówkach proweniencja i URL) |
+| [`analysis/sources-raw/README.md`](analysis/sources-raw/README.md) | uwaga, że kopie tekstów źródeł nie są w repozytorium; adresy wszystkich źródeł: [`SOURCES.md`](SOURCES.md) |
 | `analysis/findings/` | findings z cytatami; `*-raw-*` = z pełnego tekstu (obowiązujące), `bm-agents-fsm`, `bm-data-infra-ops`, `autogen-patterns` = pierwsza tura z WebFetch (zastąpione, zostają jako ślad audytu), `medium-12-patterns` i `mastra-book` = luki |
 | `analysis/00-summary.md` | podsumowanie i katalog 13 wzorców + AutoGen |
 | `analysis/01-cross-source-verification.md` | sprzeczności, korelacje, werdykty twierdzeń, weryfikacja cytatów (94,8% dosłownie zgodnych) |

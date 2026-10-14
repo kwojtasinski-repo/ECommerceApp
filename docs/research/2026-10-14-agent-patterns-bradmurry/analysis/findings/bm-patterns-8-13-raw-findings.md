@@ -3,13 +3,13 @@
 Scope: patterns 8-13 of Brad Murry's "13 Multi-Agent Orchestration Patterns, Implemented via the Reactive Reducer" series, gathered from full-text local files in (lokalne kopie tekstu, poza repozytorium; źródła w SOURCES.md).
 
 Source key (used in every `Source:` line below):
-- **[05]** = [05-reactive-reducer-patterns-13](https://bradmurry.com/software/reactive-reducer-patterns/), URL https://bradmurry.com/software/reactive-reducer-patterns/ (index post; only its sections 8-13 and the closing idioms were read for this file).
-- **[16]** = [16-pattern-08-planner-executor](https://bradmurry.com/software/planner-executor-pattern-implemented-via-reactive-reducer/)
-- **[17]** = [17-pattern-09-generator-critic-refiner](https://bradmurry.com/software/generator-critic-refiner-pattern-implemented-via-reactive-reducer/)
-- **[18]** = [18-pattern-10-auction-contract-net](https://bradmurry.com/software/auction-contract-net-pattern-implemented-via-reactive-reducer/) (header: dated "Sep 10, 2026")
-- **[19]** = [19-pattern-11-event-driven-pubsub](https://bradmurry.com/software/event-driven-publish-subscribe-pattern-implemented-via-reactive-reducer/) (header: dated "Sep 11, 2026")
-- **[20]** = [20-pattern-12-quorum-voting](https://bradmurry.com/software/quorum-voting-pattern-implemented-via-reactive-reducer/) (header: dated "Sep 12, 2026")
-- **[21]** = [21-pattern-13-dynamic-team-formation](https://bradmurry.com/software/dynamic-team-formation-pattern-implemented-via-reactive-reducer/)
+- **[05]** = [05 reactive-reducer-patterns](https://bradmurry.com/software/reactive-reducer-patterns/), URL https://bradmurry.com/software/reactive-reducer-patterns/ (index post; only its sections 8-13 and the closing idioms were read for this file).
+- **[16]** = [16 planner-executor-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/planner-executor-pattern-implemented-via-reactive-reducer/)
+- **[17]** = [17 generator-critic-refiner-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/generator-critic-refiner-pattern-implemented-via-reactive-reducer/)
+- **[18]** = [18 auction-contract-net-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/auction-contract-net-pattern-implemented-via-reactive-reducer/) (header: dated "Sep 10, 2026")
+- **[19]** = [19 event-driven-publish-subscribe-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/event-driven-publish-subscribe-pattern-implemented-via-reactive-reducer/) (header: dated "Sep 11, 2026")
+- **[20]** = [20 quorum-voting-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/quorum-voting-pattern-implemented-via-reactive-reducer/) (header: dated "Sep 12, 2026")
+- **[21]** = [21 dynamic-team-formation-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/dynamic-team-formation-pattern-implemented-via-reactive-reducer/)
 
 URL note (gap): the task said each header comment carries the original URL. Only [05] does. The headers of [16]-[21] give the article title and "URL NOT in the user's 18-URL list; text pasted by the user 2026-10-14", with no URL. I did not guess URLs. Those files are cited by file name and article title. The [05] intro also says the per-pattern posts are "NOT in the 18-URL list".
 
