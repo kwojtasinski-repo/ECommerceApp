@@ -260,6 +260,205 @@ namespace ECommerceApp.IntegrationTests.API
 
             receivedCounts.Last().ShouldBe(session.TotalChunks);
         }
+
+        // ---------- chunked upload hardening ----------
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        [InlineData(10 * 1024 * 1024 + 1)]
+        public async Task InitUpload_SizeOutOfRange_ShouldReturnBadRequest(long size)
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+
+            var response = await InitUploadRawAsync(client, "a.jpg", size, itemId);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+        }
+
+        [Theory]
+        [InlineData("evil.jpg.")]
+        [InlineData("CON.jpg")]
+        [InlineData("a\0b.jpg")]
+        [InlineData("evil.exe")]
+        public async Task InitUpload_InvalidFileName_ShouldReturnBadRequest(string fileName)
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+
+            var response = await InitUploadRawAsync(client, fileName, 1000, itemId);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task InitUpload_UnknownItem_ShouldReturnBadRequest()
+        {
+            var client = await GetLoggingClient();
+
+            var response = await InitUploadRawAsync(client, "a.jpg", 1000, 987654321);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+        }
+
+        [Theory]
+        [InlineData("..\\..\\evil.jpg")]
+        [InlineData("../../evil.jpg")]
+        [InlineData("C:\\evil.jpg")]
+        public async Task UploadChunk_TraversalFileName_ShouldCompleteWithoutWritingOutsideTempDir(string fileName)
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+            var bytes = await File.ReadAllBytesAsync(_testData.GetFiles().First(f => f.Name == "apple-iphone-13.jpg").FullName, CancellationToken);
+
+            var session = await InitUploadAsync(client, fileName, bytes.Length, itemId);
+            var response = await PostChunkAsync(client, session.SessionId, 1, bytes);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "evil.jpg")).ShouldBeFalse();
+            File.Exists(Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "evil.jpg")).ShouldBeFalse();
+            File.Exists("C:\\evil.jpg").ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task UploadChunk_NonImageBytesNamedJpg_ShouldReturnBadRequestAndDropSession()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+            var bytes = Encoding.ASCII.GetBytes("<html><script>alert(1)</script></html>");
+            var session = await InitUploadAsync(client, "fake.jpg", bytes.Length, itemId);
+
+            var response = await PostChunkAsync(client, session.SessionId, 1, bytes);
+            var status = await GetStatusAsync(client, session.SessionId);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            status.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task UploadChunk_WrongChunkLength_ShouldReturnBadRequest()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+            var session = await InitUploadAsync(client, "a.jpg", 1000, itemId);
+
+            var response = await PostChunkAsync(client, session.SessionId, 1, new byte[999]);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task UploadChunkAndStatus_UnknownSession_ShouldReturnNotFound()
+        {
+            var client = await GetLoggingClient();
+
+            var chunk = await PostChunkAsync(client, Guid.NewGuid(), 1, new byte[10]);
+            var status = await GetStatusAsync(client, Guid.NewGuid());
+
+            chunk.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
+            status.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task UploadStatus_AfterPartialUpload_ShouldListReceivedChunks()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+            var totalLength = ChunkedUploadLimits.ChunkSizeBytes + 100;
+            var session = await InitUploadAsync(client, "big.jpg", totalLength, itemId);
+            await PostChunkAsync(client, session.SessionId, 2, new byte[100]);
+
+            var response = await GetStatusAsync(client, session.SessionId);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            var status = JsonSerializer.Deserialize<UploadStatusResponse>(
+                await response.ResponseMessage.Content.ReadAsStringAsync(CancellationToken),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            status.SessionId.ShouldBe(session.SessionId);
+            status.TotalChunks.ShouldBe(2);
+            status.ReceivedChunkIds.ShouldBe(new[] { 2 });
+            status.Complete.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task ChunkedEndpoints_NonMaintenanceUser_ShouldBeForbidden()
+        {
+            var admin = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+            var session = await InitUploadAsync(admin, "a.jpg", 1000, itemId);
+            var plainUser = await GetClientForAsync("test2@test2");
+
+            var init = await InitUploadRawAsync(plainUser, "a.jpg", 1000, itemId);
+            var chunk = await PostChunkAsync(plainUser, session.SessionId, 1, new byte[1000]);
+            var status = await GetStatusAsync(plainUser, session.SessionId);
+
+            init.StatusCode.ShouldBe((int)HttpStatusCode.Forbidden);
+            chunk.StatusCode.ShouldBe((int)HttpStatusCode.Forbidden);
+            status.StatusCode.ShouldBe((int)HttpStatusCode.Forbidden);
+        }
+
+        [Fact]
+        public async Task ChunkedEndpoints_Anonymous_ShouldBeUnauthorized()
+        {
+            var anonymous = new FlurlClient(_factory.CreateClient());
+
+            var init = await InitUploadRawAsync(anonymous, "a.jpg", 1000, 1);
+            var chunk = await PostChunkAsync(anonymous, Guid.NewGuid(), 1, new byte[10]);
+            var status = await GetStatusAsync(anonymous, Guid.NewGuid());
+
+            init.StatusCode.ShouldBe((int)HttpStatusCode.Unauthorized);
+            chunk.StatusCode.ShouldBe((int)HttpStatusCode.Unauthorized);
+            status.StatusCode.ShouldBe((int)HttpStatusCode.Unauthorized);
+        }
+
+        private async Task<IFlurlResponse> InitUploadRawAsync(FlurlClient client, string fileName, long size, int itemId)
+            => await client.Request("api/images/init-upload")
+                .AllowAnyHttpStatus()
+                .WithHeader("Content-Type", "application/json")
+                .PostStringAsync(
+                    JsonSerializer.Serialize(new InitUploadRequest { FileName = fileName, FileSizeBytes = size, ItemId = itemId }),
+                    cancellationToken: CancellationToken);
+
+        private async Task<InitUploadResponse> InitUploadAsync(FlurlClient client, string fileName, long size, int itemId)
+        {
+            var response = await InitUploadRawAsync(client, fileName, size, itemId);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            return JsonSerializer.Deserialize<InitUploadResponse>(
+                await response.ResponseMessage.Content.ReadAsStringAsync(CancellationToken),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        private async Task<IFlurlResponse> PostChunkAsync(FlurlClient client, Guid sessionId, int chunkId, byte[] bytes)
+        {
+            var form = new MultipartFormDataContent
+            {
+                { new StringContent(sessionId.ToString()), "sessionId" },
+                { new StringContent(chunkId.ToString()), "chunkId" },
+                { new ByteArrayContent(bytes), "chunk", "blob" }
+            };
+            return await client.Request("api/images/upload-chunk")
+                .AllowAnyHttpStatus()
+                .PostAsync(form, cancellationToken: CancellationToken);
+        }
+
+        private async Task<IFlurlResponse> GetStatusAsync(FlurlClient client, Guid sessionId)
+            => await client.Request("api/images/upload-status")
+                .SetQueryParam("sessionId", sessionId)
+                .AllowAnyHttpStatus()
+                .GetAsync(cancellationToken: CancellationToken);
+
+        private async Task<FlurlClient> GetClientForAsync(string userName)
+        {
+            var client = new FlurlClient(_factory.CreateClient());
+            var raw = await client.Request("api/auth/login")
+                .WithHeader("content-type", "application/json")
+                .PostStringAsync(JsonSerializer.Serialize(new { email = userName, password = "Test@test12" }), cancellationToken: CancellationToken)
+                .ReceiveString();
+            var token = JsonDocument.Parse(raw).RootElement.GetProperty("accessToken").GetString();
+            client.WithHeader("Authorization", $"Bearer {token}");
+            return client;
+        }
     }
 }
 

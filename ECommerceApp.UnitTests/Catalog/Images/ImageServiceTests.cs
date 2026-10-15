@@ -315,7 +315,13 @@ namespace ECommerceApp.UnitTests.Catalog.Images
 
         private static IFormFile AddFileToIFormFile(string fileName, int size = 0)
         {
-            var bytes = size == 0 ? Array.Empty<byte>() : new byte[size];
+            // Valid JPEG framing (SOI marker ... EOI marker): the service checks content, not only name and size.
+            var bytes = new byte[size == 0 ? 22 : size];
+            bytes[0] = 0xFF;
+            bytes[1] = 0xD8;
+            bytes[2] = 0xFF;
+            bytes[^2] = 0xFF;
+            bytes[^1] = 0xD9;
             var stream = new MemoryStream(bytes);
             return new FormFile(stream, 0, stream.Length, ".jpg", fileName)
             {

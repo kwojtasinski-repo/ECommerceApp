@@ -1,4 +1,5 @@
 using ECommerceApp.API;
+using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Catalog.Products;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,7 +23,17 @@ namespace ECommerceApp.IntegrationTests.API
     public sealed class ImageApiTestFactory : CustomWebApplicationFactory<Startup>
     {
         private bool _seeded;
+        private readonly string _uploadTempPath = Path.Combine(Path.GetTempPath(), "chunked-upload-api-tests-" + Guid.NewGuid().ToString("N"));
         public int SeededItemId { get; private set; }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing && Directory.Exists(_uploadTempPath))
+            {
+                Directory.Delete(_uploadTempPath, recursive: true);
+            }
+        }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -29,6 +41,9 @@ namespace ECommerceApp.IntegrationTests.API
 
             builder.ConfigureServices(services =>
             {
+                // Isolate upload sessions on disk per factory so runs never share (or leak) temp sessions.
+                services.AddSingleton(Options.Create(new ChunkedUploadOptions { TempPath = _uploadTempPath }));
+
                 var bcContextTypes = services
                     .Where(d => d.ServiceType.IsGenericType
                         && d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>)

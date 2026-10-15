@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.AccountProfile.Options;
+using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
 using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.Sales.Coupons;
 using ECommerceApp.Infrastructure.AccountProfile;
@@ -31,6 +32,7 @@ namespace ECommerceApp.Infrastructure
             services.Configure<RetryPolicyOptions>(configuration.GetSection(RetryPolicyOptions.SectionName));
             services.Configure<GuestProfileCleanupOptions>(configuration.GetSection(GuestProfileCleanupOptions.SectionName));
             services.Configure<CouponsOptions>(configuration.GetSection(CouponsOptions.SectionName));
+            services.Configure<ChunkedUploadOptions>(configuration.GetSection(ChunkedUploadOptions.SectionName));
             services.AddDatabase(configuration);
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);

@@ -165,7 +165,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             };
 
         private void ValidImages(ICollection<IFormFile> images)
-            => ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length)));
+            => ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length, i)));
 
         private void ValidImages(IEnumerable<ValidateFile> images)
         {
@@ -205,12 +205,32 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                         ErrorParameter.Create("extensions", sb.ToString())
                     }));
                 }
+                else if (!HasValidContent(image.File, extension))
+                {
+                    errorMessage.Message.AppendLine($"Image {fileName} content does not match its {extension} extension or is corrupted.");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileContentInvalid", new List<ErrorParameter>
+                    {
+                        ErrorParameter.Create("name", fileName),
+                        ErrorParameter.Create("extension", extension)
+                    }));
+                }
             }
 
             if (errorMessage.HasErrors())
             {
                 throw new BusinessException(errorMessage);
             }
+        }
+
+        private static bool HasValidContent(IFormFile file, string extension)
+        {
+            if (file is null)
+            {
+                return false;
+            }
+
+            using var stream = file.OpenReadStream();
+            return ImageConstraints.HasValidImageContent(extension, stream);
         }
 
         private static void ValidImageCount(Product product, int imagesToAdd)
@@ -229,6 +249,6 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             }
         }
 
-        private record ValidateFile(string Name, long Size);
+        private record ValidateFile(string Name, long Size, IFormFile File);
     }
 }
