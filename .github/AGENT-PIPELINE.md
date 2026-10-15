@@ -145,9 +145,9 @@ Hooks block the file-edit tools until the human writes the uppercase token `IMPL
 
 | Agent                           | Max iter | Iteration definition                                              | MCP tools allowed |
 | ------------------------------- | -------- | ----------------------------------------------------------------- | ----------------- |
-| `@planner`                      | 3        | One full plan revision (after REVISE)                             | RAG (read-only): `list_adrs`, `query_docs`, `read_docs`, `get_history`. |
+| `@planner`                      | 3        | One full plan revision (after REVISE)                             | RAG (read-only): `list_adrs`, `query_docs`, `read_docs`, `get_history`; KG: `GetBlastRadius`, `GetModuleOwnership`. |
 | `@implementer`                  | 5        | One full pass: impl steps + 3 probes + inline review              | RAG + bounded direct tools |
-| `@verifier` _(standalone)_      | 1        | One full build + test sweep — no auto-retry (standalone use only) | **NONE** — deterministic only |
+| `@verifier` _(standalone)_      | 1        | One full build + test sweep — no auto-retry (standalone use only) | KG only (read-only): `GetOrphanContracts`, `GetModuleDependencies`; no RAG — deterministic |
 | `@code-reviewer` _(standalone)_ | 3        | One full review pass (re-review after fix = +1, standalone only)  | RAG (read-only). |
 | `@pr-commit`                    | 2        | One commit/PR text revision                                       | RAG (`get_history` for ADR refs only) |
 | `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         | RAG + bounded direct tools (large-file triage) |
@@ -157,7 +157,7 @@ Hooks block the file-edit tools until the human writes the uppercase token `IMPL
 | `@assumption-check` _(optional)_| 3        | One assumption-check pass                                         | Read-only grep/read; `ecommerceapp-kg` optional |
 | `research-gatherer`             | 3        | One research pass (plan + gather + verify + synthesize)           | RAG + approved external web path as needed |
 
-**Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). Use one relevant MCP family per atomic intent.
+**Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). Use one relevant MCP family per atomic intent. KG usage: `ecommerceapp-kg-query` skill + [docs/reference/kg-mcp-tools.md](../docs/reference/kg-mcp-tools.md); the KG is optional — fall back to grep and say so.
 
 After hitting the cap → **STOP, report what was tried, ask the human**. No silent continuation.
 
@@ -201,7 +201,7 @@ Each agent file lists its required reads. Summary:
 - **All agents** (except `@verifier`) → `.github/instructions/mcp-routing.instructions.md` for tool routing + precedence.
 - `@planner` → agent-decisions, project-state, known-issues, docs-index, ADR(s) (via `get_history`), per-stack instructions, anti-patterns-critical
 - `@implementer` → APPROVED plan + agent-decisions + per-stack instructions
-- `@verifier` → handoff message only (no architectural reads, no MCP — it's deterministic)
+- `@verifier` → handoff message only (no architectural reads, no RAG; only the read-only KG contract check, skipped when the KG is unavailable)
 - `@code-reviewer` → anti-patterns-critical, project-state, per-stack instructions, ADR per BC (via `get_history`), agent-decisions (per area, via bare `query_docs("<area>")`)
 - `@pr-commit` → reviewer output + plan + bounded-context-map (for branch scope) + `get_history` for cited ADRs
 

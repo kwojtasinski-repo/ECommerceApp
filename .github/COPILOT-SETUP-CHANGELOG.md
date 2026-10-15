@@ -6,6 +6,15 @@
 > Use as a quick reference to see what exists without scanning every file.
 
 
+## Session 73 — KG pipeline integration (2026-10-15)
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | `@planner` establishes blast radius and module ownership via KG; `@verifier` gains a read-only KG contract check (orphan contracts, cross-module calls via declared contract). Both fall back to grep when the KG is unavailable and never delete on `ambiguous` rows. | `.github/agents/planner.md`, `.github/agents/verifier.md` |
+| 2 | Pipeline MCP table and routing text updated to match. | `.github/AGENT-PIPELINE.md` |
+
+---
+
 ## Session 72 — research workflow bootstrap (2026-06-30)
 
 Added a strict, human-gated research workflow for ECommerceApp.

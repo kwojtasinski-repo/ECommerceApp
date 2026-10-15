@@ -71,7 +71,11 @@ dotnet test ECommerceApp.IntegrationTests/ECommerceApp.IntegrationTests.csproj `
 - Exit code 0 → PASS this step.
 - Non-zero → Verdict = **FAIL — Integration tests**.
 
-### Step 4 — Verdict
+### Step 4 — Contract check (KG, read-only)
+
+Confirm via `ecommerceapp-kg` that the change did not orphan a contract (`GetOrphanContracts`) and that new cross-module calls go through a declared contract (`GetModuleDependencies`). Report rows verbatim; do not delete or "fix" on `ambiguous`-confidence rows. Tool contracts: [docs/reference/kg-mcp-tools.md](../../docs/reference/kg-mcp-tools.md). If the KG is unavailable (server down / graph not loaded), report `KG: SKIPPED (unavailable)` and fall back to grep for the changed contracts — this step never changes the build/test verdict.
+
+### Step 5 — Verdict
 
 If Steps 1–3 all PASS:
 
@@ -81,6 +85,7 @@ If Steps 1–3 all PASS:
 - Unit tests:           PASS (<count> passed)
 - Integration tests:    PASS (<count> passed)
 - ArchUnitNET:          PASS (part of unit tests)
+- KG contract check:    <clean | rows reported | SKIPPED (unavailable)>
 Hand off to @code-reviewer.
 ══════════════════════════════════════════════
 ```
@@ -112,7 +117,7 @@ Auto-retry is FORBIDDEN. Awaiting human decision:
 - **No interpretation of test names.** A red test is a FAIL, period — even if "the test looks wrong".
 - **No skipping steps.** All three steps must run on PASS path.
 - **No new commands.** Use exactly the commands above. Adding flags, filters, or wildcards is forbidden.
-- **No MCP tool calls.** Verifier MUST NOT invoke RAG or KG — LLM-based context lookups break determinism. The single allowed tool surface is `runCommand` + `read/readFile` + `read/problems`. See [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) (verifier is the explicit exception to the MCP knowledge rule).
+- **No RAG calls.** Verifier MUST NOT invoke RAG — LLM-based context lookups break determinism. The only MCP exception is the read-only structural KG check in Step 4. See [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md).
 
 ---
 
