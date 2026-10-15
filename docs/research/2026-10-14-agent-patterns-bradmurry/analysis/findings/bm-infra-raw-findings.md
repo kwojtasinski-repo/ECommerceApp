@@ -1,9 +1,9 @@
 # Findings: bm-infra-raw
 
-Re-gather from the full text of the articles linked below (local copies are not in the repository). All quotes copied verbatim from those texts. Layer tags: BP = Big Picture, MOD = Modeling, IMPL = Implementation. Raw-file names abbreviated (e.g. "30-apis" = [30 apis-at-massive-scale](https://bradmurry.com/software/apis-at-massive-scale/)).
+Re-gather from the full text of the articles linked below (see SOURCES.md). All quotes copied verbatim from those texts. Layer tags: BP = Big Picture, MOD = Modeling, IMPL = Implementation. Raw-file names abbreviated (e.g. "30-apis" = [30 apis-at-massive-scale](https://bradmurry.com/software/apis-at-massive-scale/)).
 
 Provenance notes (affect confidence ceiling):
-- 30, 31, 32: full article text pasted by the user 2026-10-14 (raw, as pasted).
+- 30, 31, 32: full article text 2026-10-14 (raw text).
 - 42, 43, 44, 45: curl HTTP 200 fetch 2026-10-14, machine-extracted from HTML (tables flattened; inline formatting lost). Quoted text is the extracted text.
 - Single-source claims: at most Medium per plan until the verification phase; "High" below means the quote is explicit about the stated claim (confidence in what the author says, not that it is independently verified).
 

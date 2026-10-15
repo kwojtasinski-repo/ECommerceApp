@@ -5,7 +5,6 @@ Workflow: `research-gather` (Faza 1 brief → Faza 2 plan + gatherery → Faza 3
 | Folder / plik | Zawartość |
 |---|---|
 | `planning/` | `research-brief.md`, `research-plan.md`, `sources.md` |
-| [`analysis/sources-raw/README.md`](analysis/sources-raw/README.md) | uwaga, że kopie tekstów źródeł nie są w repozytorium; adresy wszystkich źródeł: [`SOURCES.md`](SOURCES.md) |
 | `analysis/findings/` | findings z cytatami; `*-raw-*` = z pełnego tekstu (obowiązujące), `bm-agents-fsm`, `bm-data-infra-ops`, `autogen-patterns` = pierwsza tura z WebFetch (zastąpione, zostają jako ślad audytu), `medium-12-patterns` i `mastra-book` = luki |
 | `analysis/00-summary.md` | podsumowanie i katalog 13 wzorców + AutoGen |
 | `analysis/01-cross-source-verification.md` | sprzeczności, korelacje, werdykty twierdzeń, weryfikacja cytatów (94,8% dosłownie zgodnych) |
@@ -29,7 +28,7 @@ Workflow: `research-gather` (Faza 1 brief → Faza 2 plan + gatherery → Faza 3
 
 Cel tego folderu: **solidny punkt startowy**, nie gotowa decyzja. Agent, który go dostaje, ma sprawdzić na kodzie, co z tego jest trafne dla ECommerceApp.
 
-- **Pełna bibliografia i proweniencja:** [`SOURCES.md`](SOURCES.md) (z adresami URL, datami dostępu i zakresem odczytu). Kopii cudzych artykułów w repozytorium nie ma.
+- **Pełna bibliografia i proweniencja:** [`SOURCES.md`](SOURCES.md) (z adresami URL, datami dostępu i zakresem odczytu).
 - **Najpierw przeczytaj:** [`../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md`](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md) (hipotezy H1–H9, stan GO/ADJUST/PIVOT) i [`debate/decision.md`](debate/decision.md) razem z erratum.
 - **Co już zweryfikowano na kodzie (2026-10-14/15):** liczby w `.github/setup-state.md`; brak integracji LLM w kodzie sklepu; `Product` nie ma SKU ani URL (jest `Name`, `Cost`); `IOrderAccessService` działa po tokenie bez `ClaimsPrincipal`; 9 z 10 reguł BLOCKS MERGE bez naruszeń w skanie regexem.
 - **Do sprawdzenia na kodzie (otwarte):**

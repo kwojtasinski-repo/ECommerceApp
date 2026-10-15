@@ -1,6 +1,6 @@
 # Findings: bm-patterns-8-13-raw
 
-Scope: patterns 8-13 of Brad Murry's "13 Multi-Agent Orchestration Patterns, Implemented via the Reactive Reducer" series, gathered from full-text local files in (lokalne kopie tekstu, poza repozytorium; źródła w SOURCES.md).
+Scope: patterns 8-13 of Brad Murry's "13 Multi-Agent Orchestration Patterns, Implemented via the Reactive Reducer" series, gathered from the full text of the articles in (źródła: SOURCES.md).
 
 Source key (used in every `Source:` line below):
 - **[05]** = [05 reactive-reducer-patterns](https://bradmurry.com/software/reactive-reducer-patterns/), URL https://bradmurry.com/software/reactive-reducer-patterns/ (index post; only its sections 8-13 and the closing idioms were read for this file).
@@ -11,9 +11,9 @@ Source key (used in every `Source:` line below):
 - **[20]** = [20 quorum-voting-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/quorum-voting-pattern-implemented-via-reactive-reducer/) (header: dated "Sep 12, 2026")
 - **[21]** = [21 dynamic-team-formation-pattern-implemented-via-reactive-reducer](https://bradmurry.com/software/dynamic-team-formation-pattern-implemented-via-reactive-reducer/)
 
-URL note (gap): the task said each header comment carries the original URL. Only [05] does. The headers of [16]-[21] give the article title and "URL NOT in the user's 18-URL list; text pasted by the user 2026-10-14", with no URL. I did not guess URLs. Those files are cited by file name and article title. The [05] intro also says the per-pattern posts are "NOT in the 18-URL list".
+URL note (gap): the task said each header comment carries the original URL. Only [05] does. The headers of [16]-[21] give the article title and "URL NOT in the user's 18-URL list; text provided 2026-10-14", with no URL. I did not guess URLs. Those files are cited by file name and article title. The [05] intro also says the per-pattern posts are "NOT in the 18-URL list".
 
-Provenance caveat from [05] header, quoted: "full article text pasted by the user on 2026-10-14 (WebFetch had returned only fragments)." Diagrams were flattened or omitted in all files. All files are the user's raw paste, not a fresh fetch.
+Provenance caveat from [05] header, quoted: "full article text on 2026-10-14 (WebFetch had returned only fragments)." Diagrams were flattened or omitted in all files. All files are the user's raw paste, not a fresh fetch.
 
 Confidence rule used: High = the author states it explicitly in the quoted text. Single-source claims stay at most Medium until the verification phase (plan rule). Where a finding is explicit but single-source I have written "High (explicit statement)" and left cross-source verification to that phase.
 

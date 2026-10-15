@@ -1,6 +1,6 @@
 # Findings: bm-agentic-core-raw
 
-Re-gather from FULL-TEXT local files. No synthesis, no recommendation. All quotes copied verbatim from the files (<=40 words; ellipses only in J1 and I-table cells marking elided text).
+Re-gather from the full text of the articles. No synthesis, no recommendation. All quotes copied verbatim from the files (<=40 words; ellipses only in J1 and I-table cells marking elided text).
 
 ## Source key
 

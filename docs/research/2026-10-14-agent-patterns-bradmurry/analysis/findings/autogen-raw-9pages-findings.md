@@ -1,10 +1,9 @@
 # Findings: autogen-raw-9pages
 
-Category: autogen-raw-9pages (re-gather from full-text local extracts of nine AutoGen core-user-guide design-pattern pages).
-Gathered: 2026-10-14. Method: full read of each local file; no web access used. No synthesis or recommendation.
+Category: autogen-raw-9pages (re-gather from the full text of nine AutoGen core-user-guide design-pattern pages).
+Gathered: 2026-10-14. Method: full read of each article. No synthesis or recommendation.
 
 URL base (every page): `https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/<slug>.html`
-Local files are under (lokalne kopie tekstu, poza repozytorium; źródła w SOURCES.md).
 
 | # | File | Slug | Lines |
 |---|---|---|---|
@@ -18,7 +17,7 @@ Local files are under (lokalne kopie tekstu, poza repozytorium; źródła w SOUR
 | 40 | [40 reflection](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/reflection.html) | reflection | 401 |
 | 41 | [41 code-execution-groupchat](https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/code-execution-groupchat.html) | code-execution-groupchat | 263 |
 
-Line numbers below refer to the local files. Layer tags: [BP] Big Picture, [MOD] Modeling, [IMPL] Implementation.
+Line numbers below refer to a text extract of each page. Layer tags: [BP] Big Picture, [MOD] Modeling, [IMPL] Implementation.
 "Code-evidenced" = read from the code on the page, not stated in prose. Quotes are verbatim; code quotes are short single lines.
 
 ---
