@@ -1,6 +1,6 @@
 # Roadmap: Chunked Image Upload
 
-> Status: ✅ V2 complete (2026-05-10) — TUS (tusdotnet) middleware live; `CompleteUpload` bridge endpoint live; 13 integration tests green. V1 classic chunked upload retained in parallel.
+> Status: ✅ **V1 (Classic) is the production engine** — hardened and resumable (2026-10-15, see "V1 hardening" below). **V2 (TUS) is a server-side experiment**, kept opt-in and unused by the browser.
 > Scope: `Web` + `API` projects (Catalog Image upload flow)
 > TUS upgrade path: ✅ complete
 
@@ -129,7 +129,23 @@ for (const chunkId of chunkIds) {
 
 ---
 
-## V2 — TUS upgrade path — ✅ Complete (2026-05-10)
+## V1 hardening (2026-10-15)
+
+Decision: keep the custom Classic engine and harden it instead of adopting TUS. Done in commit `84100779`:
+path-traversal-safe file names (server-named assembly file), size/chunk/session limits, per-chunk integrity checks,
+owner-bound sessions, magic-byte check of the assembled image in `ImageService`, `GET /Catalog/Image/UploadStatus`
+and on-disk `session.json` so sessions survive a restart, and `ChunkedUploadCleanupTask` (an `IScheduledTask`, so Catalog
+depends on the TimeManagement contract like every other BC with a job) which removes abandoned sessions after a TTL.
+Config: section `Catalog:ChunkedUpload`. Browser side (`wwwroot/js/chunked-upload.js`, shared by `AddItemNew` and `EditItemNew`): the open session is kept in `localStorage`, a matching file resumes via `UploadStatus` and sends only the missing chunks, and each request retries 3× with backoff on network errors/5xx. Covered by `ChunkedImageUploadTests` (E2E, including an interrupted-then-resumed upload).
+
+Known, accepted limits: the content check validates framing only (no decode), extensions are limited to `.jpg`/`.png`.
+
+## V2 — TUS — 🧪 experiment (built 2026-05-10, not adopted)
+
+> **When to revisit:** only if image storage moves to a fully managed/resumable store. Then adopt TUS end to end:
+> add `tus-js-client`, read `ChunkedUploadImplementation` in the views, configure `Expiration`, `MaxAllowedUploadSizeInBytes`,
+> the `Checksum` extension and a role check in `OnAuthorizeAsync` (today it only checks "authenticated"), and delete V1.
+> Until then V1 is the engine and this section is a reference.
 
 | Step | What                                                                                  | Status |
 | ---- | ------------------------------------------------------------------------------------- | ------ |
