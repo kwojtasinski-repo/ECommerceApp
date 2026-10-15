@@ -5,6 +5,7 @@ using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Application.Catalog.Products.Services
@@ -19,11 +20,14 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 .AddScoped<ICategoryService, CategoryService>()
                 .AddScoped<ICatalogNavigationService, CachedCatalogNavigationService>()
                 .AddScoped<IProductTagService, ProductTagService>()
+                .AddSingleton<IProductCacheInvalidator, ProductCacheInvalidator>()
                 .AddSingleton<IImageUrlBuilder, RelativeImageUrlBuilder>()
+                .AddSingleton<IImageSanitizer, ImageSanitizer>()
                 .AddTransient<IImageService, ImageService>()
                 .AddTransient<IUrlImageResolver, UrlImageResolver>()
                 .AddSingleton<UploadSessionStore>()
                 .AddTransient<IChunkedUploadService, ChunkedUploadService>()
+                .AddScoped<IScheduledTask, ChunkedUploadCleanupTask>()
                 // Cache invalidation — one registration per message type so ModuleClient finds them
                 .AddScoped<IMessageHandler<ProductUpdated>, ProductCacheInvalidationHandler>()
                 .AddScoped<IMessageHandler<ProductPublished>, ProductCacheInvalidationHandler>()

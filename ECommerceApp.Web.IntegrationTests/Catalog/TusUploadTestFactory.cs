@@ -148,12 +148,21 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
     {
         private static readonly byte[] _jpeg = { 0xFF, 0xD8, 0xFF, 0xE0 };
 
+        /// <summary>Bytes handed to <c>WriteFileAsync</c>, i.e. what would really have been stored.</summary>
+        public System.Collections.Concurrent.ConcurrentQueue<byte[]> WrittenFiles { get; } = new();
+
         public byte[] ReadFile(string path) => _jpeg;
         public Task<byte[]> ReadFileAsync(string path) => Task.FromResult(_jpeg);
         public Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file)
             => WriteFileAsync(file, Path.Combine(Path.GetTempPath(), "tus-test"));
-        public Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file, string path)
-            => Task.FromResult(new FileDirectoryPOCO { SourcePath = Path.Combine(path, $"{Guid.NewGuid()}.jpg"), Name = "test.jpg" });
+        public async Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file, string path)
+        {
+            await using var stream = file.OpenReadStream();
+            using var copy = new MemoryStream();
+            await stream.CopyToAsync(copy);
+            WrittenFiles.Enqueue(copy.ToArray());
+            return new FileDirectoryPOCO { SourcePath = Path.Combine(path, $"{Guid.NewGuid()}.jpg"), Name = "test.jpg" };
+        }
         public FileDirectoryPOCO WriteFile(string fileName, byte[] file, string path)
             => new() { SourcePath = Path.Combine(path, fileName), Name = Path.GetFileName(fileName) };
         public string SafeWriteFile(byte[] content, string sourceFileName, string path)

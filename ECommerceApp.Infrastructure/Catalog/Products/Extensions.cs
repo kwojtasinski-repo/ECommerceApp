@@ -23,6 +23,8 @@ namespace ECommerceApp.Infrastructure.Catalog.Products
 
             services.AddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
 
+            services.AddHostedService<ChunkedUploadCleanupScheduledJobReconciler>();
+
             return services
                 .AddScoped<IProductRepository, ProductRepository>()
                 .AddScoped<ICategoryRepository, CategoryRepository>()

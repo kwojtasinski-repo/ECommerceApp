@@ -56,28 +56,49 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
         }
 
         [HttpPost]
-        public IActionResult InitUpload([FromBody] InitUploadRequest request)
+        public async Task<IActionResult> InitUpload([FromBody] InitUploadRequest request)
         {
-            if (request == null || string.IsNullOrWhiteSpace(request.FileName) || request.FileSizeBytes <= 0)
+            if (request == null)
+            {
                 return BadRequest("Invalid request.");
-
-            return Ok(_chunkedUpload.InitUpload(request));
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UploadChunk([FromForm] UploadChunkRequest request)
-        {
-            if (request?.Chunk == null)
-                return BadRequest("Missing chunk.");
+            }
 
             try
             {
-                return Ok(await _chunkedUpload.UploadChunkAsync(request));
+                return Ok(await _chunkedUpload.InitUploadAsync(GetUserId(), request));
             }
             catch (BusinessException exception)
             {
                 return BadRequest(BuildErrorModel(exception).Codes);
             }
+        }
+
+        [HttpPost]
+        [RequestSizeLimit(ChunkedUploadLimits.MaxChunkRequestBodyBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = ChunkedUploadLimits.MaxChunkRequestBodyBytes)]
+        public async Task<IActionResult> UploadChunk([FromForm] UploadChunkRequest request)
+        {
+            if (request?.Chunk == null)
+            {
+                return BadRequest("Missing chunk.");
+            }
+
+            try
+            {
+                var response = await _chunkedUpload.UploadChunkAsync(GetUserId(), request);
+                return response == null ? NotFound() : Ok(response);
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(BuildErrorModel(exception).Codes);
+            }
+        }
+
+        [HttpGet]
+        public IActionResult UploadStatus(Guid sessionId)
+        {
+            var status = _chunkedUpload.GetStatus(GetUserId(), sessionId);
+            return status == null ? NotFound() : Ok(status);
         }
 
         /// <summary>

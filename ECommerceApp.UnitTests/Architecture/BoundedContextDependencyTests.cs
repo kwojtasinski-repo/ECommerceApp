@@ -428,7 +428,8 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(DomainCatalog)
                         .And().AreNot(SharedDomain)
                         .And().AreNot(SharedApplication)
-                        .And().AreNot(Messaging))
+                        .And().AreNot(Messaging)
+                        .And().AreNot(AppTimeManagement))  // ChunkedUploadCleanupTask implements IScheduledTask
                 .Because("Catalog application must not depend on other BCs")
                 .Check(Architecture);
         }

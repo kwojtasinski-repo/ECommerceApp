@@ -31,4 +31,13 @@ namespace ECommerceApp.Application.Catalog.Images.ChunkedUpload
         public int ReceivedCount { get; set; }
         public int? ImageId { get; set; }
     }
+
+    public sealed class UploadStatusResponse
+    {
+        public Guid SessionId { get; set; }
+        public int ChunkSize { get; set; }
+        public int TotalChunks { get; set; }
+        public int[] ReceivedChunkIds { get; set; } = Array.Empty<int>();
+        public bool Complete { get; set; }
+    }
 }
