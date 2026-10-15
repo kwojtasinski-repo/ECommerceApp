@@ -49,5 +49,5 @@ All steps are part of a single PR unless noted. Phases are ordered by dependency
 **Phase 6 — Post-merge:**
 1. Update `frontend.instructions.md` to state Bootstrap 5 target and `bootstrap.Modal` API rule.
 2. Update ADR-0021 `modalService.js` deferred item to mark it resolved by this ADR.
-3. Update ADR-0022 status from Proposed → Accepted if not already done.
+3. Update ADR-0022 status from Proposed → Accepted if not already done. _(✅ Done — ADR-0022 reads `Accepted`, verified 2026-10-15.)_
 4. Close open item #1 (info modal close bug) in the frontend status report.

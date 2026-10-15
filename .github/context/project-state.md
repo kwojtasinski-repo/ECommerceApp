@@ -37,8 +37,10 @@ per-BC status table. If a new initiative starts, add its row here.
 
 ## What is NOT started yet
 
-Nothing blocked or queued. The only open roadmap items (F2, F5 Phase 3) are deferred by choice
-with no trigger condition met — see `docs/roadmap/README.md` "Future architectural considerations".
+Nothing blocked. Open leftovers (KG CI gate, ADR-0026 dead-code decision, real email delivery,
+`Context.cs` removal, minor checks) are listed in `docs/roadmap/README.md` "Open items" (verified
+2026-10-15). F2 and F5 Phase 3 stay deferred by choice with no trigger condition met — see
+"Future architectural considerations" there.
 
 ---
 

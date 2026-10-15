@@ -1,7 +1,7 @@
 # Roadmap: Frontend Error Pipeline & JS Migration
 
 > ADR: [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](../adr/0021/0021-frontend-error-pipeline-and-js-migration-strategy.md)
-> Status: ⬜ Not started
+> Status: ✅ Phases 1–4 complete — Phase 4 criteria verified against the code on 2026-10-15.
 
 ---
 
@@ -73,7 +73,7 @@ until their natural rewrite.
 ---
 
 ## Phase 4 — Bootstrap 5 milestone
-**Estimate:** ~2 days · **Priority:** Deferred — not started until Bootstrap upgrade is scheduled
+**Estimate:** ~2 days · **Status:** ✅ Done — after the Bootstrap 5.3.3 upgrade (ADR-0023) `modalService.js` uses the `bootstrap.Modal` class API and `addObjectPropertiesToGlobal` is gone from `config.js`. Views receive modules through the `DOMInitialized` event (the ADR-0021 decision) or an explicit `require([...])`. Gate and criteria below kept as the historical record.
 
 ### Scope
 - Rewrite `modalService.js` for Bootstrap 5 data attributes (`data-bs-dismiss`, `data-bs-backdrop`); remove `$().modal()` jQuery plugin calls; target BS5 `Modal` class API or native `<dialog>`
@@ -84,11 +84,11 @@ This phase cannot start until a Bootstrap 5 upgrade ADR is accepted. That ADR mu
 `modalService.js` rewrite as a **mandatory prerequisite** of the BS5 upgrade.
 
 ### Acceptance criteria
-- [ ] `modalService.js` contains no `data-dismiss`, `data-backdrop`, `data-keyboard` Bootstrap 4 attributes
-- [ ] `modalService.js` contains no `$().modal()` calls
-- [ ] `config.js:addObjectPropertiesToGlobal` removed
-- [ ] All views declare their AMD dependencies explicitly — no implicit `window.*` module access
+- [x] `modalService.js` contains no `data-dismiss`, `data-backdrop`, `data-keyboard` Bootstrap 4 attributes (verified 2026-10-15)
+- [x] `modalService.js` contains no `$().modal()` calls (verified 2026-10-15)
+- [x] `config.js:addObjectPropertiesToGlobal` removed (verified 2026-10-15)
+- [x] All views obtain their modules explicitly — via the `DOMInitialized` payload (ADR-0021 pattern) or `require([...])`; no implicit `window.*` module access _(verified 2026-10-15: scan of 131 views found 0 undeclared module identifiers; two violators — `Currencies/Currency/Index` and `IAM/UserManagement/Index`, whose delete buttons threw `ReferenceError` — fixed and covered by `AdminDeleteButtonsTests`)_
 
 ---
 
-*Last reviewed: 2026-03-12 · ADR: [ADR-0021](../adr/0021/0021-frontend-error-pipeline-and-js-migration-strategy.md)*
+*Last reviewed: 2026-10-15 · ADR: [ADR-0021](../adr/0021/0021-frontend-error-pipeline-and-js-migration-strategy.md)*
