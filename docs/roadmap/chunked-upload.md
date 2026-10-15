@@ -140,6 +140,34 @@ Config: section `Catalog:ChunkedUpload`. Browser side (`wwwroot/js/chunked-uploa
 
 Known, accepted limits: the content check validates framing only (no decode), extensions are limited to `.jpg`/`.png`.
 
+### Abandoned-session cleanup
+
+**Why.** Every `InitUpload` creates `Upload/Temp/<sessionId>/` holding the `.part` chunk files and `session.json`. They are
+deliberately persisted on disk so an upload can resume after a restart — which also means an upload the user never finishes
+would stay there forever.
+
+**What it does.** `ChunkedUploadCleanupTask` (`ECommerceApp.Application/Catalog/Images/ChunkedUpload/`, job name
+`ChunkedUploadCleanup`) is an `IScheduledTask`, registered as a recurring job by `ChunkedUploadCleanupScheduledJobReconciler`
+(`ECommerceApp.Infrastructure/Catalog/Products/`). On each run it removes every session that has been inactive longer than the
+TTL, from memory and from disk (the whole session directory). Inactivity is judged by the **newest file time inside the
+session directory**, so a session that is still receiving chunks is never removed. With `Enabled = false` the job still runs but
+removes nothing.
+
+**Configuration** — section `Catalog:ChunkedUpload` (`ChunkedUploadOptions`; values below are the defaults, identical in `appsettings.json`):
+
+| Key                      | Default      | Meaning                                                              |
+| ------------------------ | ------------ | -------------------------------------------------------------------- |
+| `Enabled`                | `true`       | When false, the cleanup job runs but removes nothing                 |
+| `MaxOpenSessionsPerUser` | `5`          | Simultaneously open upload sessions of a single user                 |
+| `SessionTtl`             | `1.00:00:00` | Inactivity (24 h) after which a session is removed                   |
+| `Schedule`               | `0 * * * *`  | Cron expression of the cleanup job (hourly)                          |
+| `TempPath`               | empty        | Session root; defaults to `{CurrentDirectory}/Upload/Temp` (mainly for tests) |
+
+**Architecture note.** The task implements `IScheduledTask`, so the Catalog application layer depends on the TimeManagement
+contract (`ECommerceApp.Application.Supporting.TimeManagement`). This is the same explicit exception every BC with a job has in
+`BoundedContextDependencyTests` (Orders, Payments, Inventory, Presale, AccountProfile, Currencies, Identity); the Catalog
+rule carries the comment `ChunkedUploadCleanupTask implements IScheduledTask`.
+
 ## V2 — TUS — 🧪 experiment (built 2026-05-10, not adopted)
 
 > **When to revisit:** only if image storage moves to a fully managed/resumable store. Then adopt TUS end to end:
