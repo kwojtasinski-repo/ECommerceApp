@@ -9,6 +9,7 @@ using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Shared.TestInfrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -18,9 +19,17 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Presale.Checkout
 {
-    public class CheckoutServiceIntegrationTests : BcBaseTest<ICheckoutService>
+    public class CheckoutServiceIntegrationTests
+        : BcBaseTest<ICheckoutService>, IClassFixture<MessageProcessingOperationsFixture>
     {
-        public CheckoutServiceIntegrationTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
+
+        public CheckoutServiceIntegrationTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
+        {
+            _messageProcessing = messageProcessing;
+        }
 
         private const int CustomerId = 1;
         private const int CurrencyId = 1;
@@ -47,6 +56,69 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         {
             var snapshotRepo = GetRequiredService<IStockSnapshotRepository>();
             await snapshotRepo.AddAsync(StockSnapshot.Create(productId, qty, DateTime.UtcNow), CancellationToken);
+        }
+
+        private async Task<StockSnapshot> GetStockSnapshotAsync(int productId, CancellationToken ct)
+        {
+            using var scope = Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IStockSnapshotRepository>();
+            return await repo.FindByProductIdAsync(productId, ct);
+        }
+
+        // InitializeStockAsync enqueues StockAvailabilityChanged into the outbox; the dispatcher then
+        // lets Presale's handler write the snapshot asynchronously. Waiting for the snapshot to reach
+        // the real quantity proves the outbox message was dispatched and handled.
+        private async Task InitializeRealStockAndAwaitSnapshotAsync(int productId, int quantity)
+        {
+            var stockService = GetRequiredService<IStockService>();
+            await stockService.InitializeStockAsync(productId, quantity, CancellationToken);
+
+            var snapshot = await _messageProcessing.WaitUntilAsync(
+                new StockSnapshotQuantityOperation(this, productId, quantity));
+            snapshot.AvailableQuantity.ShouldBe(quantity);
+        }
+
+        private async Task OverrideStockSnapshotAsync(int productId, int qty)
+        {
+            using var scope = Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IStockSnapshotRepository>();
+            var snapshot = await repo.FindByProductIdAsync(productId, CancellationToken);
+            snapshot.Update(qty, DateTime.UtcNow);
+            await repo.UpdateAsync(snapshot, CancellationToken);
+        }
+
+        private sealed class StockSnapshotQuantityOperation : IMessageProcessingOperation<StockSnapshot>
+        {
+            private readonly CheckoutServiceIntegrationTests _test;
+            private readonly int _productId;
+            private readonly int _expectedQuantity;
+
+            public StockSnapshotQuantityOperation(
+                CheckoutServiceIntegrationTests test,
+                int productId,
+                int expectedQuantity)
+            {
+                _test = test;
+                _productId = productId;
+                _expectedQuantity = expectedQuantity;
+            }
+
+            public Task<StockSnapshot> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetStockSnapshotAsync(_productId, cancellationToken);
+            }
+
+            public bool IsCompleted(StockSnapshot state)
+            {
+                return state is not null && state.AvailableQuantity == _expectedQuantity;
+            }
+
+            public string Describe(StockSnapshot state)
+            {
+                return state is null
+                    ? $"Stock snapshot for product {_productId} was not created."
+                    : $"Stock snapshot for product {_productId} has quantity {state.AvailableQuantity}, expected {_expectedQuantity}.";
+            }
         }
 
         // ── PlaceOrderAsync ───────────────────────────────────────────────
@@ -95,12 +167,13 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             var presaleUserId = new PresaleUserId(userId);
 
             var productId = await SeedProductAsync(ct: CancellationToken);
-            // Presale's own cached snapshot says plenty is available (matches how a stale/optimistic
-            // cache could look) — the real Inventory-side StockItem is what should actually gate this.
-            await SeedStockSnapshotAsync(productId, qty: 100, CancellationToken);
+            // Real Inventory stock is 1. Wait until the outbox has dispatched the resulting event and
+            // Presale's handler has written its snapshot, so nothing can overwrite the override below.
+            await InitializeRealStockAndAwaitSnapshotAsync(productId, quantity: 1);
 
-            var stockService = GetRequiredService<IStockService>();
-            await stockService.InitializeStockAsync(productId, initialQuantity: 1, CancellationToken);
+            // Now make Presale's cached snapshot stale/optimistic — the real Inventory-side StockItem
+            // is what should actually gate the order.
+            await OverrideStockSnapshotAsync(productId, qty: 100);
 
             var cartService = GetRequiredService<ICartService>();
             await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 5), CancellationToken);
@@ -118,6 +191,23 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         }
 
         // ── InitiateAsync ─────────────────────────────────────────────────
+
+        [Fact]
+        public async Task InitiateAsync_CartQuantityExceedsInSyncStock_ReturnsNothingReserved()
+        {
+            var userId = "co-user-insync-lowstock";
+            var presaleUserId = new PresaleUserId(userId);
+
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            await InitializeRealStockAndAwaitSnapshotAsync(productId, quantity: 1);
+
+            var cartService = GetRequiredService<ICartService>();
+            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 5), CancellationToken);
+
+            var result = await _service.InitiateAsync(presaleUserId, CancellationToken);
+
+            result.ShouldBeOfType<InitiateCheckoutResult.NothingReserved>();
+        }
 
         [Fact]
         public async Task InitiateAsync_EmptyCart_ReturnsCartEmpty()
