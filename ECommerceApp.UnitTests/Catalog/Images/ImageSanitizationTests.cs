@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Catalog.Products.Services;
 using AwesomeAssertions;
 using ECommerceApp.Application.Catalog.Images;
 using ECommerceApp.Application.Catalog.Images.Models;
@@ -216,7 +217,7 @@ namespace ECommerceApp.UnitTests.Catalog.Images
             _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Product.Create("Test Product", 10m, "Description", 1));
             _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
-            return new ImageService(new Mock<IImageRepository>().Object, _fileStoreProvider.Object, _productRepository.Object, new ImageSanitizer(Options.Create(new ImageLimitsOptions())));
+            return new ImageService(new Mock<IImageRepository>().Object, _fileStoreProvider.Object, _productRepository.Object, new ImageSanitizer(Options.Create(new ImageLimitsOptions())), new Mock<IProductCacheInvalidator>().Object);
         }
 
         private void SetupFileStoreCapturingWrittenBytes()

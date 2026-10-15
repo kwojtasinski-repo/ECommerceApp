@@ -19,7 +19,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 {
     internal sealed class ProductService : IProductService
     {
-        // Keep in sync with ProductCacheInvalidationHandler.CatalogProductKeyPrefix
+        // Keep in sync with ProductCacheInvalidator.CatalogProductKeyPrefix
         private const string CatalogProductCacheKeyPrefix = "CatalogProduct:";
         private const string CatalogListCacheKeyPrefix = "CatalogList:";
 

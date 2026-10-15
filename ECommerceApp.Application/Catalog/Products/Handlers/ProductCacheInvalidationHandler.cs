@@ -1,6 +1,6 @@
 using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Messaging;
-using Microsoft.Extensions.Caching.Memory;
+using ECommerceApp.Application.Catalog.Products.Services;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,14 +16,11 @@ namespace ECommerceApp.Application.Catalog.Products.Handlers
         IMessageHandler<ProductUnpublished>,
         IMessageHandler<ProductDiscontinued>
     {
-        // Keep in sync with the key pattern in ProductService.GetProductDetails
-        internal const string CatalogProductKeyPrefix = "CatalogProduct:";
+        private readonly IProductCacheInvalidator _invalidator;
 
-        private readonly IMemoryCache _cache;
-
-        public ProductCacheInvalidationHandler(IMemoryCache cache)
+        public ProductCacheInvalidationHandler(IProductCacheInvalidator invalidator)
         {
-            _cache = cache;
+            _invalidator = invalidator;
         }
 
         public Task HandleAsync(ProductUpdated message, CancellationToken ct = default)
@@ -51,6 +48,6 @@ namespace ECommerceApp.Application.Catalog.Products.Handlers
         }
 
         private void Evict(int productId)
-            => _cache.Remove($"{CatalogProductKeyPrefix}{productId}");
+            => _invalidator.InvalidateDetails(productId);
     }
 }

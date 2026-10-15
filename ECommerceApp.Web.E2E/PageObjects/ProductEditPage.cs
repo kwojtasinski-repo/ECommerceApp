@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using System;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.E2E.PageObjects
@@ -33,6 +34,23 @@ namespace ECommerceApp.Web.E2E.PageObjects
 
         public Task WaitForPageToSettleAsync() =>
             _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        public Task<int> GalleryImageCountAsync() =>
+            _page.Locator("[data-name='ItemImage'] img").CountAsync();
+
+        public async Task WaitForGalleryImageCountAsync(int expected)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(15);
+            while (await GalleryImageCountAsync() != expected)
+            {
+                if (DateTime.UtcNow > deadline)
+                {
+                    throw new TimeoutException($"Expected {expected} image(s) in the product edit gallery.");
+                }
+
+                await Task.Delay(100);
+            }
+        }
 
         private async Task<string> WaitForVisibleTextAsync(string selector)
         {

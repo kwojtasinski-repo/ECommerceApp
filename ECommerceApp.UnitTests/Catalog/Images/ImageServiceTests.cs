@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Catalog.Images;
+﻿using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Application.Catalog.Images;
 using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.Services;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
@@ -288,7 +289,7 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         }
 
         private ImageService CreateService()
-            => new ImageService(_imageRepository.Object, _fileStoreProvider.Object, _productRepository.Object, new ImageSanitizer(Options.Create(new ImageLimitsOptions())));
+            => new ImageService(_imageRepository.Object, _fileStoreProvider.Object, _productRepository.Object, new ImageSanitizer(Options.Create(new ImageLimitsOptions())), new Mock<IProductCacheInvalidator>().Object);
 
         private static Product CreateProductWithImages(int imageCount)
         {

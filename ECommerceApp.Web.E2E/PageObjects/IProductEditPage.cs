@@ -9,5 +9,7 @@ namespace ECommerceApp.Web.E2E.PageObjects
         Task<string> WaitForUploadErrorAsync();
         Task<string> WaitForResumeNoticeAsync();
         Task WaitForPageToSettleAsync();
+        Task<int> GalleryImageCountAsync();
+        Task WaitForGalleryImageCountAsync(int expected);
     }
 }

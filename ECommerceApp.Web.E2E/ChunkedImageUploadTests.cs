@@ -51,6 +51,11 @@ namespace ECommerceApp.Web.E2E
             await WaitForSavedImageCountAsync(services, productId, 1);
             await editPage.WaitForPageToSettleAsync();
 
+            // The page reloads after the upload and must show the new image straight away: the product
+            // details (gallery included) are cached, and the upload has to evict that cache entry.
+            await editPage.WaitForGalleryImageCountAsync(1);
+            editPage = await ProductEditPage.NavigateAsync(page, factory.ServerAddress, productId);
+            (await editPage.GalleryImageCountAsync()).ShouldBe(1);
             pageErrors.ShouldBeEmpty();
         }
 
@@ -117,11 +122,14 @@ namespace ECommerceApp.Web.E2E
             notice.ShouldContain("Wznowiono");
             sentChunkIds.ShouldBe(new[] { 2, 3 });
             await AssertSavedImageCountAsync(services, productId, 1);
+            await editPage.WaitForGalleryImageCountAsync(1);
+            editPage = await ProductEditPage.NavigateAsync(page, factory.ServerAddress, productId);
+            (await editPage.GalleryImageCountAsync()).ShouldBe(1);
             pageErrors.ShouldBeEmpty();
         }
 
-        // The product details page caches the gallery for CatalogProductTtl, so a reloaded edit page cannot
-        // be used to observe a fresh upload; the saved images are read from the database instead.
+        // Saved images are read through IImageService (the database), independent of the page's cached details;
+        // the gallery DOM assertions above cover what the user actually sees.
         private static async Task<int> SavedImageCountAsync(IServiceProvider services, int productId)
         {
             using var scope = services.CreateScope();

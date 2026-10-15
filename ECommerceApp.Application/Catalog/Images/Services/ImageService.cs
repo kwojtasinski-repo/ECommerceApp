@@ -2,6 +2,7 @@
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
+using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Domain.Catalog.Products;
 using Microsoft.AspNetCore.Http;
 using System;
@@ -19,9 +20,11 @@ namespace ECommerceApp.Application.Catalog.Images.Services
         private readonly IImageRepository _imageRepository;
         private readonly IProductRepository _productRepository;
         private readonly IImageSanitizer _imageSanitizer;
+        private readonly IProductCacheInvalidator _productCacheInvalidator;
 
-        public ImageService(IImageRepository repo, IFileStoreProvider fileStoreProvider, IProductRepository productRepository, IImageSanitizer imageSanitizer)
+        public ImageService(IImageRepository repo, IFileStoreProvider fileStoreProvider, IProductRepository productRepository, IImageSanitizer imageSanitizer, IProductCacheInvalidator productCacheInvalidator)
         {
+            _productCacheInvalidator = productCacheInvalidator;
             _imageSanitizer = imageSanitizer;
             _imageRepository = repo;
             _fileStoreProvider = fileStoreProvider;
@@ -67,6 +70,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             var fileDir = await _fileStoreProvider.WriteFileAsync(sanitizedImages.First(), ImagesConstants.FileProvider.Local);
             product.AddImage(fileDir.Name, fileDir.SourcePath, ImagesConstants.FileProvider.Local);
             await _productRepository.UpdateAsync(product);
+            _productCacheInvalidator.InvalidateDetails(objectVm.ItemId.Value);
 
             return product.Images.Last().Id?.Value ?? 0;
         }
@@ -91,6 +95,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             }
 
             await _productRepository.UpdateAsync(product);
+            _productCacheInvalidator.InvalidateDetails(image.ProductId.Value);
             return true;
         }
 
@@ -148,6 +153,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             }
 
             await _productRepository.UpdateAsync(product);
+            _productCacheInvalidator.InvalidateDetails(imageVm.ItemId.Value);
 
             return product.Images
                 .Where(i => writtenFileNames.Contains(i.FileName.Value))
