@@ -69,6 +69,7 @@
                     <div id="chunkProgressBar" class="progress-bar" role="progressbar" style="width:0%">0%</div>
                 </div>
                 <div id="chunkUploadError" class="text-danger mt-1 d-none"></div>
+                <div id="chunkUploadInfo" class="text-muted small mt-1 d-none"></div>
             </div>
 
             @if (images.Count > 0)
@@ -98,75 +99,13 @@
 }
 
 @section Scripts {
+    <script src="~/js/chunked-upload.js" asp-append-version="true"></script>
     <script>
         let ajaxRequest, modalService, statusCodes, showError, showErrorFromResponse;
 
         $(document).on('DOMInitialized', function (event, mods) {
             ({ ajaxRequest, modalService, statusCodes, showError, showErrorFromResponse } = mods);
             new TomSelect('#ProductCategorySelect');
-        });
-
-        document.getElementById('chunkUploadBtn').addEventListener('click', async function () {
-            const fileInput = document.getElementById('chunkFileInput');
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            const errorEl = document.getElementById('chunkUploadError');
-            errorEl.classList.add('d-none');
-            errorEl.textContent = '';
-
-            const progressWrapper = document.getElementById('chunkProgressWrapper');
-            const progressBar = document.getElementById('chunkProgressBar');
-            progressWrapper.classList.remove('d-none');
-            progressBar.style.width = '0%';
-            progressBar.textContent = '0%';
-
-            const aft = document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                     ?? document.cookie.split('; ').find(r => r.startsWith('XSRF-TOKEN='))?.split('=')[1]
-                     ?? '';
-
-            let sessionId, chunkSize, totalChunks, chunkIds;
-            try {
-                const initRes = await fetch('/Catalog/Image/InitUpload', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': aft },
-                    body: JSON.stringify({ fileName: file.name, fileSizeBytes: file.size, itemId: @productId })
-                });
-                if (!initRes.ok) throw new Error('Błąd inicjalizacji uploadu.');
-                ({ sessionId, chunkSize, totalChunks, chunkIds } = await initRes.json());
-            } catch (e) {
-                showUploadError(e.message || 'Błąd inicjalizacji uploadu.');
-                return;
-            }
-
-            for (const chunkId of chunkIds) {
-                const start = (chunkId - 1) * chunkSize;
-                const slice = file.slice(start, start + chunkSize);
-                const fd = new FormData();
-                fd.append('sessionId', sessionId);
-                fd.append('chunkId', chunkId);
-                fd.append('chunk', slice, file.name);
-                fd.append('__RequestVerificationToken', aft);
-                let res;
-                try {
-                    const chunkRes = await fetch('/Catalog/Image/UploadChunk', { method: 'POST', body: fd });
-                    if (!chunkRes.ok) throw new Error('Błąd uploadu fragmentu ' + chunkId + '.');
-                    res = await chunkRes.json();
-                } catch (e) {
-                    showUploadError(e.message || 'Błąd uploadu.');
-                    return;
-                }
-
-                const pct = Math.round(res.receivedCount / totalChunks * 100);
-                progressBar.style.width = pct + '%';
-                progressBar.textContent = pct + '%';
-
-                if (res.complete) {
-                    fileInput.value = '';
-                    window.location.reload();
-                    break;
-                }
-            }
         });
 
         async function DeleteImage(id) {
@@ -183,11 +122,13 @@
             }
         }
 
-        function showUploadError(msg) {
-            const el = document.getElementById('chunkUploadError');
-            el.textContent = msg;
-            el.classList.remove('d-none');
-            document.getElementById('chunkProgressWrapper').classList.add('d-none');
-        }
+        require(['chunked-upload'], function (chunkedUpload) {
+            chunkedUpload.initialize({
+                itemId: @productId,
+                onComplete: function () {
+                    window.location.reload();
+                }
+            });
+        });
     </script>
 }
