@@ -9,10 +9,10 @@ Zebrać i zweryfikować krzyżowo treść podanych źródeł (14 URL-i bradmurry
 
 | Grupa | Źródła | Pełny tekst? | Pliki surowe | Findings (finalne) |
 |---|---|---|---|---|
-| Brad: rdzeń agentowy (6 postów z listy) | binding-llms-to-FSM, walking-HIL-FSM, 13-patterns index, agents-in-production-intro, self-evolving-intro, reactive-reducer-intro | tak (wklejone przez użytkownika) | 03–08 | `bm-agentic-core-raw-findings.md` (132 sekcje) + `bm-patterns-1-7-raw` + `bm-patterns-8-13-raw` |
-| Brad: 13 artykułów per wzorzec | wzorce 1–13 | tak (wklejone) — **poza listą 18 URL** (rozszerzenie zakresu) | 09–21 | `bm-patterns-1-7-raw` (51), `bm-patterns-8-13-raw` (77) |
-| Brad: serie „Self-evolving" 1–4 i „Agents in Production" 1–4 | 8 artykułów | tak (wklejone) — **poza listą 18 URL** | 22–29 | `bm-series-parts-raw` (55) |
-| Brad: posty infra z listy | apis-at-massive-scale, dev-ops-contract, config-driven-transforms, sparkctl, dsl-ai-partition, ai-annotations, pyflink-intro | tak (3 wklejone, 4 pobrane `curl`em) | 30–32, 42–45 | `bm-infra-raw` (73) |
+| Brad: rdzeń agentowy (6 postów z listy) | binding-llms-to-FSM, walking-HIL-FSM, 13-patterns index, agents-in-production-intro, self-evolving-intro, reactive-reducer-intro | tak | 03–08 | `bm-agentic-core-raw-findings.md` (132 sekcje) + `bm-patterns-1-7-raw` + `bm-patterns-8-13-raw` |
+| Brad: 13 artykułów per wzorzec | wzorce 1–13 | tak — **poza listą 18 URL** (rozszerzenie zakresu) | 09–21 | `bm-patterns-1-7-raw` (51), `bm-patterns-8-13-raw` (77) |
+| Brad: serie „Self-evolving" 1–4 i „Agents in Production" 1–4 | 8 artykułów | tak — **poza listą 18 URL** | 22–29 | `bm-series-parts-raw` (55) |
+| Brad: posty infra z listy | apis-at-massive-scale, dev-ops-contract, config-driven-transforms, sparkctl, dsl-ai-partition, ai-annotations, pyflink-intro | tak | 30–32, 42–45 | `bm-infra-raw` (73) |
 | AutoGen (9 stron design-patterns) | intro, concurrent-agents, sequential-workflow, group-chat, handoffs, mixture-of-agents, multi-agent-debate, reflection, code-execution-groupchat | tak (`curl` + konwersja HTML→tekst) | 33–41 | `autogen-raw-9pages` (14 sekcji, ~83 findings) |
 | Mastra *Patterns of Building AI Agents* | 1 strona | **nie** — treść za bramką e-mail; tylko spis treści | — | `mastra-book-findings.md` (luka) |
 | Medium *12 design patterns* | 1 artykuł | **nie** — HTTP 403, użytkownik zrezygnował | — | `medium-12-patterns-findings.md` (luka) |

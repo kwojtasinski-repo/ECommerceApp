@@ -10,7 +10,7 @@ Data: 2026-10-14 · Pytanie: wzorce/umiejętności agentowe z podanych źródeł
 | R2 | Szczegóły domenowe przykładów (logi 40 MB, tickety, rekordy klientów) | `22`–`25` | konkretna domena, nie wzorzec | analiza samego benchmarku |
 | R3 | Konfiguracja PyFlink (`make fresh`, venv), sprzęt DGX Spark | `45`, `42` | szczegóły środowiska, nie wzorce agentowe | wdrażanie tej infrastruktury |
 | R4 | Narracyjne otwarcia/„Until next time", teasery | wszystkie posty | brak treści analitycznej | analiza stylu/tonu |
-| R5 | Spłaszczone diagramy Mermaid i sekwencyjne | wklejki | artefakt kopiowania, brak informacji | dostęp do oryginalnych diagramów |
+| R5 | Spłaszczone diagramy Mermaid i sekwencyjne | źródła | artefakt kopiowania, brak informacji | dostęp do oryginalnych diagramów |
 | R6 | Wynik wygenerowanej opowieści w group-chat | `36` | tekst generowany, nie wzorzec | ewaluacja jakości wyjścia |
 | R7 | Linki wychodzące (arXiv 2406.11776 sparse topology, repo aegis, tool-use pages) | `39`, `03` | spoza listy URL; nie pobrane | rozszerzenie zakresu o weryfikację zewnętrzną skuteczności debaty |
 

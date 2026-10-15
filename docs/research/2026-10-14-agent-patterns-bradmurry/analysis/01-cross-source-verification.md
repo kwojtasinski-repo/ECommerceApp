@@ -54,7 +54,7 @@ Nie dotyczy — źródła zewnętrzne (publikacje), nie transkrypty z mówcami. 
 | D6 | SLM „sufficiently powerful, inherently more suitable, necessarily more economical" (arXiv 2506.02153) | Belcak i in. | position paper | brak niezależnych w zebranych materiałach | **Partially supported** (autorzy sami nazywają to „value statement") |
 
 ## 5. Weryfikacja cytatów (automatyczna, 2026-10-14)
-Skrypt porównał cytaty w cudzysłowach (≥25 znaków) z plików `*-raw-*findings.md` z lokalnymi kopiami tekstu źródeł (poza repozytorium; adresy w [`../SOURCES.md`](../SOURCES.md)) (po normalizacji białych znaków, apostrofów, backticków). Wynik:
+Skrypt porównał cytaty w cudzysłowach (≥25 znaków) z plików `*-raw-*findings.md` z tekstem źródeł (adresy w [`../SOURCES.md`](../SOURCES.md)) (po normalizacji białych znaków, apostrofów, backticków). Wynik:
 
 | Plik findings | Cytaty | Zgodne | Niezgodne |
 |---|---|---|---|

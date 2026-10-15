@@ -1,8 +1,8 @@
 # Źródła i podstawy researchu (bibliografia)
 
 - **Data researchu:** 2026-10-14 do 2026-10-15
-- **Zasada publikacji:** w repozytorium **nie ma kopii cudzych artykułów**. Wszystko poniżej to **odnośniki** do oryginałów, z datą dostępu i informacją, na czym oparto które wnioski. Lokalne kopie tekstu (43 pliki) istnieją tylko na komputerze, na którym research wykonano.
-- **Powiązane:** [`analysis/sources-index.md`](analysis/sources-index.md) (plik lokalny ↔ URL ↔ sposób pozyskania), [self research](../2026-10-14-llm-self-research/README.md) §13, [dobór wzorca](../2026-10-15-pattern-selection/README.md) §2.
+- **Zasada:** wszystkie źródła są podane jako linki do oryginałów, z datą dostępu i zakresem odczytu.
+- **Powiązane:** [`analysis/sources-index.md`](analysis/sources-index.md) (numer ↔ URL), [self research](../2026-10-14-llm-self-research/README.md) §13, [dobór wzorca](../2026-10-15-pattern-selection/README.md) §2.
 - **Daty publikacji:** podane tylko tam, gdzie są na stronie albo w metadanych arXiv. Reszta: „brak danych".
 - **Pewność użycia:** **pełny tekst** = czytane w całości; **abstrakt/streszczenie** = tylko abstrakt lub podsumowanie narzędzia pobierającego; **fragment** = wynik wyszukiwarki; **luka** = nie udało się odczytać.
 
@@ -12,7 +12,7 @@
 
 ### A1. bradmurry.com (14 URL-i; indeks bloga + 13 postów)
 
-Dostęp: 2026-10-14 (wklejki użytkownika lub `curl`). Indeks https://bradmurry.com/software/ potwierdził 13 postów.
+Dostęp: 2026-10-14. Indeks https://bradmurry.com/software/ potwierdził 13 postów.
 
 | Post | URL | Wykorzystanie | Zakres odczytu |
 |---|---|---|---|
@@ -22,10 +22,10 @@ Dostęp: 2026-10-14 (wklejki użytkownika lub `curl`). Indeks https://bradmurry.
 | Reactive Reducer Patterns (intro serii) | https://bradmurry.com/software/reactive-reducer-patterns-intro/ | trzy reguły reducera, dwa cele wykonania | pełny tekst |
 | Walking a Reentrant Human-in-the-Loop FSM, Step by Step | https://bradmurry.com/software/walking-a-reentrant-human-in-the-loop-fsm-step-by-step/ | akumulacja zamiast czyszczenia, porównania `size()`, parkowanie | pełny tekst |
 | Binding LLMs to Finite State Machines Using the Reactive Reducer Pattern | https://bradmurry.com/software/binding-llms-to-finite-state-machines-using-the-reactive-reducer-pattern/ | mikrokroki, DSL, trwałość | pełny tekst |
-| sparkctl | https://bradmurry.com/software/sparkctl/ | serwowanie modeli z konfiguracji | pełny tekst (2026-10-14, `curl`) |
-| DSL / AI partition | https://bradmurry.com/software/dsl-ai-partition/ | podział DSL ↔ AI jako granica uprawnień | pełny tekst (`curl`) |
-| AI annotations | https://bradmurry.com/software/ai-annotations/ | adnotacje `@!` | pełny tekst (`curl`) |
-| PyFlink (intro) | https://bradmurry.com/software/pyflink-intro/ (2023-07-15 wg strony) | streaming vs micro-batching | pełny tekst (`curl`) |
+| sparkctl | https://bradmurry.com/software/sparkctl/ | serwowanie modeli z konfiguracji | pełny tekst |
+| DSL / AI partition | https://bradmurry.com/software/dsl-ai-partition/ | podział DSL ↔ AI jako granica uprawnień | pełny tekst |
+| AI annotations | https://bradmurry.com/software/ai-annotations/ | adnotacje `@!` | pełny tekst |
+| PyFlink (intro) | https://bradmurry.com/software/pyflink-intro/ (2023-07-15 wg strony) | streaming vs micro-batching | pełny tekst |
 | API Architecture for Massive Scale | https://bradmurry.com/software/apis-at-massive-scale/ | CDC, pre-computed paths, Redis + S3 | pełny tekst |
 | Devops Contract | https://bradmurry.com/software/dev-ops-contract/ | kontrakt komend + faz | pełny tekst |
 | Config Driven Data Transforms (pt1) | https://bradmurry.com/software/config-driven-transforms/ | DSL source/sink, walidacja | pełny tekst |
@@ -44,7 +44,7 @@ Dostęp: 2026-10-14 (wklejki użytkownika lub `curl`). Indeks https://bradmurry.
 
 ## B. Rozszerzenie zakresu: artykuły Brada spoza pierwotnej listy
 
-Odnalezione z linków na stronach indeksowych; **URL-e i tytuły zweryfikowane 2026-10-15 (HTTP 200)**. Tekst wklejony przez użytkownika 2026-10-14.
+Odnalezione z linków na stronach indeksowych; **URL-e i tytuły zweryfikowane 2026-10-15 (HTTP 200)**. Czytane 2026-10-14.
 
 ### B1. 13 wzorców orkiestracji (jako „Implemented via the Reactive Reducer")
 Wszystkie pod `https://bradmurry.com/software/<slug>`:
@@ -54,7 +54,7 @@ Wszystkie pod `https://bradmurry.com/software/<slug>`:
 | 1 | Sequential Pipeline | `sequential-pipeline-pattern-implemented-via-reactive-reducer` |
 | 2 | Parallel Fan-Out / Fan-In | `parallel-fan-out-fan-in-pattern-implemented-via-reactive-reducer` |
 | 3 | Supervisor / Router | `supervisor-router-pattern-implemented-via-reactive-reducer` |
-| 4 | Hierarchical Manager / Worker | `hierarchical-manager-worker-pattern-implemented-via-reactive-reducer` (2026-09-04 wg wklejki) |
+| 4 | Hierarchical Manager / Worker | `hierarchical-manager-worker-pattern-implemented-via-reactive-reducer` (2026-09-04 wg strony) |
 | 5 | Peer Handoff / Swarm | `peer-handoff-swarm-pattern-implemented-via-reactive-reducer` |
 | 6 | Debate / Consensus | `debate-consensus-pattern-implemented-via-reactive-reducer` |
 | 7 | Blackboard / Shared-State | `blackboard-shared-state-pattern-implemented-via-reactive-reducer` (2026-09-07) |
@@ -82,7 +82,7 @@ Przykład pełnego adresu: https://bradmurry.com/software/debate-consensus-patte
 Adres: `https://bradmurry.com/software/<slug>`. Części 5–7 serii „Agents in Production" są tylko wspomniane w tekście, nie czytano ich.
 
 ### B3. Druga partia stron AutoGen (dodana przez użytkownika później)
-Wszystkie pod `https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/`: `concurrent-agents.html`, `sequential-workflow.html`, `group-chat.html`, `handoffs.html`, `mixture-of-agents.html`, `reflection.html`, `code-execution-groupchat.html`. Pełny tekst, `curl` 2026-10-14.
+Wszystkie pod `https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/`: `concurrent-agents.html`, `sequential-workflow.html`, `group-chat.html`, `handoffs.html`, `mixture-of-agents.html`, `reflection.html`, `code-execution-groupchat.html`. Pełny tekst, czytane 2026-10-14.
 
 ---
 
@@ -133,7 +133,7 @@ Historia git: 200 ostatnich commitów (2026-05-27 do 2026-10-14) do symulacji wi
 
 | Wniosek | Podstawa | Siła |
 |---|---|---|
-| Bramki dowodowe w researchu dają wartość | pomiar w tej sesji: 5 z 6 odpowiedzi WebFetch fragmentarycznych; 1 373 z 1 448 cytatów zgodnych | zmierzone lokalnie |
+| Bramki dowodowe w researchu dają wartość | pomiar w tej sesji: 5 z 6 odpowiedzi WebFetch fragmentarycznych; 1 373 z 1 448 cytatów zgodnych | zmierzone w tym researchu |
 | Krytyk/sędzia LLM wymaga zewnętrznego sygnału i kalibracji | Zheng 2023, Huang 2023, Brad (zgodność tylko kierunkowa) | średnia |
 | Debata nie jest domyślnie lepsza niż prosta baza | Zhang 2025 (abstrakt), Huang (fragment) | średnia–niska |
 | Koordynacja wieloagentowa szkodzi zadaniom sekwencyjnym | Kim 2025, Anthropic | średnia (rozbieżne wersje Kim) |
@@ -144,6 +144,5 @@ Historia git: 200 ostatnich commitów (2026-05-27 do 2026-10-14) do symulacji wi
 
 ---
 
-## F. Czego nie opublikowano i dlaczego
-- Pełne teksty 43 artykułów (posty bradmurry.com, strony AutoGen): repozytorium jest publiczne, a to cudze treści, więc zamiast kopii są linki powyżej. Kontekst: [`analysis/sources-raw/README.md`](analysis/sources-raw/README.md).
-- W repozytorium są wyłącznie: krótkie cytaty (≤ 40 słów) w findings z podaniem źródła, własne podsumowania i oceny.
+## F. Cytaty
+- W findings są wyłącznie krótkie cytaty (≤ 40 słów) z podaniem źródła; pełne teksty artykułów są dostępne pod linkami powyżej.
