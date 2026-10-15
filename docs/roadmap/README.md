@@ -65,6 +65,25 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 
 ---
 
+## Open items (verified 2026-10-15)
+
+> Small and deferred leftovers found in a repo-wide sweep. Nothing here blocks anything.
+
+| # | Item | Size | Notes |
+| - | ---- | ---- | ----- |
+| O1 | **KG adoption — CI freshness gate** ([plan 08](../../.github/plans/08-phase-kg-workflow-adoption-implementation.md), workstream C) | M | Waits for the CI process. Workstream A (`ecommerceapp-kg-query` skill) ✅ and B (planner/verifier wired to the KG, commit `b336d0c4`, tested in Copilot 2026-10-15) ✅ are done. Until C lands, a stale seed is only caught by a manual `kg-codegen --check`. |
+| O2 | **ADR-0026 dead-code decision** | L | `PlaceOrderAsync(PlaceOrderDto)` + `OrderPlacementFailed` + 3 compensation handlers have no production caller. Deferred for blast radius; handoff: `adr-0026-legacy-order-placement-dead-code-investigation-prompt.md` (repo root). |
+| O3 | **Real email delivery** | M | `IEmailSender` has no real implementation (only used by Identity pages). Needs a provider decision first; see [`guest-checkout.md`](./guest-checkout.md). |
+| O4 | **`Context.cs` removal** | M | Empty legacy `DbContext` still referenced by test infrastructure (e.g. architecture tests); blocked by EF migration history. |
+| O9 | **Chunked upload V2 (TUS) is server-only and opt-in** | S–M | Middleware, bridge endpoint and tests exist, but `ChunkedUploadImplementation` defaults to `"Classic"` and no `tus-js-client` is in the code. Decide whether to finish the browser side and flip the default, or document V2 as optional/parked. |
+| O6 | **`MyPayments.cshtml` / `web-ui-views-report.md` ⚠️ rows** | S | Report is old; check whether `MyPayments` is still a stub and whether the Details scope checks were fixed by the access audit. |
+| O7 | **Test GO-gate live** (ADR-0033) | S | The gate was validated with piped payloads only. |
+| O8 | **Repo-root clutter** | XS | Untracked demo folders, `74,`, `*.log`, `screen_*.PNG` in the repo root. |
+
+Deferred by choice (see "Future architectural considerations" above): F2, F5 Phase 3, DD-003 (local outbox per BC), the checkout partial-availability modal idea, `ExpiredRefreshTokenCleanupJob`.
+
+---
+
 ## Deferred (scheduled separately)
 
 _(none currently — Per-BC DbContext interfaces, ADR-0013, turned out to already be fully
@@ -75,4 +94,4 @@ requires it. This table previously listed the item as blocked; that was stale.)
 
 ---
 
-_Last reviewed: 2026-08-26_
+_Last reviewed: 2026-10-15_

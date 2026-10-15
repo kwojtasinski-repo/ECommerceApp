@@ -71,6 +71,12 @@
 
 @section Scripts {
     <script>
+        let modalService, ajaxRequest, showError, showErrorFromResponse, statusCodes;
+
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ modalService, ajaxRequest, showError, showErrorFromResponse, statusCodes } = mods);
+        });
+
         async function deleteUser(id, name) {
             const result = await modalService.showConfirmationModal('Usuń użytkownika', 'Czy na pewno chcesz usunąć użytkownika \'' + name + '\'?');
             if (!result) {
@@ -78,7 +84,8 @@
             }
 
             try {
-                await ajaxRequest.send('@Url.Action("DeleteUser", "UserManagement", new { area = "IAM" })/' + id, 'DELETE', undefined);
+                const antiForgeryToken = document.querySelector('#search-form input[name="__RequestVerificationToken"]')?.value;
+                await ajaxRequest.send('@Url.Action("DeleteUser", "UserManagement", new { area = "IAM" })/' + id, 'POST', { __RequestVerificationToken: antiForgeryToken });
                 window.location.reload();
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {

@@ -39,7 +39,8 @@ In this exact order:
 - **Always** use `query_docs` / `read_docs` / `get_history` to confirm every ADR and instruction you cite — never quote from memory.
 - Use `list_adrs()` once at the start to confirm the ADR number(s) you'll reference exist.
 - Use `get_history(id)` for the BC's governing ADR — not `query_docs` — when you know the ADR number.
- - Do NOT call MCP tools beyond read-only RAG lookups — planner produces no executable artefacts.
+- Before proposing a change set, establish blast radius (`GetBlastRadius`) and module ownership (`GetModuleOwnership`) from the `ecommerceapp-kg` MCP; method and tool contracts: `ecommerceapp-kg-query` skill, [docs/reference/kg-mcp-tools.md](../../docs/reference/kg-mcp-tools.md). Never plan deletion on `ambiguous`-confidence rows. If the KG is unavailable (server down / graph not loaded), fall back to grep and say so in "Risks / open questions".
+ - Do NOT call MCP tools beyond read-only RAG and KG lookups — planner produces no executable artefacts.
 
 > **Context budget**: at most 2 ADRs + 2 per-stack instruction files. If the change spans more,
 > split into multiple sub-plans and surface that to the human.
