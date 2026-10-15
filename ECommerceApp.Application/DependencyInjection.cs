@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.AccountProfile.Options;
 using ECommerceApp.Application.AccountProfile.Services;
+using ECommerceApp.Application.Catalog.Images;
 using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
 using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Constants;
@@ -36,6 +37,7 @@ namespace ECommerceApp.Application
             services.Configure<GuestProfileCleanupOptions>(_ => { });
             services.Configure<CouponsOptions>(_ => { });
             services.Configure<ChunkedUploadOptions>(_ => { });
+            services.Configure<ImageLimitsOptions>(_ => { });
             services.AddFilesStore();
             services.AddErrorHandling();
             services.AddNbpClient();

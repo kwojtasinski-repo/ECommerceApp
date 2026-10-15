@@ -42,6 +42,19 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         private const string TusEndpoint = "/tus";
 
         // Minimal valid JPEG bytes (JFIF header) — enough for the image service to accept.
+        // Completing an upload decodes and re-encodes the image, so that path needs a real one;
+        // the framing-only MinJpegBytes are enough for the protocol-level tests.
+        private static readonly byte[] DecodableJpegBytes = CreateDecodableJpeg();
+
+        private static byte[] CreateDecodableJpeg()
+        {
+            using var bitmap = new SkiaSharp.SKBitmap(16, 16);
+            bitmap.Erase(SkiaSharp.SKColors.Red);
+            using var image = SkiaSharp.SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 90);
+            return data.ToArray();
+        }
+
         private static readonly byte[] MinJpegBytes =
         {
             0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
@@ -280,10 +293,10 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         {
             var itemId = _itemId;
             var client = await CreateAuthenticatedClientAsync();
-            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: itemId);
+            var location = await CreateTusUploadAsync(client, fileBytes: DecodableJpegBytes, itemId: itemId);
 
             // Upload the full file
-            var patchResp = await PatchTusChunkAsync(client, location, offset: 0, data: MinJpegBytes);
+            var patchResp = await PatchTusChunkAsync(client, location, offset: 0, data: DecodableJpegBytes);
             patchResp.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
             // CompleteUpload uses [IgnoreAntiforgeryToken] — no CSRF header needed.

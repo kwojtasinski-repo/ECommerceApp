@@ -1,3 +1,4 @@
+﻿using ECommerceApp.Application.Catalog.Images;
 using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.Services;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
@@ -7,6 +8,7 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Catalog.Products;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -286,7 +288,7 @@ namespace ECommerceApp.UnitTests.Catalog.Images
         }
 
         private ImageService CreateService()
-            => new ImageService(_imageRepository.Object, _fileStoreProvider.Object, _productRepository.Object);
+            => new ImageService(_imageRepository.Object, _fileStoreProvider.Object, _productRepository.Object, new ImageSanitizer(Options.Create(new ImageLimitsOptions())));
 
         private static Product CreateProductWithImages(int imageCount)
         {
@@ -315,13 +317,18 @@ namespace ECommerceApp.UnitTests.Catalog.Images
 
         private static IFormFile AddFileToIFormFile(string fileName, int size = 0)
         {
-            // Valid JPEG framing (SOI marker ... EOI marker): the service checks content, not only name and size.
-            var bytes = new byte[size == 0 ? 22 : size];
-            bytes[0] = 0xFF;
-            bytes[1] = 0xD8;
-            bytes[2] = 0xFF;
-            bytes[^2] = 0xFF;
-            bytes[^1] = 0xD9;
+            // A real, decodable JPEG: the service decodes and re-encodes uploads. An explicit size builds
+            // a framing-only blob, which is only meant for the file size checks that run before decoding.
+            var bytes = size == 0 ? ImagePayloads.ValidJpeg() : new byte[size];
+            if (size != 0)
+            {
+                bytes[0] = 0xFF;
+                bytes[1] = 0xD8;
+                bytes[2] = 0xFF;
+                bytes[^2] = 0xFF;
+                bytes[^1] = 0xD9;
+            }
+
             var stream = new MemoryStream(bytes);
             return new FormFile(stream, 0, stream.Length, ".jpg", fileName)
             {

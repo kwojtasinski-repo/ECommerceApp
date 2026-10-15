@@ -1,8 +1,12 @@
 using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Web.IntegrationTests;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
+using SkiaSharp;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -21,11 +25,9 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
     public class ChunkedUploadWebTests
         : WebTestBase<TusUploadTestFactory>, IClassFixture<TusUploadTestFactory>
     {
-        private static readonly byte[] MinJpegBytes =
-        {
-            0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
-            0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9
-        };
+        private const string HostileMarker = "HOSTILE-MARKER-7f3a91";
+
+        private static readonly byte[] MinJpegBytes = CreateJpeg();
 
         private int _itemId;
 
@@ -108,6 +110,43 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
 
             chunk.StatusCode.ShouldBe(HttpStatusCode.OK);
             status.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task ChunkedUpload_JpegWithCommentSegmentCarryingMarker_ShouldNotStoreMarker()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var fileStore = (TusFakeFileStore)_factory.Services.GetRequiredService<IFileStore>();
+            var polluted = WithCommentSegment(MinJpegBytes, HostileMarker);
+            var init = await InitUploadAsync(client, "polluted.jpg", polluted.Length, _itemId);
+            var session = JsonSerializer.Deserialize<InitUploadResponse>(
+                await init.Content.ReadAsStringAsync(CancellationToken),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var chunk = await PostChunkAsync(client, session.SessionId, 1, polluted);
+
+            chunk.StatusCode.ShouldBe(HttpStatusCode.OK);
+            fileStore.WrittenFiles.ShouldNotBeEmpty();
+            fileStore.WrittenFiles.Any(file => file.AsSpan().IndexOf(Encoding.ASCII.GetBytes(HostileMarker)) >= 0).ShouldBeFalse();
+        }
+
+        private static byte[] CreateJpeg()
+        {
+            using var bitmap = new SKBitmap(16, 16);
+            bitmap.Erase(SKColors.Red);
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90);
+            return data.ToArray();
+        }
+
+        private static byte[] WithCommentSegment(byte[] jpeg, string text)
+        {
+            var payload = Encoding.ASCII.GetBytes(text);
+            var length = payload.Length + 2;
+            var result = new System.Collections.Generic.List<byte>(jpeg[..2]) { 0xFF, 0xFE, (byte)(length >> 8), (byte)length };
+            result.AddRange(payload);
+            result.AddRange(jpeg[2..]);
+            return result.ToArray();
         }
 
         private Task<HttpResponseMessage> InitUploadAsync(HttpClient client, string fileName, long size, int itemId)

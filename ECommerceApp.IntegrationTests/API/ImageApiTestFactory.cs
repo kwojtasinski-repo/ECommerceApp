@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -136,9 +137,12 @@ namespace ECommerceApp.IntegrationTests.API
     {
         private static readonly byte[] _testBytes = { 0xFF, 0xD8, 0xFF, 0xE0 };
 
-        public byte[] ReadFile(string path) => _testBytes;
-        
-        public Task<byte[]> ReadFileAsync(string path) => Task.FromResult(_testBytes);
+        // Bytes handed to WriteFileAsync, by source path, so tests can assert on what would really be stored.
+        private readonly ConcurrentDictionary<string, byte[]> _written = new();
+
+        public byte[] ReadFile(string path) => _written.TryGetValue(path, out var bytes) ? bytes : _testBytes;
+
+        public Task<byte[]> ReadFileAsync(string path) => Task.FromResult(ReadFile(path));
 
         public Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file)
         {
@@ -146,10 +150,14 @@ namespace ECommerceApp.IntegrationTests.API
             return WriteFileAsync(file, path);
         }
 
-        public Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file, string path)
+        public async Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file, string path)
         {
             var sourcePath = Path.Combine(path, $"{Guid.NewGuid()}_test.jpg");
-            return Task.FromResult(new FileDirectoryPOCO { SourcePath = sourcePath, Name = "test.jpg" });
+            await using var stream = file.OpenReadStream();
+            using var copy = new MemoryStream();
+            await stream.CopyToAsync(copy);
+            _written[sourcePath] = copy.ToArray();
+            return new FileDirectoryPOCO { SourcePath = sourcePath, Name = "test.jpg" };
         }
 
         public FileDirectoryPOCO WriteFile(string fileName, byte[] file, string path) =>

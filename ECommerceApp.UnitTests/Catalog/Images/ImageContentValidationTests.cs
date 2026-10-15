@@ -1,4 +1,5 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
+using ECommerceApp.Application.Catalog.Images;
 using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.Services;
 using ECommerceApp.Application.Exceptions;
@@ -6,6 +7,7 @@ using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Catalog.Products;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -128,7 +130,7 @@ namespace ECommerceApp.UnitTests.Catalog.Images
             _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Product.Create("Test Product", 10m, "Description", 1));
             _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
-            return new ImageService(new Mock<IImageRepository>().Object, _fileStoreProvider.Object, _productRepository.Object);
+            return new ImageService(new Mock<IImageRepository>().Object, _fileStoreProvider.Object, _productRepository.Object, new ImageSanitizer(Options.Create(new ImageLimitsOptions())));
         }
 
         private static AddImagesPOCO Upload(string name, byte[] content)
@@ -141,14 +143,8 @@ namespace ECommerceApp.UnitTests.Catalog.Images
             };
         }
 
-        private static byte[] Jpeg() => new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9 };
+        private static byte[] Jpeg() => ImagePayloads.ValidJpeg();
 
-        private static byte[] Png()
-        {
-            var bytes = new List<byte>(PngSignature);
-            bytes.AddRange(new byte[] { 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE });
-            bytes.AddRange(PngEnd);
-            return bytes.ToArray();
-        }
+        private static byte[] Png() => ImagePayloads.ValidPng();
     }
 }

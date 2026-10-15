@@ -1,4 +1,4 @@
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
@@ -6,6 +6,7 @@ using ECommerceApp.Domain.Catalog.Products;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,9 +18,11 @@ namespace ECommerceApp.Application.Catalog.Images.Services
         private readonly IFileStoreProvider _fileStoreProvider;
         private readonly IImageRepository _imageRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IImageSanitizer _imageSanitizer;
 
-        public ImageService(IImageRepository repo, IFileStoreProvider fileStoreProvider, IProductRepository productRepository)
+        public ImageService(IImageRepository repo, IFileStoreProvider fileStoreProvider, IProductRepository productRepository, IImageSanitizer imageSanitizer)
         {
+            _imageSanitizer = imageSanitizer;
             _imageRepository = repo;
             _fileStoreProvider = fileStoreProvider;
             _productRepository = productRepository;
@@ -52,7 +55,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                 throw new BusinessException("Product id is required for adding images");
             }
 
-            ValidImages(objectVm.Images);
+            var sanitizedImages = ValidImages(objectVm.Images);
 
             var product = await _productRepository.GetByIdWithDetailsAsync(new ProductId(objectVm.ItemId.Value)) 
                 ?? throw new BusinessException(
@@ -61,7 +64,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
 
             ValidImageCount(product, 1);
 
-            var fileDir = await _fileStoreProvider.WriteFileAsync(objectVm.Images.First(), ImagesConstants.FileProvider.Local);
+            var fileDir = await _fileStoreProvider.WriteFileAsync(sanitizedImages.First(), ImagesConstants.FileProvider.Local);
             product.AddImage(fileDir.Name, fileDir.SourcePath, ImagesConstants.FileProvider.Local);
             await _productRepository.UpdateAsync(product);
 
@@ -128,7 +131,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                 throw new BusinessException("Product id is required for adding images");
             }
 
-            ValidImages(imageVm.Files);
+            var sanitizedFiles = ValidImages(imageVm.Files);
 
             var product = await _productRepository.GetByIdWithDetailsAsync(new ProductId(imageVm.ItemId.Value)) 
                 ?? throw new BusinessException($"Product with id '{imageVm.ItemId.Value}' was not found",
@@ -137,7 +140,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             ValidImageCount(product, imageVm.Files.Count);
 
             var writtenFileNames = new List<string>();
-            foreach (var file in imageVm.Files)
+            foreach (var file in sanitizedFiles)
             {
                 var fileDir = await _fileStoreProvider.WriteFileAsync(file, ImagesConstants.FileProvider.Local);
                 product.AddImage(fileDir.Name, fileDir.SourcePath, ImagesConstants.FileProvider.Local);
@@ -164,12 +167,17 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                 ImageSource = Convert.ToBase64String(_fileStoreProvider.ReadFile(image.FileSource, image.Provider))
             };
 
-        private void ValidImages(ICollection<IFormFile> images)
-            => ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length, i)));
+        private List<IFormFile> ValidImages(ICollection<IFormFile> images)
+            => ValidImages(images.Select(i => new ValidateFile(i?.FileName, i?.Length ?? 0, i)));
 
-        private void ValidImages(IEnumerable<ValidateFile> images)
+        /// <summary>
+        /// Validates every upload and returns, in the same order, files holding ONLY the re-encoded image.
+        /// The original bytes are never stored.
+        /// </summary>
+        private List<IFormFile> ValidImages(IEnumerable<ValidateFile> images)
         {
             var errorMessage = new ErrorMessage();
+            var sanitized = new List<IFormFile>();
 
             foreach (var image in images)
             {
@@ -205,14 +213,32 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                         ErrorParameter.Create("extensions", sb.ToString())
                     }));
                 }
-                else if (!HasValidContent(image.File, extension))
+                else
                 {
-                    errorMessage.Message.AppendLine($"Image {fileName} content does not match its {extension} extension or is corrupted.");
-                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileContentInvalid", new List<ErrorParameter>
+                    var result = Sanitize(image.File, extension);
+                    if (result.IsAccepted)
                     {
-                        ErrorParameter.Create("name", fileName),
-                        ErrorParameter.Create("extension", extension)
-                    }));
+                        sanitized.Add(ToSanitizedFile(image.File, result.Bytes));
+                    }
+                    else if (result.Rejection == ImageRejection.DimensionsTooLarge)
+                    {
+                        errorMessage.Message.AppendLine($"Image {fileName} dimensions {result.Width}x{result.Height} exceed the allowed limits.");
+                        errorMessage.ErrorCodes.Add(ErrorCode.Create("imageDimensionsTooLarge", new List<ErrorParameter>
+                        {
+                            ErrorParameter.Create("name", fileName),
+                            ErrorParameter.Create("width", result.Width),
+                            ErrorParameter.Create("height", result.Height)
+                        }));
+                    }
+                    else
+                    {
+                        errorMessage.Message.AppendLine($"Image {fileName} content does not match its {extension} extension or is corrupted.");
+                        errorMessage.ErrorCodes.Add(ErrorCode.Create("fileContentInvalid", new List<ErrorParameter>
+                        {
+                            ErrorParameter.Create("name", fileName),
+                            ErrorParameter.Create("extension", extension)
+                        }));
+                    }
                 }
             }
 
@@ -220,18 +246,27 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             {
                 throw new BusinessException(errorMessage);
             }
+
+            return sanitized;
         }
 
-        private static bool HasValidContent(IFormFile file, string extension)
+        private ImageSanitizeResult Sanitize(IFormFile file, string extension)
         {
             if (file is null)
             {
-                return false;
+                return ImageSanitizeResult.Rejected(ImageRejection.InvalidContent);
             }
 
             using var stream = file.OpenReadStream();
-            return ImageConstraints.HasValidImageContent(extension, stream);
+            return _imageSanitizer.Sanitize(stream, extension);
         }
+
+        private static IFormFile ToSanitizedFile(IFormFile original, byte[] bytes)
+            => new FormFile(new MemoryStream(bytes, writable: false), 0, bytes.Length, original.Name, original.FileName)
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = original.ContentType
+            };
 
         private static void ValidImageCount(Product product, int imagesToAdd)
         {

@@ -21,6 +21,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 .AddScoped<ICatalogNavigationService, CachedCatalogNavigationService>()
                 .AddScoped<IProductTagService, ProductTagService>()
                 .AddSingleton<IImageUrlBuilder, RelativeImageUrlBuilder>()
+                .AddSingleton<IImageSanitizer, ImageSanitizer>()
                 .AddTransient<IImageService, ImageService>()
                 .AddTransient<IUrlImageResolver, UrlImageResolver>()
                 .AddSingleton<UploadSessionStore>()

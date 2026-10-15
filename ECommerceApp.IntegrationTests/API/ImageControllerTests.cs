@@ -1,4 +1,4 @@
-using ECommerceApp.Application.Catalog.Images.Models;
+﻿using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
@@ -50,6 +50,56 @@ namespace ECommerceApp.IntegrationTests.API
 
             GC.SuppressFinalize(this);
             await base.DisposeAsync();
+        }
+
+        private const string HostileMarker = "HOSTILE-MARKER-7f3a91";
+
+        private async Task<byte[]> ReadTestJpegAsync()
+            => await File.ReadAllBytesAsync(_testData.GetFiles().First(f => f.Name == "apple-iphone-13.jpg").FullName, CancellationToken);
+
+        private static IFormFile ToFormFile(byte[] bytes, string fileName)
+        {
+            var stream = new MemoryStream(bytes);
+            return new FormFile(stream, 0, stream.Length, ".jpg", fileName) { Headers = new HeaderDictionary(), ContentDisposition = "image/jpeg" };
+        }
+
+        private static byte[] WithCommentSegment(byte[] jpeg, string text)
+        {
+            var payload = Encoding.ASCII.GetBytes(text);
+            var length = payload.Length + 2;
+            var result = new List<byte>(jpeg[..2]) { 0xFF, 0xFE, (byte)(length >> 8), (byte)length };
+            result.AddRange(payload);
+            result.AddRange(jpeg[2..]);
+            return result.ToArray();
+        }
+
+        private static byte[] WithDeclaredDimensions(byte[] jpeg, int width, int height)
+        {
+            var bytes = (byte[])jpeg.Clone();
+            for (var i = 2; i < bytes.Length - 9; i++)
+            {
+                if (bytes[i] == 0xFF && (bytes[i + 1] == 0xC0 || bytes[i + 1] == 0xC1 || bytes[i + 1] == 0xC2))
+                {
+                    bytes[i + 5] = (byte)(height >> 8);
+                    bytes[i + 6] = (byte)height;
+                    bytes[i + 7] = (byte)(width >> 8);
+                    bytes[i + 8] = (byte)width;
+                    return bytes;
+                }
+            }
+
+            throw new InvalidOperationException("No SOF segment found in the test JPEG.");
+        }
+
+        private static bool ContainsMarker(byte[] bytes)
+            => bytes.AsSpan().IndexOf(Encoding.ASCII.GetBytes(HostileMarker)) >= 0;
+
+        private async Task<byte[]> ReadStoredBytesAsync(int imageId)
+        {
+            var imageRepository = _factory.Services.GetService(typeof(IImageRepository)) as IImageRepository;
+            var fileStore = _factory.Services.GetService(typeof(IFileStore)) as IFileStore;
+            var image = await imageRepository.GetImageById(imageId);
+            return fileStore.ReadFile(image.FileSource);
         }
 
         private async Task<FlurlClient> GetLoggingClient()
@@ -259,6 +309,63 @@ namespace ECommerceApp.IntegrationTests.API
                 receivedCounts[i].ShouldBeGreaterThan(receivedCounts[i - 1]);
 
             receivedCounts.Last().ShouldBe(session.TotalChunks);
+        }
+
+        // ---------- stored bytes are re-encoded, never the original upload ----------
+
+        [Fact]
+        public async Task AddImage_JpegWithCommentSegmentCarryingMarker_ShouldNotStoreMarker()
+        {
+            var client = await GetLoggingClient();
+            var polluted = WithCommentSegment(await ReadTestJpegAsync(), HostileMarker);
+            var addPoco = new AddImagePOCO { File = ToFormFile(polluted, "polluted.jpg"), ItemId = _factory.SeededItemId };
+            var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(addPoco);
+
+            var id = await client.Request("api/images")
+                .PostAsync(multiContent, cancellationToken: CancellationToken)
+                .ReceiveJson<int>();
+
+            var stored = await ReadStoredBytesAsync(id);
+            stored.ShouldNotBeEmpty();
+            ContainsMarker(stored).ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task UploadChunk_JpegWithCommentSegmentCarryingMarker_ShouldNotStoreMarker()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+            var polluted = WithCommentSegment(await ReadTestJpegAsync(), HostileMarker);
+            var session = await InitUploadAsync(client, "polluted.jpg", polluted.Length, itemId);
+            IFlurlResponse response = null;
+            foreach (var chunkId in session.ChunkIds)
+            {
+                response = await PostChunkAsync(client, session.SessionId, chunkId, polluted.Skip((chunkId - 1) * session.ChunkSize).Take(session.ChunkSize).ToArray());
+            }
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            var result = JsonSerializer.Deserialize<UploadChunkResponse>(
+                await response.ResponseMessage.Content.ReadAsStringAsync(CancellationToken),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var stored = await ReadStoredBytesAsync(result.ImageId.Value);
+            stored.ShouldNotBeEmpty();
+            ContainsMarker(stored).ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task UploadChunk_JpegDeclaringHugeDimensions_ShouldReturnBadRequest()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
+            var bomb = WithDeclaredDimensions(await ReadTestJpegAsync(), 60000, 60000);
+            var session = await InitUploadAsync(client, "bomb.jpg", bomb.Length, itemId);
+            IFlurlResponse response = null;
+            foreach (var chunkId in session.ChunkIds)
+            {
+                response = await PostChunkAsync(client, session.SessionId, chunkId, bomb.Skip((chunkId - 1) * session.ChunkSize).Take(session.ChunkSize).ToArray());
+            }
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
         }
 
         // ---------- chunked upload hardening ----------

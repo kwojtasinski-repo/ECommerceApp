@@ -26,6 +26,7 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
                 return NotFound();
             }
 
+            Response.Headers["X-Content-Type-Options"] = "nosniff";
             return File(result.Bytes, result.ContentType, result.FileName);
         }
     }
