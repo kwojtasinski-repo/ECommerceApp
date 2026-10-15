@@ -2,6 +2,8 @@ using ECommerceApp.Application.AccountProfile.DTOs;
 using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Application.Supporting.Currencies.DTOs;
+using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.Domain.Presale.Checkout;
@@ -98,6 +100,38 @@ namespace ECommerceApp.Web.E2E.Infrastructure
             {
                 (await userManager.AddToRoleAsync(user, "Administrator")).Succeeded.ShouldBeTrue();
             }
+        }
+
+        /// <summary>
+        /// Creates a disposable user (unique email per call) that a test may delete through the UI.
+        /// Returns the user name shown in the user list.
+        /// </summary>
+        public static async Task<string> DisposableUserAsync(IServiceProvider services)
+        {
+            using var scope = services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var email = $"e2e-delete-{Guid.NewGuid():N}@example.com";
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true
+            };
+            var result = await userManager.CreateAsync(user, Password);
+            result.Succeeded.ShouldBeTrue(string.Join("; ", result.Errors));
+            return email;
+        }
+
+        /// <summary>
+        /// Creates a currency a test may delete through the UI. Currency codes must be valid ISO 4217
+        /// codes, so a per-call GUID suffix is not possible; the caller passes a code reserved for its test.
+        /// </summary>
+        public static async Task CurrencyAsync(IServiceProvider services, string code)
+        {
+            using var scope = services.CreateScope();
+            var currencyService = scope.ServiceProvider.GetRequiredService<ICurrencyService>();
+            await currencyService.AddAsync(new CreateCurrencyDto(code, $"E2E currency {code}"));
         }
 
         public static async Task<IReadOnlyList<int>> LifecycleProductsAsync(IServiceProvider services) =>

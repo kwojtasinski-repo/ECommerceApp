@@ -63,6 +63,12 @@
 
 @section Scripts {
     <script>
+        let modalService, ajaxRequest, showError, showErrorFromResponse, statusCodes;
+
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ modalService, ajaxRequest, showError, showErrorFromResponse, statusCodes } = mods);
+        });
+
         async function deleteCurrency(id, name) {
             const result = await modalService.showConfirmationModal('Usuń walutę', 'Czy na pewno chcesz usunąć walutę \'' + name + '\'?');
             if (!result) {
