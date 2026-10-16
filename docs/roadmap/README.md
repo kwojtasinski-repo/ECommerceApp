@@ -75,9 +75,10 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 | O2 | **ADR-0026 dead-code decision** | L | `PlaceOrderAsync(PlaceOrderDto)` + `OrderPlacementFailed` + 3 compensation handlers have no production caller. Deferred for blast radius; handoff: `adr-0026-legacy-order-placement-dead-code-investigation-prompt.md` (repo root). |
 | O3 | **Real email delivery** | M | `IEmailSender` has no real implementation (only used by Identity pages). Needs a provider decision first; see [`guest-checkout.md`](./guest-checkout.md). |
 | O4 | **`Context.cs` removal** | M | Empty legacy `DbContext` still referenced by test infrastructure (e.g. architecture tests); blocked by EF migration history. |
-| O6 | **`MyPayments.cshtml` / `web-ui-views-report.md` ⚠️ rows** | S | Report is old; check whether `MyPayments` is still a stub and whether the Details scope checks were fixed by the access audit. |
+| O6 | **`web-ui-views-report.md` ⚠️ rows** | XS | ✅ Report re-verified against code 2026-10-16; Orders/Payments `Details`, `MyPayments`, refund `View`/`Request`/Approve+Reject and Profile are all fine. Also closed a real hole: `ProfileController` `Edit`/`EditContactInfo` POST had no ownership check. Remaining: `Payments/Create` GET keeps `int orderId` (spec said `Guid paymentId`) — decision deferred, no change until the project is straightened out. |
 | O7 | **Test GO-gate live** (ADR-0033) | S | The gate was validated with piped payloads only. |
 | O8 | **Repo-root clutter** | XS | Untracked demo folders, `74,`, `*.log`, `screen_*.PNG` in the repo root. |
+| O9 | **Docker images with SkiaSharp** | S | Image upload now decodes/re-encodes with SkiaSharp (`14b44bdc`). `docker build` of both Dockerfiles and a container start with one image upload have never been run — native libs may be missing in the runtime image. |
 
 Deferred by choice (see "Future architectural considerations" above): F2, F5 Phase 3, DD-003 (local outbox per BC), the checkout partial-availability modal idea, `ExpiredRefreshTokenCleanupJob`.
 

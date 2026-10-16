@@ -4,7 +4,7 @@
 > Covers both legacy (non-Area) controllers and the new Area-based BC controllers.
 > This is a living reference — update when views are added, moved, or deleted during atomic switches.
 >
-> Last updated: 2026-03-27
+> Last updated: 2026-10-16 (Sales Orders/Payments/Refund and AccountProfile Profile rows re-verified against code; other sections not re-checked — the Backoffice area and several legacy→Area moves postdate the rest of this report)
 
 ---
 
@@ -27,11 +27,11 @@
 | BC | 🌐 Public | 👤 User | 🔐 Backoffice | Issues |
 |----|-----------|---------|---------------|--------|
 | Presale / Checkout | 0 | 3 | 0 | — |
-| Sales / Orders | 0 | 2 | 4 | ⚠️ Details missing scope |
-| Sales / Payments | 0 | 3 | 1 | ⚠️ Create route wrong, Details missing scope |
+| Sales / Orders | 0 | 2 | 4 | — |
+| Sales / Payments | 0 | 3 | 1 | ⚠️ Create GET route is `int orderId` (differs from original spec) |
 | Sales / OrderItems | 0 | 0 | 2 | — |
-| Fulfillment / Refunds | 0 | 3 | 2 | ⚠️ customer scope, 🆕 Approve/Reject/Report, 🆕 Request form |
-| AccountProfile / Profile | 0 | 5 | 1 | ⚠️ Edit/View scope unclear |
+| Fulfillment / Refunds | 0 | 3 | 2 | 🆕 Report |
+| AccountProfile / Profile | 0 | 5 | 1 | — (Edit/EditContactInfo POST ownership fixed 2026-10-16) |
 | AccountProfile / Address | 0 | 3 | 0 | — |
 | Catalog / Item (legacy) | 3 | 0 | 3 | ShowItemBrands ❌ deleted |
 | Catalog / Tag (legacy) | 0 | 0 | 4 | — |
@@ -69,7 +69,7 @@
 | View file | Audience | Route | Status | Notes |
 |-----------|----------|-------|--------|-------|
 | `MyOrders.cshtml` | 👤 | `GET /Sales/Orders/MyOrders` | ✅ | Own orders list — scoped by `userId` from session |
-| `Details.cshtml` | 👤 | `GET /Sales/Orders/Details/{id}` | ⚠️ | **Missing scope check** — any authenticated user can view any order. Must return `403` if `order.UserId ≠ caller`. |
+| `Details.cshtml` | 👤 | `GET /Sales/Orders/Details/{id}` | ✅ | Scoped via `IOrderAccessAuthorizer.AuthorizeAsync` (owner, Maint, or guest holding the order's access token); otherwise `OrderAccessDenial`. |
 
 ### Backoffice-only
 
@@ -91,9 +91,9 @@
 
 | View file | Audience | Route | Status | Notes |
 |-----------|----------|-------|--------|-------|
-| `Create.cshtml` | 👤 | `GET /Sales/Payments/Create/{paymentId:guid}` | ⚠️ | **Route wrong** — controller currently takes `int id` (orderId). Must change to `Guid paymentId`, look up via `GetByTokenAsync(guid, userId)`, return `403` if `Status ≠ Pending`. |
-| `MyPayments.cshtml` | 👤 | `GET /Sales/Payments/MyPayments` | ⚠️ | Stub — page exists but not yet fully implemented. |
-| `Details.cshtml` | 👤 | `GET /Sales/Payments/Details/{id}` | ⚠️ | **Missing scope check** — must return `403` if `payment.UserId ≠ caller`. |
+| `Create.cshtml` | 👤 | `GET /Sales/Payments/Create/{id}` (`id` = orderId) | ⚠️ | Scope-checked via `IOrderAccessAuthorizer`; non-`Pending` payment returns `404`. Route is still `int orderId`, **not** the originally specified `Guid paymentId` — deliberately left as is for now (guest links depend on it); revisit after the project is straightened out. |
+| `MyPayments.cshtml` | 👤 | `GET /Sales/Payments/MyPayments` | ✅ | Full table; own payments only, narrowed to the current order for guest principals (`GuestAccessScope`). |
+| `Details.cshtml` | 👤 | `GET /Sales/Payments/Details/{id}` | ✅ | Scoped via `IOrderAccessAuthorizer.AuthorizeAsync` + `OrderAccessDenial`. |
 
 ### Backoffice-only
 
@@ -126,15 +126,15 @@
 
 | View file | Audience | Route | Status | Notes |
 |-----------|----------|-------|--------|-------|
-| 🆕 `Request.cshtml` | 👤 | `GET /Sales/Refund/Request/{orderId}` | 🆕 | **Does not exist.** Refund request form — reason field, items to refund. Own-scoped: validates `order.UserId == caller`. Linked from the Order Details page. |
-| `ViewRefundDetails.cshtml` | 👤 | `GET /Refund/ViewRefundDetails/{id}` | ⚠️ | **Missing scope check** — must return `403` if `refund.UserId ≠ caller`. Target route: `GET /Sales/Refund/View/{id}`. |
+| `Request.cshtml` | 👤 | `GET /Sales/Refund/Request/{id}` (`id` = orderId) | ✅ | Refund request form; `Forbid()` unless `order.UserId == caller`. POST has the same check. |
+| `View.cshtml` | 👤 | `GET /Sales/Refund/View/{id}` | ✅ | `Forbid()` unless `refund.UserId == caller` (Maint staff use `Edit`, not this page). |
 
 ### Backoffice-only
 
 | View file | Audience | Route | Status | Notes |
 |-----------|----------|-------|--------|-------|
 | `Index.cshtml` | 🔐 | `GET /Refund` | ✅ | All refunds — paginated, searchable |
-| `EditRefund.cshtml` | 🔐 | `GET /Refund/EditRefund/{id}` | ⚠️ | Edit form exists, but **Approve and Reject buttons are missing** — these must be added as distinct POST actions (`/Refund/Approve/{id}`, `/Refund/Reject/{id}`). |
+| `Edit.cshtml` | 🔐 | `GET /Sales/Refund/Edit/{id}` | ✅ | Has Approve and Reject forms posting to `RefundController.Approve` / `Reject` (`[Maint]`, antiforgery). |
 
 ### Missing — not yet implemented
 
@@ -146,9 +146,8 @@
 
 ## AccountProfile BC — User Profile
 
-**Controller (legacy):** `Controllers/CustomerController.cs`
-**View path:** `Views/Customer/`
-**Target:** `Areas/AccountProfile/Controllers/UserProfileController.cs`
+**Controller:** `Areas/AccountProfile/Controllers/ProfileController.cs` (was `CustomerController`)
+**View path:** `Areas/AccountProfile/Views/Profile/`
 
 ### User-facing
 
@@ -157,8 +156,8 @@
 | `Index.cshtml` | 👤 | `GET /Customer` | ✅ | Own profile (scoped by `userId`) |
 | `AddCustomer.cshtml` | 👤 | `GET /Customer/AddCustomer` | ✅ | Create profile form |
 | `AddCustomerPartialView.cshtml` | 👤 | `GET /Customer/AddCustomerPartialView` | ✅ | Partial — inline profile creation used in checkout flow |
-| `EditCustomer.cshtml` | 👤 | `GET /Customer/EditCustomer/{id}` | ⚠️ | Scope of `id` relative to caller is not enforced in controller |
-| `ViewCustomer.cshtml` | 👤 | `GET /Customer/ViewCustomer/{id}` | ⚠️ | Same scope concern |
+| `Edit.cshtml` | 👤 | `GET /AccountProfile/Profile/Edit/{id}` | ✅ | GET scoped by `GetAsync(id, userId)`; POST (and `EditContactInfo` POST) now return `Forbid()` for non-owner non-Maint (fixed 2026-10-16, see `ProfileOwnershipIntegrationTests`). Forbid is a 302 to `/Identity/Account/AccessDenied`, not a raw 403. |
+| `Details.cshtml` | 👤 | `GET /AccountProfile/Profile/Details/{id}` | ✅ | `Forbid()` unless owner or Maint. |
 
 ### Backoffice-only
 
@@ -342,17 +341,10 @@ Replaced by inline `Email` + `PhoneNumber` fields on `UserProfile`.
 
 | # | View | Issue | Severity |
 |---|------|-------|----------|
-| 1 | `Areas/Sales/Views/Orders/Details.cshtml` | Controller serves any order to any auth user — scope check missing | 🔴 Security |
-| 2 | `Areas/Sales/Views/Payments/Create.cshtml` | Controller route takes `int id` (orderId) instead of `Guid paymentId`; no 403 guard for non-Pending state | 🔴 Must fix before switch |
-| 3 | `Areas/Sales/Views/Payments/Details.cshtml` | No `payment.UserId ≠ caller` check in controller | 🔴 Security |
-| 4 | `Views/Refund/ViewRefundDetails.cshtml` | No `refund.UserId ≠ caller` check — any auth user sees any refund | 🔴 Security |
-| 5 | `Views/Refund/EditRefund.cshtml` | Approve / Reject buttons not present — decision actions not yet implemented | 🟠 Missing feature |
-| 6 | *(missing)* `Views/Refund/Report.cshtml` | Admin refund report view does not exist | 🟠 Missing feature |
-| 7 | `Views/Customer/EditCustomer.cshtml` | Ownership of the `id` parameter relative to session user not enforced | 🟡 Investigate |
-| 8 | `Views/Customer/ViewCustomer.cshtml` | Same ownership concern | 🟡 Investigate |
-| 9 | *(missing)* `Views/Refund/Request.cshtml` | Customer has no Web page to submit a refund request — `POST /Refund/Request` is `[Maint]` only in current code | 🔴 Missing user flow |
+| 1 | `Areas/Sales/Views/Payments/Create.cshtml` | Route is `int orderId`, not the originally specified `Guid paymentId`. Access control is in place (`IOrderAccessAuthorizer`, non-Pending → 404); change deferred. | 🟡 Spec deviation |
+| 2 | *(missing)* `Refund/Report.cshtml` | Admin refund report view does not exist | 🟠 Missing feature |
 
----
+Resolved since the March 2026 revision: Orders/Payments/Refund scope checks, `MyPayments`, refund `Request` view, refund Approve/Reject buttons, Profile ownership (GET and, since 2026-10-16, POST).
 
 ## References
 
