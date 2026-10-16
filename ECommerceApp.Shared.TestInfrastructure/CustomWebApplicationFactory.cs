@@ -91,7 +91,7 @@ namespace ECommerceApp.Shared.TestInfrastructure
                 .ReceiveString();
 
             var deserializedToken = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonToken);
-            deserializedToken.TryGetValue("token", out var token);
+            deserializedToken.TryGetValue("accessToken", out var token);
 
             return token;
         }

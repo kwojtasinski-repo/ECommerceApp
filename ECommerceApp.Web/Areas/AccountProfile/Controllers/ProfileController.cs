@@ -107,6 +107,17 @@ namespace ECommerceApp.Web.Areas.AccountProfile.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(int id, EditProfileFormVm model)
         {
+            var existing = await _profileService.GetDetailsAsync(id);
+            if (existing is null)
+            {
+                return NotFound();
+            }
+
+            if (!MaintenanceRoles.Any(r => User.IsInRole(r)) && existing.UserId != GetUserId())
+            {
+                return Forbid();
+            }
+
             await _profileService.UpdatePersonalInfoAsync(new UpdateUserProfileDto(
                 id,
                 model.FirstName,
@@ -134,6 +145,17 @@ namespace ECommerceApp.Web.Areas.AccountProfile.Controllers
         [HttpPost]
         public async Task<IActionResult> EditContactInfo(int id, string email, string phoneNumber)
         {
+            var existing = await _profileService.GetDetailsAsync(id);
+            if (existing is null)
+            {
+                return NotFound();
+            }
+
+            if (!MaintenanceRoles.Any(r => User.IsInRole(r)) && existing.UserId != GetUserId())
+            {
+                return Forbid();
+            }
+
             await _profileService.UpdateContactInfoAsync(new UpdateContactInfoDto(id, email, phoneNumber));
             return RedirectToAction(nameof(Details), new { id });
         }
