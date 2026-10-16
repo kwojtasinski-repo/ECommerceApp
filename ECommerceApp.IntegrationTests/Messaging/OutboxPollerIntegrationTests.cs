@@ -192,11 +192,17 @@ namespace ECommerceApp.IntegrationTests.Messaging
             finalStatus.ShouldBe(OutboxStatus.Dispatched);
             ReceivedCorrelationIds.ShouldContain(goodCorrelationId);
 
-            // Default maxRetries (5): one failed attempt leaves it back at Pending (with backoff),
-            // not DeadLetter yet — it must never reach Dispatched or Running.
-            var badStatus = await GetStatusAsync(badId, CancellationToken);
-            badStatus.ShouldNotBe(OutboxStatus.Dispatched);
-            badStatus.ShouldNotBe(OutboxStatus.Running);
+            // The poller handles both rows in the same batch, so the good row can be Dispatched while
+            // the bad one is still Running — and it keeps being retried, passing through Running on
+            // every attempt. Wait for a snapshot in which a failed attempt is recorded and the row is
+            // at rest, and assert on that single snapshot.
+            var failure = await _messageProcessing.WaitUntilAsync(
+                new OutboxFailedAttemptOperation(this, badId));
+
+            // Never Dispatched; at rest it is back at Pending (waiting for backoff) or, once the
+            // retries are exhausted, DeadLetter.
+            failure.RetryCount.ShouldBeGreaterThan(0);
+            failure.Status.ShouldBeOneOf(OutboxStatus.Pending, OutboxStatus.DeadLetter);
         }
 
         [Fact]
@@ -210,6 +216,45 @@ namespace ECommerceApp.IntegrationTests.Messaging
             var due = await _service.GetDueAsync(batchSize: 50, CancellationToken);
 
             due.ShouldNotContain(m => m.MessageTypeKey == message.MessageTypeKey);
+        }
+
+        private async Task<(OutboxStatus Status, int RetryCount)> GetFailureStateAsync(
+            long id,
+            CancellationToken cancellationToken)
+        {
+            var context = GetRequiredService<IMessagingDbContext>();
+            var row = await context.Outbox.AsNoTracking().FirstAsync(m => m.Id == id, cancellationToken);
+            return (row.Status, row.RetryCount);
+        }
+
+        private sealed class OutboxFailedAttemptOperation
+            : IMessageProcessingOperation<(OutboxStatus Status, int RetryCount)>
+        {
+            private readonly OutboxPollerIntegrationTests _test;
+            private readonly long _messageId;
+
+            public OutboxFailedAttemptOperation(
+                OutboxPollerIntegrationTests test,
+                long messageId)
+            {
+                _test = test;
+                _messageId = messageId;
+            }
+
+            public Task<(OutboxStatus Status, int RetryCount)> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetFailureStateAsync(_messageId, cancellationToken);
+            }
+
+            public bool IsCompleted((OutboxStatus Status, int RetryCount) state)
+            {
+                return state.RetryCount >= 1 && state.Status != OutboxStatus.Running;
+            }
+
+            public string Describe((OutboxStatus Status, int RetryCount) state)
+            {
+                return $"Outbox message {_messageId} has status {state.Status} after {state.RetryCount} failed attempt(s), expected a recorded failed attempt.";
+            }
         }
 
         private sealed class OutboxStatusOperation
