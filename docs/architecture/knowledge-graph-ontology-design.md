@@ -468,12 +468,21 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
    are structurally unreadable by a syntax-only scan.
    **Warning discipline is part of the guardrail, not cosmetics.** Validation
    found the parser reporting `Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml`
-   as unresolved on every run: both are rendered by `Create`/`Edit` via
-   `return View("AddItemNew", …)`, so no `Page` id can carry their filename, and
-   both contain only same-host `fetch(...)` calls that fact #5 requires to be
-   silent. The "view resolves to no `Page`" warnings now fire only when an edge
+   as unresolved on every run: both are rendered by `Create`/`Edit` under another
+   name (`View(flag ? CreateChunkedView : CreateView, …)` with `const string`
+   operands), so no `Page` id can carry their filename. They are now mapped by
+   `RenderedViewIndex`, which reads the first `View(...)` argument of every web
+   action (literal, same-class `const string`, `nameof(X)`, or a conditional of
+   those) and attaches the view to the action. The resulting
+   `Page-[:USES]->ScriptModule` edge means "may render a view that uses the
+   module": for a conditional both operands count, because the choice is a
+   runtime flag (`UseChunkedUpload`). This stays within the `Page` marker (MVC
+   action + Razor view) and adds no node or edge type. The real graph gains
+   `Create`/`Create#2`/`Edit`/`Edit#2` -> `chunked-upload` and
+   `CheckoutController.ResumeOrder` -> `checkout-placeorder` (11 USES->ScriptModule
+   edges in total). The "view resolves to no `Page`" warnings fire only when an edge
    was genuinely blocked, and `PinnedRealGraphTests` pins the real tree at
-   **exactly zero** `ScriptModuleParser` warnings — an over-warning parser hides
+   **exactly zero** `ScriptModuleParser` warnings - an over-warning parser hides
    the drop-to-zero signal as effectively as a silent one.
    **Marker prose to tighten in Phase 6.** `tools/kg/seed/ontology.cypher:89`
    describes the `ScriptModule` marker as "`define([...], fn) / require([...],

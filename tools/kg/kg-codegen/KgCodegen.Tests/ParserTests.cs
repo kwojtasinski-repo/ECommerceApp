@@ -892,6 +892,49 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void ScriptModuleParser_reads_named_define_with_dependencies()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/base.js", "define([], function () { });"),
+            ("wwwroot/js/named.js", "define(\"named\", [\"base\"], function (base) { });"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.Single(result.Graph.Nodes, node => node.Id == "named");
+        Assert.Single(result.Graph.Edges, edge => edge.Type == "DEPENDS_ON" && edge.SourceId == "named" && edge.TargetId == "base");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_reads_named_define_with_empty_dependencies_and_single_quotes()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/a.js", "define('a',[],function () { });"),
+            ("wwwroot/js/b.js", "define  (  'b'  ,  [ 'a' ]  , function (a) { });"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.Equal(2, result.Graph.Nodes.Count(node => node.Label == "ScriptModule"));
+        Assert.Single(result.Graph.Edges, edge => edge.Type == "DEPENDS_ON" && edge.SourceId == "b" && edge.TargetId == "a");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_ignores_define_inside_comment_or_string()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/commented.js", "// define(\"x\", [], function () { });\nvar s = 'define([], 1)';"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.DoesNotContain(result.Graph.Nodes, node => node.Label == "ScriptModule");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
     public void ScriptModuleParser_warns_without_fabricating_unknown_dependency()
     {
         var root = CreateScriptModuleFixture(("wwwroot/js/common.js", "define(['nope'], function (nope) { });"));
@@ -992,11 +1035,118 @@ public sealed class ParserTests
         Directory.Delete(root, true);
     }
 
+    private const string ChunkedProductController = """
+        namespace Demo.Web.Areas.Catalog.Controllers;
+        public class ProductController : BaseController
+        {
+            private const string CreateView = "Create";
+            private const string CreateChunkedView = "AddItemNew";
+            private readonly Options _options;
+
+            [HttpGet]
+            public IActionResult Create() => View(_options.UseChunkedUpload ? CreateChunkedView : CreateView, new object());
+
+            [HttpPost]
+            public IActionResult Create(object model)
+            {
+                return View(_options.UseChunkedUpload ? CreateChunkedView : CreateView, model);
+            }
+        }
+        """;
+
+    private static readonly CypherNode[] ProductCreatePages =
+    [
+        new("Page", "Demo.Web.Areas.Catalog.Controllers.ProductController.Create", new Dictionary<string, object?>()),
+        new("Page", "Demo.Web.Areas.Catalog.Controllers.ProductController.Create#2", new Dictionary<string, object?>())
+    ];
+
+    [Fact]
+    public void ScriptModuleParser_maps_a_view_rendered_through_a_conditional_of_constants_to_every_overload()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/chunked-upload.js", "define([], function () { });"),
+            ("Areas/Catalog/Controllers/ProductController.cs", ChunkedProductController),
+            ("Areas/Catalog/Views/Product/AddItemNew.cshtml", "require(['chunked-upload'], function () { });"));
+
+        var result = ParseScriptModuleFixture(root, ProductCreatePages);
+
+        Assert.Equal(
+            ProductCreatePages.Select(page => page.Id).OrderBy(id => id, StringComparer.Ordinal),
+            result.Graph.Edges
+                .Where(edge => edge.Type == "USES" && edge.TargetId == "chunked-upload")
+                .Select(edge => edge.SourceId)
+                .OrderBy(id => id, StringComparer.Ordinal));
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_maps_a_view_named_by_literal_or_nameof()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/summary.js", "define([], function () { });"),
+            ("Controllers/OrdersController.cs", """
+                namespace Demo.Web.Controllers;
+                public class OrdersController : BaseController
+                {
+                    public IActionResult Overview() => View("Summary", new object());
+                    public IActionResult Resume() => View(nameof(Summary), new object());
+                    public IActionResult Summary() => View();
+                    public IActionResult Other() => View(model: "Summary");
+                }
+                """),
+            ("Views/Orders/Summary.cshtml", "require(['summary'], function () { });"));
+        var pages = new[] { "Overview", "Resume", "Summary", "Other" }
+            .Select(method => new CypherNode("Page", "Demo.Web.Controllers.OrdersController." + method, new Dictionary<string, object?>()))
+            .ToArray();
+
+        var result = ParseScriptModuleFixture(root, pages);
+
+        Assert.Equal(
+            ["Demo.Web.Controllers.OrdersController.Overview", "Demo.Web.Controllers.OrdersController.Resume", "Demo.Web.Controllers.OrdersController.Summary"],
+            result.Graph.Edges
+                .Where(edge => edge.Type == "USES")
+                .Select(edge => edge.SourceId)
+                .OrderBy(id => id, StringComparer.Ordinal));
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_does_not_map_a_view_to_another_controller_or_area_that_renders_the_same_name()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/chunked-upload.js", "define([], function () { });"),
+            ("Areas/Catalog/Controllers/ProductController.cs", ChunkedProductController),
+            ("Areas/Other/Views/Product/AddItemNew.cshtml", "require(['chunked-upload'], function () { });"));
+
+        var result = ParseScriptModuleFixture(root, ProductCreatePages);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "USES");
+        Assert.Contains(result.Warnings, warning => warning.Contains("AddItemNew.cshtml", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_still_warns_when_no_action_renders_the_view_and_a_real_edge_is_blocked()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/chunked-upload.js", "define([], function () { });"),
+            ("Areas/Catalog/Controllers/ProductController.cs", ChunkedProductController),
+            ("Areas/Catalog/Views/Product/NeverRendered.cshtml", "require(['chunked-upload'], function () { });"));
+
+        var result = ParseScriptModuleFixture(root, ProductCreatePages);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "USES");
+        Assert.Contains(result.Warnings, warning => warning.Contains("NeverRendered.cshtml", StringComparison.Ordinal) && warning.Contains("to a Page node", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
     /// <summary>
-    /// The real specimens are `Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml`: view files
-    /// rendered by `Create`/`Edit` through `return View("AddItemNew", …)`, so no `Page` id can ever
-    /// carry their filename. They contain only same-host MVC `fetch(...)` calls, which resolve to no
-    /// `Endpoint` — nothing was left unresolved, so nothing may be reported.
+    /// Same-host MVC `fetch(...)` calls resolve to no `Endpoint`, so even a view no action maps to
+    /// (here: no controller source at all) has nothing blocked — nothing may be reported.
+    /// Historically the specimens were `Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml`; they
+    /// now map through `RenderedViewIndex`, so this pins the silence rule with an unmapped view.
     /// </summary>
     [Fact]
     public void ScriptModuleParser_stays_silent_when_an_unmatched_view_has_no_attachable_usage()

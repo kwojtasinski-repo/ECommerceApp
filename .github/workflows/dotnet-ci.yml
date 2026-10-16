@@ -62,3 +62,61 @@ jobs:
           name: test-results
           path: ./TestResults/*.trx
           retention-days: 14
+
+  # Knowledge-graph validation gate (plan 08, workstream C; ADR-0031).
+  # NOT YET RUN on a real runner - first execution may need path / SDK tweaks.
+  #
+  # What this gate does:    kg-codegen --check parses the code and validates it against
+  #                         tools/kg/seed/ontology.json. Exit code 1 == at least one `error:`.
+  # What it does NOT do:    compare the output with the committed tools/kg/kg-seed.cypher,
+  #                         so a stale seed still passes. Open decision, see roadmap O1.
+  # Hard rules:             never write/commit a seed, never load Neo4j, and never gate on the
+  #                         warning count (~209 warnings is the designed state).
+  # Trigger:                when push/pull_request are enabled above, scope this job to
+  #                         `**/*.cs` and `tools/kg/**` (path filters are workflow-level, so
+  #                         split it into its own workflow first or build-and-test is narrowed too).
+  kg-validation:
+    name: KG - codegen check + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      KG_DOTNET_VERSION: '10.0.x'   # tools/kg projects target net10.0 (the 7.0.x above is for ECommerceApp.sln)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET (KG tools)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.KG_DOTNET_VERSION }}
+
+      - name: Build KgCodegen
+        run: dotnet build tools/kg/kg-codegen/KgCodegen.sln --configuration ${{ env.CONFIGURATION }}
+
+      - name: KgCodegen tests
+        run: dotnet test tools/kg/kg-codegen/KgCodegen.sln --configuration ${{ env.CONFIGURATION }} --no-build
+
+      # Exit code is the signal; warnings are expected and must not fail the job.
+      - name: kg-codegen --check
+        run: dotnet run --project tools/kg/kg-codegen/KgCodegen --configuration ${{ env.CONFIGURATION }} -- --root . --check
+
+      - name: Verify nothing under tools/kg was modified (tests + --check)
+        run: |
+          if [ -n "$(git status --porcelain -- tools/kg)" ]; then
+            echo "::error::Files under tools/kg were modified by the KgCodegen tests or kg-codegen --check"
+            git status --porcelain -- tools/kg
+            exit 1
+          fi
+
+      - name: Build KgMcp
+        run: dotnet build tools/kg/kg-mcp/KgMcp.sln --configuration ${{ env.CONFIGURATION }}
+
+      # Decision: Testcontainers.Neo4j suites need Docker and run locally only, not here.
+      # If they should gate CI, drop the filter (ubuntu-latest does ship Docker) and update roadmap O1.
+      - name: KgMcp tests (without Testcontainers suites)
+        run: >
+          dotnet test tools/kg/kg-mcp/KgMcp.sln
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          --filter "FullyQualifiedName!~GraphServiceTests&FullyQualifiedName!~RealGraphE2ETests"

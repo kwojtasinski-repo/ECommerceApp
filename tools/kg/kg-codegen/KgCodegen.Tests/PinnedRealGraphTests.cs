@@ -337,11 +337,12 @@ public sealed class PinnedRealGraphTests
     {
         var graph = BuildRealGraph();
 
-        Assert.Equal(10, graph.Nodes.Count(node => node.Label == "ScriptModule"));
+        Assert.Equal(12, graph.Nodes.Count(node => node.Label == "ScriptModule"));
         Assert.DoesNotContain(graph.Nodes, node => node.Label == "ScriptModule" && (node.Id == "config" || node.Id == "site"));
         Assert.Equal(
             [
                 "cartNotification->modalService",
+                "coupon-rule-builder->ajaxRequest",
                 "modalService->buttonTemplate",
                 "modalService->dialogTemplate"
             ],
@@ -349,7 +350,7 @@ public sealed class PinnedRealGraphTests
                 .Where(edge => edge.Type == "DEPENDS_ON" && edge.SourceLabel == "ScriptModule" && edge.TargetLabel == "ScriptModule")
                 .Select(edge => $"{edge.SourceId}->{edge.TargetId}")
                 .OrderBy(edge => edge, StringComparer.Ordinal));
-        Assert.Equal(10, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceLabel == "Host" && edge.TargetLabel == "ScriptModule"));
+        Assert.Equal(12, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceLabel == "Host" && edge.TargetLabel == "ScriptModule"));
         Assert.DoesNotContain(graph.Edges, edge => edge.TargetLabel == "ScriptModule" && edge.SourceLabel == "Module");
 
         var checkoutSources = graph.Edges
@@ -360,10 +361,26 @@ public sealed class PinnedRealGraphTests
         Assert.Equal(
             [
                 "ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder",
-                "ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder#2"
+                "ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder#2",
+                // `ResumeOrder` renders the same view via `View(nameof(PlaceOrder), …)`.
+                "ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.ResumeOrder"
             ],
             checkoutSources);
-        Assert.Equal(2, graph.Edges.Count(edge => edge.Type == "USES" && edge.TargetLabel == "ScriptModule"));
+
+        // `Create`/`Edit` (GET + POST) pick `AddItemNew`/`EditItemNew` over `Create`/`Edit` through a
+        // runtime flag; the edge means "may render", so both overloads of each action carry it.
+        Assert.Equal(
+            [
+                "ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Create",
+                "ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Create#2",
+                "ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit",
+                "ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit#2"
+            ],
+            graph.Edges
+                .Where(edge => edge.Type == "USES" && edge.TargetLabel == "ScriptModule" && edge.TargetId == "chunked-upload")
+                .Select(edge => edge.SourceId)
+                .OrderBy(id => id, StringComparer.Ordinal));
+        Assert.Equal(11, graph.Edges.Count(edge => edge.Type == "USES" && edge.TargetLabel == "ScriptModule"));
         Assert.Equal(0, graph.Edges.Count(edge => edge.Type == "USES" && edge.SourceLabel == "Page" && edge.TargetLabel == "Endpoint"));
     }
 
@@ -456,13 +473,14 @@ public sealed class PinnedRealGraphTests
         var graph = BuildRealGraph();
         var jobs = graph.Nodes.Where(node => node.Label == "Job").ToArray();
 
-        Assert.Equal(10, jobs.Length);
+        Assert.Equal(11, jobs.Length);
         Assert.Equal("CurrencyDownloader", Assert.Single(jobs, node => node.Id.EndsWith("CurrencyRateSyncTask", StringComparison.Ordinal)).Properties["taskName"]);
         Assert.Equal("InboxCleanup", Assert.Single(jobs, node => node.Id.EndsWith("InboxCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
         Assert.Equal("OutboxCleanup", Assert.Single(jobs, node => node.Id.EndsWith("OutboxCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
+        Assert.Equal("ChunkedUploadCleanup", Assert.Single(jobs, node => node.Id.EndsWith("ChunkedUploadCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
         Assert.Equal("SnapshotOrderItemsJob", Assert.Single(jobs, node => node.Id.EndsWith("SnapshotOrderItemsJob", StringComparison.Ordinal)).Properties["taskName"]);
         Assert.Equal("UnclaimedGuestProfileCleanup", Assert.Single(jobs, node => node.Id.EndsWith("UnclaimedGuestProfileCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
-        Assert.Equal(10, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Job"));
+        Assert.Equal(11, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Job"));
     }
 
     [Fact]
@@ -485,7 +503,7 @@ public sealed class PinnedRealGraphTests
 
         Assert.DoesNotContain(schedules, edge => edge.SourceId.EndsWith("OrderPlacementFailedHandler", StringComparison.Ordinal));
         Assert.Equal(3, graph.Nodes.Count(node => node.Label == "Job" && Equals(node.Properties["triggerMode"], "Deferred")));
-        Assert.Equal(7, graph.Nodes.Count(node => node.Label == "Job" && node.Properties["triggerMode"] is null));
+        Assert.Equal(8, graph.Nodes.Count(node => node.Label == "Job" && node.Properties["triggerMode"] is null));
     }
 
     [Fact]

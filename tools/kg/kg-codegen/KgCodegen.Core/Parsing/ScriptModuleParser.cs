@@ -6,7 +6,7 @@ namespace KgCodegen.Core.Parsing;
 public sealed class ScriptModuleParser
 {
     private static readonly Regex DefinePattern = new(
-        "^define\\s*\\(\\s*\\[(?<deps>[^\\]]*)\\]",
+        "^define\\s*\\(\\s*(?:(?:'[^']*'|\"[^\"]*\")\\s*,\\s*)?\\[(?<deps>[^\\]]*)\\]",
         RegexOptions.Multiline | RegexOptions.CultureInvariant);
 
     private static readonly Regex DependencyPattern = new(
@@ -19,10 +19,6 @@ public sealed class ScriptModuleParser
 
     private static readonly Regex UrlPattern = new(
         "(?:fetch|ajaxRequest\\.send)\\s*\\(\\s*[\"'](?<url>/[^\"']*)",
-        RegexOptions.CultureInvariant);
-
-    private static readonly Regex PageIdPattern = new(
-        "^(?<namespace>.+)\\.(?<controller>[^.]+Controller)\\.(?<method>[^.]+)$",
         RegexOptions.CultureInvariant);
 
     public ParserResult Parse(
@@ -67,6 +63,7 @@ public sealed class ScriptModuleParser
         }
 
         var knownModules = moduleIds;
+        var renderedViews = RenderedViewIndex.Build(webRoot);
         var webFiles = Directory.EnumerateFiles(webRoot, "*.cshtml", SearchOption.AllDirectories)
             .Where(path => !Path.GetFileName(path).StartsWith("_", StringComparison.Ordinal))
             .OrderBy(path => path, StringComparer.Ordinal);
@@ -83,16 +80,19 @@ public sealed class ScriptModuleParser
             var relativePath = Path.GetRelativePath(webRoot, file);
             var hasViewShape = TryGetViewShape(webRoot, file, out var view);
             var matchingPages = hasViewShape
-                ? pages.Where(page => page.Label == "Page" && MatchesPage(page, view)).ToArray()
+                ? pages.Where(page => page.Label == "Page" && MatchesPage(page, view, renderedViews)).ToArray()
                 : [];
 
             // A view that resolves to no `Page` node is only worth a warning once something in it
-            // would actually have become an edge. Razor view files outnumber controller actions —
-            // `Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml` are rendered by `Create`/`Edit`
-            // via `return View("AddItemNew", …)`, so no `Page` id can ever match their filename — and
-            // both contain only same-host MVC `fetch(...)` calls, which fact #5 requires to be silent.
-            // Warning on the resolution itself would report those two as failures every run and bury
-            // the Guardrail-5 signal under noise.
+            // would actually have become an edge. Razor view files outnumber controller actions, and
+            // a view is matched to a `Page` two ways: by filename == action name, or through
+            // `RenderedViewIndex` when the action renders it under another name
+            // (`Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml` via `View(flag ? Const : Const, …)`,
+            // `PlaceOrder.cshtml` via `ResumeOrder`'s `View(nameof(PlaceOrder), …)`). The resulting
+            // `USES` edge means "this page may render a view that uses the module" - for a conditional
+            // view name both operands count, since the choice is a runtime flag. Only a view that
+            // matches neither way AND carries an edge-worthy usage is reported, so a genuinely
+            // orphaned view stays loud while same-host MVC `fetch(...)` calls (fact #5) stay silent.
             var blockedBySource = false;
 
             foreach (Match require in requireMatches)
@@ -206,22 +206,23 @@ public sealed class ScriptModuleParser
         return false;
     }
 
-    private static bool MatchesPage(CypherNode page, ViewShape view)
+    private static bool MatchesPage(CypherNode page, ViewShape view, RenderedViewIndex renderedViews)
     {
-        var match = PageIdPattern.Match(page.Id);
-        if (!match.Success)
+        var lastDot = page.Id.LastIndexOf('.');
+        if (lastDot < 0 || !RenderedViewIndex.TryReadAddress(page.Id[..lastDot], out var area, out var controller))
         {
             return false;
         }
 
-        var method = Regex.Replace(match.Groups["method"].Value, "#\\d+$", string.Empty, RegexOptions.CultureInvariant);
-        var namespaceName = match.Groups["namespace"].Value;
-        var areaMatch = Regex.Match(namespaceName, "\\.Areas\\.(?<area>[^.]+)\\.Controllers$", RegexOptions.CultureInvariant);
-        var area = areaMatch.Success ? areaMatch.Groups["area"].Value : null;
-        var controller = match.Groups["controller"].Value[..^"Controller".Length];
-        return string.Equals(area, view.Area, StringComparison.Ordinal) &&
-               string.Equals(controller, view.Controller, StringComparison.Ordinal) &&
-               string.Equals(method, view.Method, StringComparison.Ordinal);
+        if (!string.Equals(area, view.Area, StringComparison.Ordinal) ||
+            !string.Equals(controller, view.Controller, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var method = Regex.Replace(page.Id[(lastDot + 1)..], "#\\d+$", string.Empty, RegexOptions.CultureInvariant);
+        return string.Equals(method, view.Method, StringComparison.Ordinal) ||
+               renderedViews.Renders(page.Id, area, controller, view.Method);
     }
 
     private static bool EndpointMatches(CypherNode endpoint, string url)
