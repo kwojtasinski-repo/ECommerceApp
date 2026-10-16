@@ -111,7 +111,8 @@ namespace ECommerceApp.UnitTests.Catalog.Images
                 new Mock<ICatalogUnitOfWork>().Object,
                 new Mock<IOutboxWriter>().Object,
                 _cache,
-                Options.Create(new CacheOptions()));
+                Options.Create(new CacheOptions()),
+                new ProductCacheInvalidator(_cache));
         }
 
         private ImageService CreateImageService()

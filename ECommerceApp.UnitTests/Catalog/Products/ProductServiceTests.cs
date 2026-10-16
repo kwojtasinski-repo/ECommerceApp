@@ -24,6 +24,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         private readonly Mock<IImageUrlBuilder> _urlBuilder = new();
         private readonly Mock<ICatalogUnitOfWork> _uow = new();
         private readonly Mock<IOutboxWriter> _outboxWriter = new();
+        private readonly Mock<IProductCacheInvalidator> _cacheInvalidator = new();
         private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
         private readonly IOptions<CacheOptions> _cacheOptions = Options.Create(new CacheOptions());
 
@@ -37,7 +38,35 @@ namespace ECommerceApp.UnitTests.Catalog.Products
                 _uow.Object,
                 _outboxWriter.Object,
                 _cache,
-                _cacheOptions);
+                _cacheOptions,
+                _cacheInvalidator.Object);
+        }
+
+        private void SetupDelete(bool result)
+        {
+            _productRepo.Setup(r => r.DeleteAsync(It.IsAny<ProductId>())).ReturnsAsync(result);
+        }
+
+        [Fact]
+        public async Task DeleteProduct_WhenDeleted_InvalidatesCachedDetails()
+        {
+            SetupDelete(true);
+
+            var result = await CreateService().DeleteProduct(7);
+
+            result.Should().BeTrue();
+            _cacheInvalidator.Verify(i => i.InvalidateDetails(7), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteProduct_WhenNothingDeleted_DoesNotInvalidate()
+        {
+            SetupDelete(false);
+
+            var result = await CreateService().DeleteProduct(7);
+
+            result.Should().BeFalse();
+            _cacheInvalidator.Verify(i => i.InvalidateDetails(It.IsAny<int>()), Times.Never);
         }
 
         private Mock<IOutboxTransaction> SetupProductPublishing()

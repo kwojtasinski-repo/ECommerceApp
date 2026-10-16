@@ -43,6 +43,25 @@
   context, rejected alternatives (ambient scoped-DI transaction accessor, `TransactionScope`/MSDTC),
   and the exit trigger.
 
+### [DD-004] `CatalogList:*` cache entries can serve a stale image for up to 15 s after an image change
+
+- **Decision**: accepted limitation, no roadmap item. `IProductCacheInvalidator` evicts only the
+  per-product `CatalogProduct:{id}` details entry when images are added/changed/deleted (and when a
+  product is deleted). The paged list entries (`CatalogList:{page}:{size}:{search}:{category}`, built in
+  `ProductService.GetProducts`) are keyed by query, not by product, so they are not evicted and expire
+  on their own after `CacheOptions.CatalogListTtl` (default 15 s).
+- **Impact**: a catalog list page may show the previous main image (or a just-deleted product) for up
+  to 15 s; product details are already fresh.
+
+### [DD-005] Uploaded images are decoded and re-encoded: ICC profiles lost, up to ~160 MB decode memory
+
+- **Decision**: accepted. `ImageSanitizer` decodes every upload and re-encodes it (strips metadata and
+  embedded payloads). Side effects: embedded ICC color profiles are dropped (colors may shift slightly for
+  wide-gamut sources), and decoding a max-size image allocates about 4 bytes per pixel, i.e. up to
+  ~160 MB for `ImageLimitsOptions.MaxPixels` = 40,000,000 (also capped at 10,000 x 10,000).
+- **Option if memory pressure shows up**: lower `Catalog:Images:MaxPixels` in configuration (no code
+  change needed).
+
 ---
 
 ## Resolved

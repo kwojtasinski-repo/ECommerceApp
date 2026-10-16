@@ -78,7 +78,7 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 | O6 | **`web-ui-views-report.md` ⚠️ rows** | XS | ✅ Report re-verified against code 2026-10-16; Orders/Payments `Details`, `MyPayments`, refund `View`/`Request`/Approve+Reject and Profile are all fine. Also closed a real hole: `ProfileController` `Edit`/`EditContactInfo` POST had no ownership check. Remaining: `Payments/Create` GET keeps `int orderId` (spec said `Guid paymentId`) — decision deferred, no change until the project is straightened out. |
 | O7 | **Test GO-gate live** (ADR-0033) | S | The gate was validated with piped payloads only. |
 | O8 | **Repo-root clutter** | XS | Untracked demo folders, `74,`, `*.log`, `screen_*.PNG` in the repo root. |
-| O9 | **Docker images with SkiaSharp** | S | Image upload now decodes/re-encodes with SkiaSharp (`14b44bdc`). `docker build` of both Dockerfiles and a container start with one image upload have never been run — native libs may be missing in the runtime image. |
+| O9 | **Docker images with SkiaSharp** | S | Image upload now decodes/re-encodes with SkiaSharp (`14b44bdc`). `docker build` of both Dockerfiles and a container start with one image upload have never been run — native libs may be missing in the runtime image. Related, accepted and not roadmap items: stale `CatalogList:*` image up to 15 s (DD-004) and ICC loss / ~160 MB decode (DD-005) in [`known-issues.md`](../../.github/context/known-issues.md). `DeleteProduct` cache eviction fixed 2026-10-16. |
 
 Deferred by choice (see "Future architectural considerations" above): F2, F5 Phase 3, DD-003 (local outbox per BC), the checkout partial-availability modal idea, `ExpiredRefreshTokenCleanupJob`.
 

@@ -31,6 +31,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         private readonly IOutboxWriter _outboxWriter;
         private readonly IMemoryCache _cache;
         private readonly CacheOptions _cacheOptions;
+        private readonly IProductCacheInvalidator _productCacheInvalidator;
 
         public ProductService(
             IProductRepository productRepo,
@@ -40,7 +41,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             ICatalogUnitOfWork unitOfWork,
             IOutboxWriter outboxWriter,
             IMemoryCache cache,
-            IOptions<CacheOptions> cacheOptions)
+            IOptions<CacheOptions> cacheOptions,
+            IProductCacheInvalidator productCacheInvalidator)
         {
             _productRepo = productRepo;
             _categoryRepo = categoryRepo;
@@ -50,6 +52,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             _outboxWriter = outboxWriter;
             _cache = cache;
             _cacheOptions = cacheOptions.Value;
+            _productCacheInvalidator = productCacheInvalidator;
         }
 
         public async Task<int> AddProduct(CreateProductDto dto)
@@ -105,7 +108,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
         public async Task<bool> DeleteProduct(int id)
         {
-            return await _productRepo.DeleteAsync(new ProductId(id));
+            var deleted = await _productRepo.DeleteAsync(new ProductId(id));
+            if (deleted)
+            {
+                _productCacheInvalidator.InvalidateDetails(id);
+            }
+
+            return deleted;
         }
 
         public async Task<ProductDetailsVm> GetProductDetails(int id, CancellationToken cancellationToken = default)
