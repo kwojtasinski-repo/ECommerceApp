@@ -34,8 +34,8 @@ Complex LINQ queries (SQL visible next to the query)
   translation, `Any`/`All`/`Contains` or navigation filters, `ExecuteUpdate`/`ExecuteDelete`/`FromSql`, a predicate
   duplicated across methods, or `Join`/`GroupBy`/`SelectMany`. Counting conditions alone is not the criterion.
 - For those queries, use the `linq-complexity-discovery` skill (`.github/skills/linq-complexity-discovery/SKILL.md`):
-  generate the SQL deliberately (`ToQueryString()` on a SQL Server-configured context, which needs no live database;
-  never InMemory) and keep it in a `// SQL (EF Core, SQL Server):` comment above the query. Never write that SQL from memory.
+  generate the SQL deliberately (captured from the real repository method with command interceptors on a SQL Server
+  context that never connects, also for `ExecuteUpdate`/`ExecuteDelete`; never InMemory) and keep it in a `// SQL (EF Core, SQL Server):` comment above the query. Never write that SQL from memory.
 - When you change such a query, regenerate and update the comment, or delete it if no trigger remains, and update the
   method description in the same change.
 

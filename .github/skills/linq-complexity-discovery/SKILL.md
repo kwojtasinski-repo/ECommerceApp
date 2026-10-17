@@ -53,23 +53,43 @@ Do not edit anything in this mode.
 
 For each query that hits a trigger and has no comment:
 
-1. **Generate the SQL on purpose. Do not write it from memory.**
-   - For queries that return a value or a list, use `ToQueryString()` on the real expression.
-     It works on a SQL Server-configured context **without a reachable database**:
-     ```csharp
-     var options = new DbContextOptionsBuilder<MessagingDbContext>()
-         .UseSqlServer("Server=tcp:127.0.0.1,1;Database=Probe;User Id=x;Password=x;TrustServerCertificate=True;Connect Timeout=1")
-         .Options;
-     using var context = new MessagingDbContext(options);
-     var sql = context.Outbox.Where(/* the real predicate */).ToQueryString();
-     ```
-     Put the probe in a throwaway test in a test project that can see the context (internal contexts need
-     `InternalsVisibleTo`; `ECommerceApp.IntegrationTests` has it for Infrastructure), write the SQL to the
-     test output or a scratch file, run it, then **delete the probe**. Never commit a probe.
-   - `ToQueryString()` does not exist for `ExecuteUpdate` / `ExecuteDelete`. Run the real code against
-     SQL Server (the `E2E.Backend` Testcontainers fixtures, or a local MSSQL) with EF command logging
-     (`LogTo(..., [RelationalEventId.CommandExecuted])`) and copy the executed statement. If that is not
-     possible, write the SQL by hand and label it `(hand-written, not generated)`.
+1. **Generate the SQL on purpose. Do not write it from memory.** Capture the SQL of the REAL repository method
+   (no rebuilt expression, so no drift) with command interceptors on a SQL Server-configured context that never
+   opens a connection. This works for reads, `ExecuteUpdate` and `ExecuteDelete` alike (verified on EF Core 10):
+   ```csharp
+   private const string Fake = "Server=tcp:127.0.0.1,1;Database=Probe;User Id=x;Password=x;TrustServerCertificate=True;Connect Timeout=1";
+   private sealed class Stop : Exception { }
+
+   private sealed class SuppressOpen : DbConnectionInterceptor   // the connection never opens
+   {
+       public override InterceptionResult ConnectionOpening(DbConnection c, ConnectionEventData e, InterceptionResult r) => InterceptionResult.Suppress();
+       public override ValueTask<InterceptionResult> ConnectionOpeningAsync(DbConnection c, ConnectionEventData e, InterceptionResult r, CancellationToken ct = default) => ValueTask.FromResult(InterceptionResult.Suppress());
+   }
+
+   private sealed class Capture : DbCommandInterceptor            // record the statement, then stop
+   {
+       public List<string> Sql { get; } = new();
+       private void Record(DbCommand command) { Sql.Add(command.CommandText + Environment.NewLine + "-- params: " + string.Join(", ", command.Parameters.Cast<DbParameter>().Select(p => p.ParameterName + "=" + p.Value))); throw new Stop(); }
+       // override ReaderExecuting/ReaderExecutingAsync, NonQueryExecuting/NonQueryExecutingAsync (ExecuteUpdate/Delete)
+       // and ScalarExecuting/ScalarExecutingAsync (Count/Any) -> Record(command); return result;
+   }
+
+   var capture = new Capture();
+   var options = new DbContextOptionsBuilder<OrdersDbContext>().UseSqlServer(Fake).AddInterceptors(capture, new SuppressOpen()).Options;
+   // call the real method; outcome: `Stop` thrown -> translated, capture.Sql[0] holds the statement;
+   //                        InvalidOperationException "could not be translated" -> translation FAILURE (nothing captured)
+   await new OrderRepository(new OrdersDbContext(options)).GetAllAsync(10, 1, "ORD-AB12");
+   ```
+   - Put the probe in a throwaway test in a project that can see the internal context and repository
+     (`ECommerceApp.IntegrationTests` has `InternalsVisibleTo` for Infrastructure), write the captured SQL to a scratch
+     file, run it, then **delete the probe**. Never commit a probe.
+   - A `could not be translated` result is a real bug on SQL Server that InMemory hides. Stop for that query, report
+     it, and do not invent SQL. Add a test in `ECommerceApp.E2E.Backend/Persistence/QueryTranslation/` that runs the
+     method on real SQL Server and asserts the results (see `UserProfileQueryTranslationE2ETests`).
+   - Pass valid arguments: value-object constructors throw on bad input and that is not a translation error.
+   - For an expression that is not inside a repository method, rebuild it and call `ToQueryString()` on the same
+     fake-connection context; `ToQueryString()` itself does not exist for `ExecuteUpdate`/`ExecuteDelete`.
+   - Parameter names (`@p`, `@now2`, ...) depend on the EF version: leave them as EF produced them.
    - InMemory cannot show SQL. Never use it for this.
 2. **Write the comment directly above the query**, stable marker included so it can be found by grep:
    ```csharp

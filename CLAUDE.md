@@ -16,8 +16,9 @@ Start at [`.github/instructions/agent-workflow.instructions.md`](.github/instruc
 
 When you write or change LINQ over a `DbSet` (mixed `&&`/`||`, nullable columns, `TypedId`/converters,
 `Any`/`All`/`Contains`, `ExecuteUpdate`/`ExecuteDelete`, `Join`/`GroupBy`, predicates duplicated across methods),
-use the `linq-complexity-discovery` skill. It generates the SQL deliberately (`ToQueryString()` on a SQL Server
-context, no live database needed; InMemory cannot do it) and keeps it in a `// SQL (EF Core, SQL Server):` comment
+use the `linq-complexity-discovery` skill. It generates the SQL deliberately (captured from the real repository method
+with command interceptors on a SQL Server context that never connects, also for `ExecuteUpdate`/`ExecuteDelete`;
+InMemory cannot do it) and keeps it in a `// SQL (EF Core, SQL Server):` comment
 above the query. Never write that SQL from memory, and when you change such a query regenerate or delete the comment.
 Canonical rules: [`.github/skills/linq-complexity-discovery/SKILL.md`](.github/skills/linq-complexity-discovery/SKILL.md),
 short form in [`.github/instructions/efcore.instructions.md`](.github/instructions/efcore.instructions.md).
