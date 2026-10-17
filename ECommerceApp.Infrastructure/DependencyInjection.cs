@@ -35,6 +35,7 @@ namespace ECommerceApp.Infrastructure
             services.Configure<CouponsOptions>(configuration.GetSection(CouponsOptions.SectionName));
             services.Configure<ChunkedUploadOptions>(configuration.GetSection(ChunkedUploadOptions.SectionName));
             services.Configure<ImageLimitsOptions>(configuration.GetSection(ImageLimitsOptions.SectionName));
+            services.Configure<ECommerceApp.Application.External.NbpClientOptions>(configuration.GetSection(ECommerceApp.Application.External.NbpClientOptions.SectionName));
             services.AddDatabase(configuration);
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);

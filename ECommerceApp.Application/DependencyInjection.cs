@@ -38,6 +38,7 @@ namespace ECommerceApp.Application
             services.Configure<CouponsOptions>(_ => { });
             services.Configure<ChunkedUploadOptions>(_ => { });
             services.Configure<ImageLimitsOptions>(_ => { });
+            services.Configure<ECommerceApp.Application.External.NbpClientOptions>(_ => { });
             services.AddFilesStore();
             services.AddErrorHandling();
             services.AddNbpClient();

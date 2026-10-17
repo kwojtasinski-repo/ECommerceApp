@@ -10,7 +10,8 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Supporting.Currencies
 {
-    public class NBPClientTests : BaseTest<INBPClient>
+    /// <summary>Deterministic tests against a canned NBP response (no network).</summary>
+    public class NBPClientTests : NbpStubBaseTest
     {
         public NBPClientTests(ITestOutputHelper output) : base(output) { }
 
@@ -25,7 +26,7 @@ namespace ECommerceApp.IntegrationTests.Supporting.Currencies
             var exchangeRate = JsonConvert.DeserializeObject<ExchangeRate>(rate);
             exchangeRate.ShouldNotBeNull();
             exchangeRate.Rates.ShouldNotBeEmpty();
-            exchangeRate.Rates[0].Mid.ShouldBeGreaterThan(0);
+            exchangeRate.Rates[0].Mid.ShouldBe(4.25m);
         }
 
         [Fact]
@@ -49,6 +50,36 @@ namespace ECommerceApp.IntegrationTests.Supporting.Currencies
         }
     }
 
+    /// <summary>
+    /// Contract test against the real api.nbp.pl. Excluded from the default run; execute explicitly with
+    /// <c>dotnet test --filter "Category=ExternalApi"</c>.
+    /// </summary>
+    [Trait("Category", "ExternalApi")]
+    public class NBPClientContractTests : BaseTest<INBPClient>
+    {
+        public NBPClientContractTests(ITestOutputHelper output) : base(output) { }
+
+        [Fact]
+        public async Task real_nbp_should_return_currency_table_with_positive_rates()
+        {
+            var table = await _service.GetCurrencyTable(CancellationToken.None);
+
+            var tables = JsonConvert.DeserializeObject<List<ExchangeRate>>(table);
+            tables.ShouldNotBeNull();
+            tables.ShouldNotBeEmpty();
+        }
+
+        [Fact]
+        public async Task real_nbp_should_return_eur_rate()
+        {
+            var rate = await _service.GetCurrency("eur", CancellationToken.None);
+
+            rate.ShouldNotBeNull();
+            var exchangeRate = JsonConvert.DeserializeObject<ExchangeRate>(rate);
+            exchangeRate.Rates[0].Mid.ShouldBeGreaterThan(0);
+        }
+    }
+
     internal class ExchangeRate
     {
         public string Table { get; set; }
@@ -64,4 +95,3 @@ namespace ECommerceApp.IntegrationTests.Supporting.Currencies
         public decimal Mid { get; set; }
     }
 }
-

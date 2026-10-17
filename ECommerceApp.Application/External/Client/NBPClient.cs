@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using Microsoft.Extensions.Options;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,11 +11,12 @@ namespace ECommerceApp.Application.External.Client
 {
     public class NBPClient : INBPClient
     {
-        private string _baseUrl = "http://api.nbp.pl";
+        private readonly string _baseUrl;
         private readonly HttpClient _httpClient;
 
-        public NBPClient(IHttpClientFactory factory)
+        public NBPClient(IHttpClientFactory factory, IOptions<NbpClientOptions> options)
         {
+            _baseUrl = options.Value.BaseUrl;
             _httpClient = factory.CreateClient("NBPClient");
         }
 

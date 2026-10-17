@@ -83,6 +83,11 @@ Pattern 1: Service-level integration tests
 - Use `FluentAssertions` for assertions.
 - `Dispose()` calls `EnsureDeleted()` — always let it run; do not suppress.
 
+External HTTP APIs (NBP) in integration tests
+- Never let a regular test call a live third-party API. `NBPClient` reads its base URL from `NbpClientOptions` (section `NbpClient`); tests derive from `NbpStubBaseTest`, which replaces the primary handler of the `"NBPClient"` HttpClient (`ConfigurePrimaryHttpMessageHandler`) with a canned in-process response.
+- At most one small contract test per external API may hit the real service. Mark it `[Trait("Category", "ExternalApi")]` (see `NBPClientContractTests`).
+- Run everything except live-API tests: `dotnet test --filter "Category!=ExternalApi"`. Run only the contract tests: `dotnet test --filter "Category=ExternalApi"`. xunit has no built-in default exclusion, so pass the filter explicitly (CI and local default runs).
+
 Pattern 2: API controller integration tests
 - Use `IClassFixture<CustomWebApplicationFactory<Startup>>` directly — NOT `BaseTest<T>`.
 - Use `_factory.GetAuthenticatedClient()` to get an authenticated **Flurl** HTTP client.
