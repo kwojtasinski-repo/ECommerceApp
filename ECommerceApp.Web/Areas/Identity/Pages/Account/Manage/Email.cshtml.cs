@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using ECommerceApp.Domain.Identity.IAM;
+using ECommerceApp.Web.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +40,7 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account.Manage
         public class InputModel
         {
             [Required]
-            [EmailAddress]
+            [ProfileEmail]
             [Display(Name = "New email")]
             public string NewEmail { get; set; }
         }

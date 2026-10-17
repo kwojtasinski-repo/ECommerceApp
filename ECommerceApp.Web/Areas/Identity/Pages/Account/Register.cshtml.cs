@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.Application.AccountProfile.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
+using ECommerceApp.Web.Validation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -52,7 +53,7 @@ namespace ECommerceApp.Web.Areas.Identity.Pages.Account
         public class InputModel
         {
             [Required]
-            [EmailAddress]
+            [ProfileEmail]
             [Display(Name = "Email")]
             public string Email { get; set; }
 
