@@ -39,6 +39,33 @@ Presale/Checkout is a bounded context with three delivered slices:
   `/api/v2/checkout/`.
 - Concurrent checkout accepts the documented EC-001 race; no distributed lock is introduced.
 
+### Availability processes
+
+Presale reacts to every `StockAvailabilityChanged` message (published by `StockService` after each
+quantity-changing operation) in two independent ways:
+
+- **Snapshot update.** `StockAvailabilityChangedHandler` refreshes `StockSnapshot`, which
+  `HoldAsync` uses to decide whether a new soft reservation fits.
+- **Invalidation.** The `AvailabilityReservationChange` saga (one `Notify` step, correlation id
+  `ProductId`) enqueues `CheckoutReservationAvailabilityDropped` into the Outbox.
+  `CheckoutReservationAvailabilityDroppedHandler` then calls
+  `InvalidateExcessForProductAsync`, which sums the `Active` reservations of the product and, when
+  they exceed the available quantity, deletes the newest-expiring ones first until the rest fits.
+  Committed reservations are never touched.
+
+Invalidation is state-based: each run recomputes from the current reservations, so a repeated
+delivery finds nothing left to do. A reservation already removed by the expiry job or a user
+cancel makes `DeleteAsync` throw; the message fails and its retry recomputes from fresh data.
+
+Scenarios covered (details in
+[Availability invalidation scenarios](example-implementation/availability-invalidation-scenarios.md)):
+
+- S1 holds still fit, nothing removed; S2 holds exceed availability, newest removed first;
+  S3 committed holds ignored; S4 bursts of events for one product.
+- S5 repeated delivery; S6 hold already removed by expiry or cancel; S7 concurrent delivery by two
+  pollers; S8 crash before `MarkDispatched` — all safe or self-healing.
+- S9 stale redelivery after availability rose — accepted risk (see Risks).
+
 Implementation details are maintained in these companions:
 
 - [Checkout confirmation flow](example-implementation/checkout-confirm-flow.md)
@@ -52,6 +79,20 @@ with HTTP clients. The BFF avoids a duplicated product projection, while `StockS
 eventual consistency for availability. Database persistence survives process restarts, and the
 memory cache remains an optimisation rather than the source of truth. The definitive Inventory
 reservation still occurs at order placement, so the pre-check cannot guarantee stock by itself.
+
+### Risks
+
+- **Stale replay of an availability message (accepted).** A redelivered
+  `CheckoutReservationAvailabilityDropped` carries the quantity from the moment of the event. If it
+  is replayed after availability has risen (for example a zombie outbox row re-dispatched after a
+  crash), `InvalidateExcessForProductAsync` can remove holds that are valid at the current stock
+  level. The affected customers must initiate checkout again; Inventory counters are not touched
+  and committed holds are unaffected. The case is accepted as too rare to justify new state: it
+  needs a crash inside one handler run, a stock increase within the five-minute lock window and
+  active holds on that product at the same time, and it errs on the safe side (holds released
+  early, never late). Revisit if customers report losing holds after a crash or deployment; the
+  cheaper fix is to read availability from `StockSnapshot` instead of the message value, once its
+  update ordering is confirmed.
 
 ## Alternatives considered
 

@@ -2,7 +2,7 @@
 
 **Status**: Accepted
 **BC**: Presale/Checkout
-**Last amended**: —
+**Last amended**: 2026-10-17
 
 ## What this decision covers
 Design of the shopping cart, soft reservations, price-change detection, and
@@ -18,11 +18,13 @@ Design of the shopping cart, soft reservations, price-change detection, and
 | example-implementation/checkout-confirm-flow.md | POST /confirm full sequence: Presale→Orders→Payments | End-to-end checkout |
 | example-implementation/soft-reservation-lifecycle.md | SoftReservation create→confirm→expire lifecycle | Working with reservations |
 | example-implementation/price-change-detection.md | GET /price-changes: how stale prices are detected | Price validation logic |
-
+| example-implementation/availability-invalidation-scenarios.md | How holds react to availability drops: scenarios S1-S9, accepted risks | Touching `InvalidateExcessForProductAsync`, the availability saga or outbox redelivery |
 ## Key rules
 - EC-001 decision: Accept the race condition on concurrent checkout — no distributed lock
 - `IOrderClient` is the ACL — Presale never calls Orders BC directly
 - Switch complete — no legacy CartController exists
+- Stale replay of `CheckoutReservationAvailabilityDropped` may remove valid holds — accepted risk, see
+  Risks in the core design document
 
 ## Related ADRs
 - ADR-0011 (Inventory) — soft reservations translate to StockHolds
