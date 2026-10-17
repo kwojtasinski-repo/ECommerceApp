@@ -47,6 +47,29 @@ namespace ECommerceApp.Infrastructure.Messaging.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<bool> TryAcquireLeaseAsync(long id, System.DateTime now, System.DateTime leaseExpiresAt, CancellationToken ct = default)
+        {
+            // LEASE, ATOMIC: a single conditional UPDATE. The database serializes concurrent writers on the
+            // row, so the first one flips it to Running with a live lease and every other one matches 0
+            // rows. Covers a DUE Pending row and a ZOMBIE (Running with an expired lease), with the same
+            // predicate GetDueAsync uses. The business reasoning for these exact conditions is on
+            // IOutboxRepository.TryAcquireLeaseAsync; if you change this predicate, update that description
+            // (DOC-SYNC list there) as well.
+            //
+            // ExecuteUpdateAsync is relational-only: this method throws on the InMemory provider. Test hosts
+            // built on BcWebApplicationFactory therefore decorate IOutboxRepository with
+            // InMemoryOutboxClaimDecorator. Rationale and the rules for anyone adding Outbox functionality:
+            // docs/adr/0010/outbox-claim-and-inmemory-test-decorator.md
+            var claimed = await _context.Outbox
+                .Where(m => m.Id == id
+                    && ((m.Status == OutboxStatus.Pending && m.NextAttemptAt <= now)
+                        || (m.Status == OutboxStatus.Running && m.LockExpiresAt < now)))
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.Status, OutboxStatus.Running)
+                    .SetProperty(m => m.LockExpiresAt, leaseExpiresAt), ct);
+            return claimed == 1;
+        }
+
         public async Task UpdateAsync(OutboxMessage message, CancellationToken ct = default)
         {
             _context.Outbox.Update(message);

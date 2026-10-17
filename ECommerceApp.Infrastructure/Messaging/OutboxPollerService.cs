@@ -70,10 +70,12 @@ namespace ECommerceApp.Infrastructure.Messaging
                 return;
             }
 
-            // Each message gets its own scope and its own try/catch: a concurrency conflict (another
-            // poller instance claimed the same row first — expected when multiple hosts share one
-            // Outbox table, as the E2E suite does) must not abort the rest of the batch. Previously one
-            // failing message stopped every message behind it in the same 50-row poll.
+            // Each message gets its own scope and its own try/catch, so one failing message must not abort
+            // the rest of the batch. Before dispatching, a lease on the row is acquired with one atomic conditional
+            // UPDATE (IOutboxRepository.TryAcquireLeaseAsync): when another poller instance leased the same row
+            // first — expected when multiple hosts share one Outbox table, as the E2E suite does — the
+            // lease matches 0 rows and this poller silently skips it. The candidates above are only a
+            // snapshot, so the lease, not that read, decides who dispatches.
             foreach (var message in candidates)
             {
                 if (ct.IsCancellationRequested)
@@ -88,6 +90,12 @@ namespace ECommerceApp.Infrastructure.Messaging
                     var options = scope.ServiceProvider.GetRequiredService<IOptions<ECommerceApp.Application.Constants.RetryPolicyOptions>>();
                     var now = DateTime.UtcNow;
 
+                    var leaseExpiresAt = now + LockWindow;
+                    if (!await outboxRepository.TryAcquireLeaseAsync(message.Id, now, leaseExpiresAt, ct))
+                    {
+                        continue;
+                    }
+
                     if (message.Status == OutboxStatus.Running)
                     {
                         _logger.LogWarning(
@@ -98,8 +106,7 @@ namespace ECommerceApp.Infrastructure.Messaging
                         continue;
                     }
 
-                    message.MarkRunning(now + LockWindow);
-                    await outboxRepository.UpdateAsync(message, ct);
+                    message.MarkRunning(leaseExpiresAt);
 
                     var dispatcher = scope.ServiceProvider.GetRequiredService<OutboxDispatcher>();
                     await dispatcher.DispatchAsync(message, ct);

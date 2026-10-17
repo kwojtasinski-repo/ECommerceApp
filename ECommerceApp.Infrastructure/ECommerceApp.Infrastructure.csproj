@@ -59,6 +59,10 @@
     <!-- OutboxDispatcherTests unit-tests the internal OutboxDispatcher class directly with mocked
          IModuleClient/IOutboxRepository. -->
     <InternalsVisibleTo Include="ECommerceApp.UnitTests" />
+    <!-- InMemoryOutboxClaimDecorator (test host support) implements the Outbox claim on the internal
+         IMessagingDbContext for InMemory hosts, where the production ExecuteUpdateAsync claim cannot run.
+         See docs/adr/0010/outbox-claim-and-inmemory-test-decorator.md. -->
+    <InternalsVisibleTo Include="ECommerceApp.Shared.TestInfrastructure" />
   </ItemGroup>
 
 </Project>

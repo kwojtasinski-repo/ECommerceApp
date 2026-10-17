@@ -25,6 +25,9 @@ namespace ECommerceApp.Shared.TestInfrastructure
     ///         — dispatches to ALL registered handlers synchronously.</item>
     ///   <item>Replaces <see cref="IDbContextMigrator"/> registrations with no-op stubs
     ///         (InMemory databases don't support migrations).</item>
+    ///   <item>Decorates <see cref="IOutboxRepository"/> with <see cref="InMemoryOutboxClaimDecorator"/>,
+    ///         because the production Outbox claim (<c>ExecuteUpdateAsync</c>) cannot run on InMemory. See
+    ///         docs/adr/0010/outbox-claim-and-inmemory-test-decorator.md.</item>
     /// </list>
     /// </summary>
     public class BcWebApplicationFactory : CustomWebApplicationFactory<Startup>
@@ -38,11 +41,36 @@ namespace ECommerceApp.Shared.TestInfrastructure
             {
                 BcDbContextTestSetup.ReplaceAllBcDbContextsWithInMemory(services);
                 BcDbContextTestSetup.MakeAllBcDbContextsTransient(services);
+                DecorateOutboxRepositoryForInMemory(services);
                 ReplaceMessageBrokerWithSynchronous(services);
                 BcDbContextTestSetup.ReplaceDbContextMigratorsWithNoOp(services);
                 EnsureIamDbContextCreatedAndSeeded(services);
                 BcDbContextTestSetup.EnsureAllBcDbContextsCreated(services);
             });
+        }
+
+        /// <summary>
+        /// Wraps the registered <see cref="IOutboxRepository"/> in <see cref="InMemoryOutboxClaimDecorator"/>
+        /// while keeping its lifetime. Must run after the InMemory swap: without it the poller's claim throws
+        /// on InMemory and the poller silently dispatches nothing.
+        /// </summary>
+        private static void DecorateOutboxRepositoryForInMemory(IServiceCollection services)
+        {
+            var original = services.FirstOrDefault(d => d.ServiceType == typeof(IOutboxRepository));
+            if (original?.ImplementationType is null)
+            {
+                throw new InvalidOperationException(
+                    "IOutboxRepository must be registered by implementation type so it can be decorated. "
+                    + "See docs/adr/0010/outbox-claim-and-inmemory-test-decorator.md.");
+            }
+
+            services.Remove(original);
+            services.Add(new ServiceDescriptor(
+                typeof(IOutboxRepository),
+                sp => new InMemoryOutboxClaimDecorator(
+                    (IOutboxRepository)ActivatorUtilities.CreateInstance(sp, original.ImplementationType),
+                    sp.GetRequiredService<ECommerceApp.Infrastructure.Messaging.IMessagingDbContext>()),
+                original.Lifetime));
         }
 
         /// <summary>
