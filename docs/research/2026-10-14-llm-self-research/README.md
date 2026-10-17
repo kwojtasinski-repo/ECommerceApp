@@ -1,256 +1,256 @@
-# Self research: koncepty LLM/agentów + czatbot na stronie + nauka modeli
+# Self research: LLM/agent concepts + a chatbot on the website + learning models
 
-- **Data researchu:** 2026-10-14 (źródła pobrane/wyszukane tego dnia; daty publikacji przy każdym źródle)
-- **Tryb:** samodzielny research asystenta (WebSearch + WebFetch), **nie** przez workflow `research-gather` — brak niezależnej weryfikacji krzyżowej subagentów.
-- **Powiązane:** [`../2026-10-14-agent-patterns-bradmurry/`](../2026-10-14-agent-patterns-bradmurry/) (główny research z blogów Brada Murry'ego + AutoGen)
-- **Zasada oceny pewności:** **Wysoka** = pierwotne źródło (paper/oficjalna dokumentacja) pobrane i zacytowane; **Średnia** = jedno źródło lub paper znany tylko z abstraktu; **Niska** = blogi/streszczenia wtórne, liczby niezweryfikowane.
-- **Czego NIE zrobiłem:** nie czytałem całych paperów (tylko abstrakty/oficjalne strony), nie uruchamiałem żadnego kodu, Medium pominięte na Twoją prośbę.
+- **Research date:** 2026-10-14 (sources fetched/searched on that day; publication dates next to each source)
+- **Mode:** the assistant's own research (WebSearch + WebFetch), **not** via the `research-gather` workflow — no independent cross-verification by subagents.
+- **Related:** [`../2026-10-14-agent-patterns-bradmurry/`](../2026-10-14-agent-patterns-bradmurry/) (main research from Brad Murry's blogs + AutoGen)
+- **Confidence rating rule:** **High** = primary source (paper/official documentation) fetched and quoted; **Medium** = single source or a paper known only from its abstract; **Low** = blogs/secondary summaries, unverified numbers.
+- **What I did NOT do:** I did not read whole papers (only abstracts/official pages), I did not run any code, Medium was skipped at your request.
 
-> **Założenia interpretacyjne (popraw mnie, jeśli źle):**
-> 1. „Taxonomy" zinterpretowałem jako *taksonomię/klasyfikację wzorców agentowych* (nazwanie i pogrupowanie wzorców). Masz ją już de facto — patrz sekcja 1.
-> 2. „Nauka modeli poniżej pojęcia" zinterpretowałem jako *uczenie/trenowanie modeli od poziomu początkującego* (małe modele, fine-tuning, trening od zera). Patrz sekcja 10.
+> **Interpretive assumptions (correct me if wrong):**
+> 1. I interpreted "Taxonomy" as a *taxonomy/classification of agent patterns* (naming and grouping the patterns). You already have it de facto — see section 1.
+> 2. I interpreted "learning models below the concept level" as *learning/training models from beginner level* (small models, fine-tuning, training from scratch). See section 10.
 
 ---
 
-## 1. Taxonomy (klasyfikacja wzorców agentowych)
+## 1. Taxonomy (classification of agent patterns)
 
-**Co to jest:** nazwany podział wzorców projektowych na grupy wg problemu, który rozwiązują. Po co: wspólny język przy projektowaniu i wybór wzorca z drzewa decyzyjnego zamiast „na oko".
+**What it is:** a named division of design patterns into groups by the problem they solve. Why: a shared language when designing, and choosing a pattern from a decision tree instead of "by eye".
 
-Istniejące taksonomie (każda patrzy pod innym kątem):
+Existing taxonomies (each looks from a different angle):
 
-| Źródło | Oś podziału | Wzorce | Pewność |
+| Source | Axis of division | Patterns | Confidence |
 |---|---|---|---|
-| Anthropic, *Building Effective Agents* | **workflow vs agent**; 5 wzorców workflow | prompt chaining, routing, parallelization (sectioning/voting), orchestrator-workers, evaluator-optimizer | Wysoka |
-| Liu i in., *Agent Design Pattern Catalogue* (arXiv 2405.10467, v1 16.05.2024, v4 06.11.2024) | architektura FM-agentów | 18 wzorców + „decision model for selecting the patterns" | Średnia (tylko abstrakt; grupowania nie widziałem) |
-| Brad Murry, 13 wzorców (nasze źródła `05`, `09`–`21`) | główny *problem orkiestracji* | Flow, Authority, Delegation, Reasoning, Planning, Coordination (6 kategorii × 13 wzorców) | Wysoka (pełny tekst) |
-| Huang i Zhou, *Two-Dimensional Framework* (arXiv 2605.13850) | dwie osie: topologia wykonania × funkcja poznawcza | m.in. katalogi Anthropic/Google ADK/LangChain | Niska (tylko snippet z wyszukiwarki, preprint) |
+| Anthropic, *Building Effective Agents* | **workflow vs agent**; 5 workflow patterns | prompt chaining, routing, parallelization (sectioning/voting), orchestrator-workers, evaluator-optimizer | High |
+| Liu et al., *Agent Design Pattern Catalogue* (arXiv 2405.10467, v1 16.05.2024, v4 06.11.2024) | architecture of FM agents | 18 patterns + "decision model for selecting the patterns" | Medium (abstract only; I did not see the grouping) |
+| Brad Murry, 13 patterns (our sources `05`, `09`–`21`) | the main *orchestration problem* | Flow, Authority, Delegation, Reasoning, Planning, Coordination (6 categories × 13 patterns) | High (full text) |
+| Huang and Zhou, *Two-Dimensional Framework* (arXiv 2605.13850) | two axes: execution topology × cognitive function | incl. the Anthropic/Google ADK/LangChain catalogues | Low (search-engine snippet only, preprint) |
 
-Cytaty (pobrane 2026-10-14):
-- Anthropic: Workflows = „Systems where LLMs and tools are orchestrated through predefined code paths"; agenci: model sam wybiera kroki i narzędzia. Rada: zaczynaj od najprostszego rozwiązania, „adding complexity only when it demonstrably improves outcomes". https://www.anthropic.com/engineering/building-effective-agents
-- Liu i in.: „a pattern catalogue consisting of 18 architectural patterns" + „decision model". https://arxiv.org/abs/2405.10467
+Quotes (fetched 2026-10-14):
+- Anthropic: Workflows = "Systems where LLMs and tools are orchestrated through predefined code paths"; agents: the model itself chooses the steps and tools. Advice: start with the simplest solution, "adding complexity only when it demonstrably improves outcomes". https://www.anthropic.com/engineering/building-effective-agents
+- Liu et al.: "a pattern catalogue consisting of 18 architectural patterns" + "decision model". https://arxiv.org/abs/2405.10467
 
-**Wniosek (moja interpretacja):** taksonomię już masz — tabela „Flow/Authority/Delegation/Reasoning/Planning/Coordination" Brada to klasyfikacja *po problemie*, a podział Anthropic to klasyfikacja *po stopniu autonomii* (workflow → agent). Warto trzymać obie: najpierw „czy to workflow czy agent?", potem „który wzorzec z kategorii?".
+**Conclusion (my interpretation):** you already have a taxonomy — Brad's "Flow/Authority/Delegation/Reasoning/Planning/Coordination" table is a classification *by problem*, while Anthropic's division is a classification *by degree of autonomy* (workflow → agent). It is worth keeping both: first "is this a workflow or an agent?", then "which pattern from the category?".
 
-Źródła: [Anthropic](https://www.anthropic.com/engineering/building-effective-agents), [Liu 2024](https://arxiv.org/abs/2405.10467), [2605.13850 (snippet)](https://www.alphaxiv.org/abs/2605.13850.md)
+Sources: [Anthropic](https://www.anthropic.com/engineering/building-effective-agents), [Liu 2024](https://arxiv.org/abs/2405.10467), [2605.13850 (snippet)](https://www.alphaxiv.org/abs/2605.13850.md)
 
 ---
 
 ## 2. LLM-as-a-Judge
 
-**Co to jest:** użycie modelu jako oceniającego (scoring lub porównanie A/B) zamiast człowieka/metryk. Skaluje ewaluację tam, gdzie nie ma jednej poprawnej odpowiedzi.
+**What it is:** using a model as the evaluator (scoring or A/B comparison) instead of a human/metrics. It scales evaluation where there is no single correct answer.
 
-**Fakty (Wysoka):** Zheng i in., *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena* (arXiv 2306.05685, 09.06.2023; v4 24.12.2023):
-- mocni sędziowie jak GPT-4 osiągają „over 80% agreement, the same level of agreement between humans";
-- nazwane obciążenia: **position bias, verbosity bias, self-enhancement bias**; ograniczona zdolność rozumowania sędziego.
+**Facts (High):** Zheng et al., *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena* (arXiv 2306.05685, 09.06.2023; v4 24.12.2023):
+- strong judges such as GPT-4 reach "over 80% agreement, the same level of agreement between humans";
+- named biases: **position bias, verbosity bias, self-enhancement bias**; the judge's limited reasoning ability.
 https://arxiv.org/abs/2306.05685
 
-**Fakty (Średnia/Niska):** survey Gu i in. (arXiv 2411.15594) dzieli obciążenia na *task-agnostic* (od samego LLM, trudne do usunięcia) i *judgment-specific* (do ograniczenia projektem zadania); drugi survey (arXiv 2412.05579) dodaje m.in. authority i bandwagon bias. Znane mi tylko ze streszczeń wyszukiwarki.
+**Facts (Medium/Low):** the survey by Gu et al. (arXiv 2411.15594) divides biases into *task-agnostic* (coming from the LLM itself, hard to remove) and *judgment-specific* (to be limited through task design); a second survey (arXiv 2412.05579) adds, among others, authority and bandwagon bias. Known to me only from search-engine summaries.
 
-**Praktyki ograniczania błędu (spójne w źródłach; część to moja synteza):**
-- zamiana kolejności odpowiedzi i ponowna ocena (position bias) — Średnia;
-- rozbicie rubryki na małe, binarne kryteria — Niska (blog);
-- kalibracja względem zbioru etykiet ludzkich zanim zaufasz sędziemu — Średnia;
-- sędzia z *innej rodziny modeli* niż generator (self-enhancement) — **to mój wniosek z nazwanego biasu, nie cytat**.
+**Error-mitigation practices (consistent across sources; part of it is my synthesis):**
+- swapping the order of answers and re-evaluating (position bias) — Medium;
+- splitting the rubric into small, binary criteria — Low (blog);
+- calibration against a set of human labels before you trust the judge — Medium;
+- a judge from a *different model family* than the generator (self-enhancement) — **this is my conclusion from the named bias, not a quote**.
 
-**Powiązanie z Bradem:** to dokładnie jego „Quality signal — opinion, not fact" (`07`): krytyk LLM = „the weakest signal: it drifts toward 'looks thorough'". Jego rozwiązanie: sędzia jako *wskazówka*, a decyzję podejmuje deterministyczny gate (recompute + diff). To spójne z literaturą.
+**Connection to Brad:** this is exactly his "Quality signal — opinion, not fact" (`07`): an LLM critic = "the weakest signal: it drifts toward 'looks thorough'". His solution: the judge as a *hint*, and the decision is made by a deterministic gate (recompute + diff). This is consistent with the literature.
 
-Źródła: [Zheng 2023](https://arxiv.org/abs/2306.05685), [Gu survey](https://arxiv.org/pdf/2411.15594), [survey 2412.05579](https://arxiv.org/pdf/2412.05579)
+Sources: [Zheng 2023](https://arxiv.org/abs/2306.05685), [Gu survey](https://arxiv.org/pdf/2411.15594), [survey 2412.05579](https://arxiv.org/pdf/2412.05579)
 
 ---
 
 ## 3. Reflection
 
-**Co to jest:** model ocenia/krytykuje własny wynik i poprawia go (pętla generate → critique → refine). Warianty: Self-Refine, Reflexion (refleksje trafiają do pamięci epizodycznej).
+**What it is:** the model evaluates/critiques its own output and corrects it (generate → critique → refine loop). Variants: Self-Refine, Reflexion (reflections go to episodic memory).
 
-**Fakty:**
-- **Reflexion** (Shinn i in., arXiv 2303.11366, 20.03.2023; v4 10.10.2023): wzmacnianie agentów „not by updating weights" lecz słowną refleksją zapisywaną w pamięci epizodycznej; deklarowane „91% pass@1 on HumanEval … surpassing … GPT-4 that achieves 80%". Wysoka (abstrakt, deklaracja autorów).
-- **Kontrargument:** Huang i in., *Large Language Models Cannot Self-Correct Reasoning Yet* (arXiv 2310.01798, 03.10.2023; v2 14.03.2024): „LLMs struggle to self-correct their responses without external feedback", w niektórych przypadkach jakość *spada* po samokorekcie. Wysoka.
-- Wtórne streszczenia (Niska): wąskim gardłem jest *wykrywanie* błędu, nie jego naprawa; zyski w paperach często zależą od zewnętrznych etykiet/oracle.
+**Facts:**
+- **Reflexion** (Shinn et al., arXiv 2303.11366, 20.03.2023; v4 10.10.2023): reinforcing agents "not by updating weights" but through verbal reflection stored in episodic memory; claimed "91% pass@1 on HumanEval … surpassing … GPT-4 that achieves 80%". High (abstract, authors' claim).
+- **Counterargument:** Huang et al., *Large Language Models Cannot Self-Correct Reasoning Yet* (arXiv 2310.01798, 03.10.2023; v2 14.03.2024): "LLMs struggle to self-correct their responses without external feedback", in some cases quality *drops* after self-correction. High.
+- Secondary summaries (Low): the bottleneck is *detecting* the error, not fixing it; gains in papers often depend on external labels/oracles.
 
-**Wniosek (moja synteza):** refleksja działa, gdy jest **zewnętrzny sygnał** (testy, wynik narzędzia, deterministyczny verify). Bez niego krytyka „z głowy" bywa bezwartościowa lub szkodliwa. To dokładnie wzorzec Generator/Critic/Refiner z `17` + gate z `22`–`25` u Brada (krytyk + budżet `size(drafts) < 4` + stan `stalled`).
+**Conclusion (my synthesis):** reflection works when there is an **external signal** (tests, tool result, deterministic verify). Without it, criticism "off the top of the head" can be worthless or harmful. This is exactly the Generator/Critic/Refiner pattern from `17` + the gate from `22`–`25` in Brad (critic + budget `size(drafts) < 4` + `stalled` state).
 
-Źródła: [Reflexion](https://arxiv.org/abs/2303.11366), [Huang 2023/24](https://arxiv.org/abs/2310.01798), [Self-Refine](https://arxiv.org/pdf/2303.17651), [Survey 2308.03188](https://arxiv.org/pdf/2308.03188)
+Sources: [Reflexion](https://arxiv.org/abs/2303.11366), [Huang 2023/24](https://arxiv.org/abs/2310.01798), [Self-Refine](https://arxiv.org/pdf/2303.17651), [Survey 2308.03188](https://arxiv.org/pdf/2308.03188)
 
 ---
 
 ## 4. Prompt Optimization
 
-**Co to jest:** automatyczne strojenie promptów (instrukcje + przykłady few-shot) pod metrykę na zbiorze rozwojowym, zamiast ręcznego „prompt engineeringu".
+**What it is:** automatic tuning of prompts (instructions + few-shot examples) for a metric on a development set, instead of manual "prompt engineering".
 
-**Fakty:**
-- **GEPA** (Agrawal i in., arXiv 2507.19457, 25.07.2025; v2 14.02.2026; ICLR 2026 Oral): optymalizator oparty na refleksji w języku naturalnym i froncie Pareto; deklaracja autorów: „outperforms GRPO by 6% on average and by up to 20%, while using up to 35x fewer rollouts"; ponad 10% nad MIPROv2 (np. +12% na AIME-2025). Wysoka dla *deklaracji*, niezależnie niezweryfikowane.
-- **DSPy:** instrukcje i demonstracje to parametry programu, optymalizatory (MIPROv2, SIMBA, GEPA) szukają wartości maksymalizujących metrykę. Niska/Średnia (blogi/tutoriale).
-- **Zastrzeżenia (Niska, wtórne):** optymalizacja kosztuje wiele wywołań LLM; prompt może przeuczyć się na źle zdefiniowaną metrykę; prompt nie przenosi się niezawodnie między modelami.
+**Facts:**
+- **GEPA** (Agrawal et al., arXiv 2507.19457, 25.07.2025; v2 14.02.2026; ICLR 2026 Oral): an optimizer based on natural-language reflection and a Pareto front; authors' claim: "outperforms GRPO by 6% on average and by up to 20%, while using up to 35x fewer rollouts"; over 10% above MIPROv2 (e.g. +12% on AIME-2025). High for the *claim*, not independently verified.
+- **DSPy:** instructions and demonstrations are program parameters, optimizers (MIPROv2, SIMBA, GEPA) search for values that maximize the metric. Low/Medium (blogs/tutorials).
+- **Caveats (Low, secondary):** optimization costs many LLM calls; a prompt can overfit to a badly defined metric; a prompt does not transfer reliably between models.
 
-**Powiązanie:** to ta sama pętla co Brad „self-evolving": RUN → MEASURE → DISCOVER → BUILD, „one change at a time", „report the ceiling" (`07`). GEPA robi to automatycznie na promptach; Brad na całym workflow/narzędziach.
+**Connection:** this is the same loop as Brad's "self-evolving": RUN → MEASURE → DISCOVER → BUILD, "one change at a time", "report the ceiling" (`07`). GEPA does it automatically on prompts; Brad does it on the whole workflow/tools.
 
-Źródła: [GEPA](https://arxiv.org/abs/2507.19457), [DSPy overview (blog)](https://founderscreative.substack.com/p/automating-prompt-engineering-with), [agentpatterns.ai](https://agentpatterns.ai/agent-design/dspy-programmatic-prompt-optimization/)
+Sources: [GEPA](https://arxiv.org/abs/2507.19457), [DSPy overview (blog)](https://founderscreative.substack.com/p/automating-prompt-engineering-with), [agentpatterns.ai](https://agentpatterns.ai/agent-design/dspy-programmatic-prompt-optimization/)
 
 ---
 
 ## 5. SLM — Small Language Models
 
-**Co to jest:** małe modele (zwykle < ~10 mld parametrów wg streszczeń — definicja nieostra) działające na sprzęcie konsumenckim, tanie i szybkie, dobre w wąskich, powtarzalnych zadaniach.
+**What it is:** small models (usually < ~10 billion parameters according to summaries — the definition is fuzzy) running on consumer hardware, cheap and fast, good at narrow, repetitive tasks.
 
-**Fakty (Wysoka dla stanowiska autorów):** Belcak i in. (NVIDIA Research), *Small Language Models are the Future of Agentic AI* (arXiv 2506.02153, 02.06.2025; wersja v3 widoczna z datą 22.09.2026): SLM są „sufficiently powerful, inherently more suitable, and necessarily more economical" dla wielu wywołań agentowych; systemy heterogeniczne (małe + duże) naturalnym wyborem tam, gdzie potrzebna ogólna rozmowa; paper podaje algorytm konwersji agentów LLM→SLM. To **position paper** (autorzy sami nazywają to „value statement" i zapraszają do krytyki) — nie dowód empiryczny.
+**Facts (High for the authors' position):** Belcak et al. (NVIDIA Research), *Small Language Models are the Future of Agentic AI* (arXiv 2506.02153, 02.06.2025; version v3 visible with date 22.09.2026): SLMs are "sufficiently powerful, inherently more suitable, and necessarily more economical" for many agentic calls; heterogeneous systems (small + large) are the natural choice where general conversation is needed; the paper gives an algorithm for converting LLM agents→SLM. This is a **position paper** (the authors themselves call it a "value statement" and invite criticism) — not empirical proof.
 
-**Gdzie to pasuje w praktyce:** wzorzec *routing* u Anthropic — „send simple queries to a smaller, cheaper model and hard ones to a more capable model". Czyli: SLM do klasyfikacji/ekstrakcji/routingu, duży model do trudnych kroków.
+**Where this fits in practice:** the *routing* pattern in Anthropic — "send simple queries to a smaller, cheaper model and hard ones to a more capable model". That is: SLM for classification/extraction/routing, a large model for hard steps.
 
-**Niska:** liczby typu „40–70% zapytań do zastąpienia", „10–30× taniej" pochodzą z blogów, nie z abstraktu — nie używać bez sprawdzenia w PDF.
+**Low:** numbers like "40–70% of queries to be replaced", "10–30× cheaper" come from blogs, not from the abstract — do not use without checking in the PDF.
 
-Źródła: [arXiv 2506.02153](https://arxiv.org/abs/2506.02153), [Anthropic – routing](https://www.anthropic.com/engineering/building-effective-agents)
+Sources: [arXiv 2506.02153](https://arxiv.org/abs/2506.02153), [Anthropic – routing](https://www.anthropic.com/engineering/building-effective-agents)
 
 ---
 
 ## 6. Prompt caching
 
-**Co to jest:** dostawca zapamiętuje przetworzony *prefiks* promptu; kolejne zapytania z identycznym prefiksem są tańsze i szybsze.
+**What it is:** the provider remembers the processed *prefix* of the prompt; subsequent requests with an identical prefix are cheaper and faster.
 
-**Anthropic (oficjalna dokumentacja, pobrana 2026-10-14; Wysoka):**
-- prefiks = `tools` → `system` → `messages` do bloku z `cache_control`; trafienie wymaga **100% identycznego** prefiksu; do 4 jawnych breakpointów lub automatyczny top-level `cache_control`.
-- TTL: 5 min (domyślnie, odświeżany przy użyciu) albo 1 h (`"ttl": "1h"`).
-- ceny: zapis 5 min = **1.25×** bazowej ceny wejścia, zapis 1 h = **2×**, odczyt = **0.1×** (dla niektórych modeli 0.05× / 0.025×).
-- minima tokenów zależą od modelu (np. 512 / 1 024 / 2 048 / 4 096) — poniżej minimum brak cache'u i brak błędu.
-- zmiana definicji narzędzi unieważnia cały cache (tools → system → messages); timestamp w cache'owanym bloku = brak trafień.
-- weryfikacja: pola `usage.cache_creation_input_tokens` i `usage.cache_read_input_tokens`.
+**Anthropic (official documentation, fetched 2026-10-14; High):**
+- prefix = `tools` → `system` → `messages` up to the block with `cache_control`; a hit requires a **100% identical** prefix; up to 4 explicit breakpoints or an automatic top-level `cache_control`.
+- TTL: 5 min (default, refreshed on use) or 1 h (`"ttl": "1h"`).
+- prices: 5-min write = **1.25×** the base input price, 1-h write = **2×**, read = **0.1×** (for some models 0.05× / 0.025×).
+- token minimums depend on the model (e.g. 512 / 1 024 / 2 048 / 4 096) — below the minimum there is no cache and no error.
+- changing tool definitions invalidates the whole cache (tools → system → messages); a timestamp in the cached block = no hits.
+- verification: the fields `usage.cache_creation_input_tokens` and `usage.cache_read_input_tokens`.
 https://platform.claude.com/docs/en/build-with-claude/prompt-caching
 
-**OpenAI (oficjalna dokumentacja, pobrana 2026-10-14; Wysoka):**
-- włączone domyślnie; minimum 1 024 tokenów (GPT-5.6+); retencja `prompt_cache_options.ttl` = „30m" (starsze modele: in-memory ~5–10 min lub 24 h); odczyt **0.1×**, zapis **1.25×**, „discounted up to 95%"; `usage.input_tokens_details.cached_tokens`.
+**OpenAI (official documentation, fetched 2026-10-14; High):**
+- enabled by default; minimum 1 024 tokens (GPT-5.6+); retention `prompt_cache_options.ttl` = "30m" (older models: in-memory ~5–10 min or 24 h); read **0.1×**, write **1.25×**, "discounted up to 95%"; `usage.input_tokens_details.cached_tokens`.
 https://developers.openai.com/api/docs/guides/prompt-caching
 
-**Praktyka (z dokumentacji):** stałe rzeczy na początek (instrukcje, narzędzia, dokumenty, przykłady), zmienne na koniec; nic zmiennego w cache'owanym prefiksie; monitoruj hit rate. **Uwaga:** ceny/TTL zmieniają się — traktuj jako stan na 2026-10-14.
+**Practice (from the documentation):** put constant things at the start (instructions, tools, documents, examples), variable things at the end; nothing variable in the cached prefix; monitor the hit rate. **Note:** prices/TTL change — treat as the state as of 2026-10-14.
 
-**Dla czatbota:** system prompt + opis sklepu/FAQ/katalog = idealny kandydat na cache'owany prefiks.
-
----
-
-## 7. Long-term memory (pamięć długoterminowa)
-
-**Co to jest:** informacje przeżywające pojedynczą sesję/okno kontekstu: fakty o użytkowniku, historia, wyuczone reguły.
-
-**Fakty:**
-- **MemGPT** (Packer i in., arXiv 2310.08560, 12.10.2023): „virtual context management" wzorowane na hierarchii pamięci systemów operacyjnych — przenoszenie danych między „szybką i wolną" pamięcią, przerwania do sterowania przepływem. Wysoka (abstrakt).
-- **Mem0** (Chhikara i in., arXiv 2504.19413, 28.04.2025): wyciąga, konsoliduje i wyszukuje fakty z rozmów; deklaracje autorów na LOCOMO: +26% względnie (LLM-as-a-Judge) vs OpenAI, −91% opóźnienia p95 i >90% mniej tokenów vs pełny kontekst. **Wysoka dla deklaracji, ale to paper autorów produktu** — nie niezależny benchmark.
-- **Reflexion** trzyma refleksje w pamięci epizodycznej (sekcja 3).
-- **Typologia** semantic (fakty) / episodic (doświadczenia) / procedural (reguły „jak") — Niska (blogi: dev.to, forkast.news), ale spójna między źródłami i narzędziami (Letta, Mem0, LangMem wg streszczeń).
-
-**Powiązanie z Bradem:** jego „context store" to pamięć *w obrębie jednego przebiegu* (typed context, journal, replay). Pamięć długoterminowa między przebiegami to osobna warstwa; jego zasada: „if a value must be durable and inspectable, it belongs in context" (`03`).
-
-**Ryzyka (moja ocena):** pamięć użytkownika = dane osobowe (RODO), zatrucie pamięci (OWASP LLM04), potrzeba kasowania/„zapomnienia".
-
-Źródła: [MemGPT](https://arxiv.org/abs/2310.08560), [Mem0](https://arxiv.org/abs/2504.19413), [dev.to guide](https://dev.to/dublecc/how-ai-agent-memory-works-in-2026-context-episodic-semantic-and-procedural-l3f)
+**For a chatbot:** system prompt + store description/FAQ/catalogue = an ideal candidate for a cached prefix.
 
 ---
 
-## 8. Agent loop (pętla agenta)
+## 7. Long-term memory
 
-**Co to jest:** podstawowa pętla: *wywołaj model → sparsuj wyjście → wykonaj narzędzia → dołącz wyniki do kontekstu → powtórz*, aż do warunku stopu.
+**What it is:** information that outlives a single session/context window: facts about the user, history, learned rules.
 
-**Fakty:**
-- **ReAct** (Yao i in., arXiv 2210.03629, 06.10.2022; v3 10.03.2023): przeplatanie śladów rozumowania i akcji; „ReAct overcomes issues of hallucination and error propagation prevalent in chain-of-thought reasoning". Wysoka.
-- **Anthropic:** agenci działają w pętli użycia narzędzi sterowanej informacją zwrotną ze środowiska; „Stopping conditions, such as a maximum iteration count" utrzymują kontrolę; autonomia = wyższy koszt i ryzyko kumulacji błędów. Wysoka.
-- **Warunki stopu (Niska, blogi, spójne):** cel osiągnięty, limit iteracji, budżet tokenów/kosztu, kolejne błędy narzędzia, anulowanie przez użytkownika; log append-only każdego kroku do replay.
+**Facts:**
+- **MemGPT** (Packer et al., arXiv 2310.08560, 12.10.2023): "virtual context management" modeled on the memory hierarchy of operating systems — moving data between "fast and slow" memory, interrupts to control flow. High (abstract).
+- **Mem0** (Chhikara et al., arXiv 2504.19413, 28.04.2025): extracts, consolidates and retrieves facts from conversations; the authors' claims on LOCOMO: +26% relative (LLM-as-a-Judge) vs OpenAI, −91% p95 latency and >90% fewer tokens vs full context. **High for the claims, but it is a paper by the product's authors** — not an independent benchmark.
+- **Reflexion** keeps reflections in episodic memory (section 3).
+- **Typology** semantic (facts) / episodic (experiences) / procedural ("how-to" rules) — Low (blogs: dev.to, forkast.news), but consistent across sources and tools (Letta, Mem0, LangMem according to summaries).
 
-**Dwa style sterowania (porównanie z naszym researchem):**
-| | Pętla modelu (ReAct) | Pętla maszyny (Brad: reactive reducer) |
+**Connection to Brad:** his "context store" is memory *within a single run* (typed context, journal, replay). Long-term memory across runs is a separate layer; his rule: "if a value must be durable and inspectable, it belongs in context" (`03`).
+
+**Risks (my assessment):** user memory = personal data (GDPR), memory poisoning (OWASP LLM04), need for deletion/"the right to be forgotten".
+
+Sources: [MemGPT](https://arxiv.org/abs/2310.08560), [Mem0](https://arxiv.org/abs/2504.19413), [dev.to guide](https://dev.to/dublecc/how-ai-agent-memory-works-in-2026-context-episodic-semantic-and-procedural-l3f)
+
+---
+
+## 8. Agent loop
+
+**What it is:** the basic loop: *call the model → parse the output → execute tools → append results to the context → repeat*, until a stop condition.
+
+**Facts:**
+- **ReAct** (Yao et al., arXiv 2210.03629, 06.10.2022; v3 10.03.2023): interleaving reasoning traces and actions; "ReAct overcomes issues of hallucination and error propagation prevalent in chain-of-thought reasoning". High.
+- **Anthropic:** agents operate in a tool-use loop driven by feedback from the environment; "Stopping conditions, such as a maximum iteration count" keep control; autonomy = higher cost and risk of compounding errors. High.
+- **Stop conditions (Low, blogs, consistent):** goal reached, iteration limit, token/cost budget, consecutive tool errors, cancellation by the user; an append-only log of every step for replay.
+
+**Two control styles (comparison with our research):**
+| | Model loop (ReAct) | Machine loop (Brad: reactive reducer) |
 |---|---|---|
-| Kto decyduje o następnym kroku | model | zadeklarowane krawędzie + guardy |
-| Stop | model „uważa, że skończył" + limity | stan terminalny, `maxIterations`, cap 128 mikrokroków, no-progress guard |
-| Atut | elastyczność przy otwartych zadaniach | determinizm, replay, audyt |
+| Who decides the next step | the model | declared edges + guards |
+| Stop | the model "thinks it is done" + limits | terminal state, `maxIterations`, cap of 128 micro-steps, no-progress guard |
+| Strength | flexibility on open-ended tasks | determinism, replay, audit |
 
-Brad ostrzega też: no-progress guard działa tylko *w obrębie jednego* `advance()`, nie między turami (`13`, `14`, `16`) — pętle międzyturowe pilnuje enum werdyktu + `maxIterations`.
+Brad also warns that the no-progress guard works only *within a single* `advance()`, not across turns (`13`, `14`, `16`) — cross-turn loops are guarded by the verdict enum + `maxIterations`.
 
-Źródła: [ReAct](https://arxiv.org/abs/2210.03629), [Anthropic](https://www.anthropic.com/engineering/building-effective-agents)
+Sources: [ReAct](https://arxiv.org/abs/2210.03629), [Anthropic](https://www.anthropic.com/engineering/building-effective-agents)
 
 ---
 
-## 9. Własny czatbot na stronie (jak to ułożyć)
+## 9. Your own chatbot on the website (how to lay it out)
 
-**Architektura minimalna (moja synteza źródeł poniżej):**
+**Minimal architecture (my synthesis of the sources below):**
 
 ```
-Przeglądarka (widget: HTML/JS, SSE)
-        │  HTTPS, bez żadnych kluczy
+Browser (widget: HTML/JS, SSE)
+        │  HTTPS, no keys at all
         ▼
-Twój backend (proxy)  ──►  limity: per-IP/użytkownik + budżet kosztowy
-   │   │   │                walidacja wejścia, logowanie
-   │   │   └──► pamięć/sesja (baza)
-   │   └──────► RAG: wyszukiwanie w treściach strony/FAQ/katalogu
+Your backend (proxy)  ──►  limits: per-IP/user + cost budget
+   │   │   │                input validation, logging
+   │   │   └──► memory/session (database)
+   │   └──────► RAG: search in site content/FAQ/catalogue
    ▼
-Model: (A) API dostawcy  lub  (B) własny SLM (Ollama/llama.cpp/vLLM)  lub  (C) router A+B
+Model: (A) provider API  or  (B) own SLM (Ollama/llama.cpp/vLLM)  or  (C) router A+B
 ```
 
-Kluczowe zasady (Średnia/Niska — blogi bezpieczeństwa; baza autorytatywna: OWASP):
-1. **Klucz API tylko po stronie serwera**, nigdy w JS ani w repo; wszystkie wywołania LLM przez backend-proxy.
-2. **Rate limit liczy żądania, nie koszt** — dodaj budżet per użytkownik/dzień i `max_tokens`.
-3. **Prompt injection nie zatrzyma sam rate limit** — oddziel instrukcje systemowe od treści użytkownika, treść pobraną ze stron traktuj jako niezaufaną (injection pośrednia), ogranicz uprawnienia narzędzi.
-4. **Zakładaj, że system prompt wycieknie** — nie wkładaj tam sekretów.
-5. **OWASP Top 10 for LLM Applications 2025** (pobrane 2026-10-14, Wysoka): LLM01 Prompt Injection, LLM02 Sensitive Information Disclosure, LLM03 Supply Chain, LLM04 Data and Model Poisoning, LLM05 Improper Output Handling, LLM06 Excessive Agency, LLM07 System Prompt Leakage, LLM08 Vector and Embedding Weaknesses, LLM09 Misinformation, LLM10 Unbounded Consumption. https://genai.owasp.org/llm-top-10/
-6. **Streaming:** odpowiedź przez SSE (`stream: true`) daje płynne wyświetlanie tokenów; trzeba obsłużyć błąd w środku strumienia. https://platform.claude.com/docs/en/build-with-claude/streaming
-7. **Cache'uj prefiks** (sekcja 6) i **mierz** hit rate.
-8. **Ewaluacja:** zbiór pytań testowych + sędzia LLM skalibrowany na ręcznych etykietach (sekcja 2) + deterministyczne sprawdzenia tam, gdzie się da (np. „czy odpowiedź zawiera istniejący SKU/URL").
+Key rules (Medium/Low — security blogs; authoritative base: OWASP):
+1. **API key only on the server side**, never in JS or in the repo; all LLM calls through the backend proxy.
+2. **Rate limit counts requests, not cost** — add a per-user/day budget and `max_tokens`.
+3. **A rate limit alone will not stop prompt injection** — separate system instructions from user content, treat content fetched from pages as untrusted (indirect injection), limit tool permissions.
+4. **Assume the system prompt will leak** — do not put secrets in it.
+5. **OWASP Top 10 for LLM Applications 2025** (fetched 2026-10-14, High): LLM01 Prompt Injection, LLM02 Sensitive Information Disclosure, LLM03 Supply Chain, LLM04 Data and Model Poisoning, LLM05 Improper Output Handling, LLM06 Excessive Agency, LLM07 System Prompt Leakage, LLM08 Vector and Embedding Weaknesses, LLM09 Misinformation, LLM10 Unbounded Consumption. https://genai.owasp.org/llm-top-10/
+6. **Streaming:** the response via SSE (`stream: true`) gives smooth token display; you have to handle an error in the middle of the stream. https://platform.claude.com/docs/en/build-with-claude/streaming
+7. **Cache the prefix** (section 6) and **measure** the hit rate.
+8. **Evaluation:** a set of test questions + an LLM judge calibrated on manual labels (section 2) + deterministic checks wherever possible (e.g. "does the answer contain an existing SKU/URL").
 
-**API vs własny model (Niska — blogi porównawcze):**
-- *API dostawcy:* najszybszy start, najlepsza jakość, koszt per token, dane wychodzą poza Twoją infrastrukturę.
-- *Własny SLM:* kontrola i prywatność, niski koszt przy dużym ruchu, ale utrzymanie i słabsza jakość ogólna. Wg streszczeń: **Ollama** — najłatwiejszy dla jednego użytkownika, **llama.cpp** — najwięcej kontroli/kwantyzacji, **vLLM** — wygrywa przy wielu równoległych użytkownikach (potrzebuje GPU). Liczby tokenów/s z blogów są sprzeczne — benchmark na własnym sprzęcie.
-- *Hybryda (router):* mały model do klasyfikacji/FAQ, duży do trudnych pytań (patrz SLM + routing).
+**API vs own model (Low — comparison blogs):**
+- *Provider API:* fastest start, best quality, per-token cost, data leaves your infrastructure.
+- *Own SLM:* control and privacy, low cost at high traffic, but maintenance and weaker general quality. According to summaries: **Ollama** — easiest for a single user, **llama.cpp** — the most control/quantization, **vLLM** — wins with many concurrent users (needs a GPU). Tokens/s numbers from blogs conflict — benchmark on your own hardware.
+- *Hybrid (router):* a small model for classification/FAQ, a large one for hard questions (see SLM + routing).
 
-**Gotowce (Niska):** Open WebUI (self-hosted UI do Ollama/API z RAG), pluginy WordPress typu „AI Chatbot". Nie sprawdzałem ich jakości ani licencji.
+**Off-the-shelf options (Low):** Open WebUI (self-hosted UI for Ollama/API with RAG), WordPress plugins such as "AI Chatbot". I did not check their quality or licenses.
 
-**Związek z Twoim ECommerceApp (tylko sugestia):** czatbot sklepu = RAG po katalogu/FAQ/polityce zwrotów, bez uprawnień do zmiany zamówień (LLM06 Excessive Agency). Akcje (np. status zamówienia) tylko przez istniejące, autoryzowane endpointy.
-
----
-
-## 10. Uczenie modeli „od poziomu zero" (drabinka)
-
-Od najtańszego i najbezpieczniejszego do najbardziej „własnego":
-
-1. **Prompt + kontekst** (zero treningu) — zacznij tu; Anthropic: „simplest solution first".
-2. **RAG** — wiedza z Twoich dokumentów w prompcie. Według tutoriali fine-tuning słabo uczy *nowych faktów*; służy raczej stylowi/formatowi/zachowaniu (Niska, blogi).
-3. **Fine-tuning SLM metodą LoRA/QLoRA.** LoRA zamraża wagi bazowe i trenuje małe macierze adaptera niskiego rzędu `r`; po treningu adapter można scalić (`merge_and_unload()`). Wysoka: oficjalna dokumentacja Hugging Face PEFT. Wg tutoriali (Niska) 7B da się dostroić na jednej karcie ~24 GB z kwantyzacją. https://huggingface.co/docs/peft/main/en/conceptual_guides/lora
-4. **Trening malutkiego modelu od zera — żeby zrozumieć, jak to działa:**
-   - **nanoGPT** (Karpathy): README oznacza repo jako przestarzałe (aktualizacja z listopada 2025, odsyła do nanochat), ale quick start nadal pokazuje trening znakowego GPT na Szekspirze: ok. 3 min na jednym A100 lub ok. 3 min na laptopie z mniejszym modelem (loss 1.88 — słabsze próbki). https://github.com/karpathy/nanoGPT
-   - **nanochat** (Karpathy): „The best ChatGPT that $100 can buy"; README: model o możliwościach GPT-2 za „$48 (~2 hours of 8XH100 GPU node)", na spocie ok. $15; pełny pipeline (tokenizacja → pretraining → finetuning → eval → inference); „talking to a kindergartener". CPU/MPS tylko w wersji zmniejszonej, „You will not get strong results". https://github.com/karpathy/nanochat
-
-**Pytanie do Ciebie:** jeśli „poniżej pojęcia" znaczyło coś innego (np. *od zera dla laika*, *bez GPU*, *model bez internetu*), powiedz — dopasuję.
+**Relation to your ECommerceApp (suggestion only):** a store chatbot = RAG over the catalogue/FAQ/returns policy, with no permission to modify orders (LLM06 Excessive Agency). Actions (e.g. order status) only through existing, authorized endpoints.
 
 ---
 
-## 11. Jak to się skleja w jedną całość (synteza, moja)
+## 10. Learning models "from level zero" (a ladder)
 
-- **Taksonomia** (1) pomaga *wybrać* wzorzec; **pętla agenta** (8) to jego silnik; **reflection** (3) i **LLM-as-judge** (2) to mechanizmy jakości — oba potrzebują *zewnętrznego sygnału* albo skalibrowanego sędziego.
-- **Prompt optimization** (4) i **SLM** (5) to dźwignie kosztu/jakości; **prompt caching** (6) to dźwignia kosztu bez zmiany jakości; **pamięć** (7) to dźwignia ciągłości między sesjami.
-- Wspólny wątek wszystkich źródeł Brada i literatury: *model wnosi wartość, a kontrola, limity i weryfikacja siedzą w deterministycznej powłoce.*
+From the cheapest and safest to the most "own":
 
-## 12. Luki i zastrzeżenia
+1. **Prompt + context** (zero training) — start here; Anthropic: "simplest solution first".
+2. **RAG** — knowledge from your documents in the prompt. According to tutorials, fine-tuning teaches *new facts* poorly; it serves rather style/format/behavior (Low, blogs).
+3. **Fine-tuning an SLM with LoRA/QLoRA.** LoRA freezes the base weights and trains small low-rank adapter matrices of rank `r`; after training the adapter can be merged (`merge_and_unload()`). High: official Hugging Face PEFT documentation. According to tutorials (Low) a 7B can be tuned on a single ~24 GB card with quantization. https://huggingface.co/docs/peft/main/en/conceptual_guides/lora
+4. **Training a tiny model from scratch — to understand how it works:**
+   - **nanoGPT** (Karpathy): the README marks the repo as deprecated (November 2025 update, pointing to nanochat), but the quick start still shows training a character-level GPT on Shakespeare: about 3 min on a single A100 or about 3 min on a laptop with a smaller model (loss 1.88 — weaker samples). https://github.com/karpathy/nanoGPT
+   - **nanochat** (Karpathy): "The best ChatGPT that $100 can buy"; README: a model with GPT-2 capabilities for "$48 (~2 hours of 8XH100 GPU node)", about $15 on spot; the full pipeline (tokenization → pretraining → finetuning → eval → inference); "talking to a kindergartener". CPU/MPS only in a scaled-down version, "You will not get strong results". https://github.com/karpathy/nanochat
 
-- Nie otwierałem pełnych paperów — tylko abstrakty i oficjalne strony (liczby „deklarowane przez autorów" ≠ niezależne benchmarki).
-- Taksonomia 2605.13850, survey LLM-as-judge (2411.15594, 2412.05579) i Self-Refine tylko ze snippetów wyszukiwarki.
-- Ceny, minima tokenów i TTL cache'u to stan z dokumentacji na 2026-10-14; zmieniają się często.
-- Porównania Ollama/llama.cpp/vLLM i rady bezpieczeństwa czatbota pochodzą z blogów (część komercyjnych) — do potwierdzenia we własnym teście i w OWASP.
-- Brak własnych eksperymentów: żadna liczba z tego dokumentu nie została odtworzona.
+**A question for you:** if "below the concept level" meant something else (e.g. *from zero for a layperson*, *without a GPU*, *a model without internet*), tell me — I will adjust.
 
-## 13. Pełna lista źródeł (z datami)
+---
 
-| Źródło | Typ | Data | Użyto w |
+## 11. How it all fits together (synthesis, mine)
+
+- **Taxonomy** (1) helps *choose* a pattern; the **agent loop** (8) is its engine; **reflection** (3) and **LLM-as-judge** (2) are quality mechanisms — both need an *external signal* or a calibrated judge.
+- **Prompt optimization** (4) and **SLM** (5) are cost/quality levers; **prompt caching** (6) is a cost lever without changing quality; **memory** (7) is a lever for continuity between sessions.
+- A common thread of all of Brad's sources and the literature: *the model contributes value, while control, limits and verification sit in a deterministic shell.*
+
+## 12. Gaps and caveats
+
+- I did not open full papers — only abstracts and official pages (numbers "claimed by the authors" ≠ independent benchmarks).
+- Taxonomy 2605.13850, the LLM-as-judge surveys (2411.15594, 2412.05579) and Self-Refine are from search-engine snippets only.
+- Prices, token minimums and cache TTL are the state from the documentation as of 2026-10-14; they change often.
+- Comparisons of Ollama/llama.cpp/vLLM and chatbot security advice come from blogs (some commercial) — to be confirmed in your own test and in OWASP.
+- No own experiments: no number in this document has been reproduced.
+
+## 13. Full list of sources (with dates)
+
+| Source | Type | Date | Used in |
 |---|---|---|---|
-| [Anthropic – Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents) | oficjalny blog | pobrane 2026-10-14 | 1, 5, 8, 11 |
-| [Liu i in., Agent Design Pattern Catalogue](https://arxiv.org/abs/2405.10467) | paper | 2024-05-16 (v4 2024-11-06) | 1 |
-| [Zheng i in., MT-Bench / LLM-as-a-Judge](https://arxiv.org/abs/2306.05685) | paper | 2023-06-09 (v4 2023-12-24) | 2 |
-| [Gu i in., Survey on LLM-as-a-Judge](https://arxiv.org/pdf/2411.15594) | survey (snippet) | — | 2 |
+| [Anthropic – Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents) | official blog | fetched 2026-10-14 | 1, 5, 8, 11 |
+| [Liu et al., Agent Design Pattern Catalogue](https://arxiv.org/abs/2405.10467) | paper | 2024-05-16 (v4 2024-11-06) | 1 |
+| [Zheng et al., MT-Bench / LLM-as-a-Judge](https://arxiv.org/abs/2306.05685) | paper | 2023-06-09 (v4 2023-12-24) | 2 |
+| [Gu et al., Survey on LLM-as-a-Judge](https://arxiv.org/pdf/2411.15594) | survey (snippet) | — | 2 |
 | [Reflexion](https://arxiv.org/abs/2303.11366) | paper | 2023-03-20 (v4 2023-10-10) | 3, 7 |
-| [Huang i in., LLMs Cannot Self-Correct Reasoning Yet](https://arxiv.org/abs/2310.01798) | paper | 2023-10-03 (v2 2024-03-14) | 3 |
+| [Huang et al., LLMs Cannot Self-Correct Reasoning Yet](https://arxiv.org/abs/2310.01798) | paper | 2023-10-03 (v2 2024-03-14) | 3 |
 | [GEPA](https://arxiv.org/abs/2507.19457) | paper (ICLR 2026 Oral) | 2025-07-25 (v2 2026-02-14) | 4 |
 | [SLM are the Future of Agentic AI](https://arxiv.org/abs/2506.02153) | position paper | 2025-06-02 (v3 2026-09-22) | 5 |
-| [Anthropic – Prompt caching docs](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) | dokumentacja | pobrane 2026-10-14 | 6 |
-| [OpenAI – Prompt caching docs](https://developers.openai.com/api/docs/guides/prompt-caching) | dokumentacja | pobrane 2026-10-14 | 6 |
+| [Anthropic – Prompt caching docs](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) | documentation | fetched 2026-10-14 | 6 |
+| [OpenAI – Prompt caching docs](https://developers.openai.com/api/docs/guides/prompt-caching) | documentation | fetched 2026-10-14 | 6 |
 | [MemGPT](https://arxiv.org/abs/2310.08560) | paper | 2023-10-12 (v2 2024-02-12) | 7 |
 | [Mem0](https://arxiv.org/abs/2504.19413) | paper | 2025-04-28 | 7 |
 | [ReAct](https://arxiv.org/abs/2210.03629) | paper | 2022-10-06 (v3 2023-03-10) | 8 |
-| [OWASP Top 10 for LLM Apps 2025](https://genai.owasp.org/llm-top-10/) | standard | pobrane 2026-10-14 | 9 |
-| [Anthropic – Streaming](https://platform.claude.com/docs/en/build-with-claude/streaming) | dokumentacja | pobrane 2026-10-14 | 9 |
-| [HF PEFT – LoRA](https://huggingface.co/docs/peft/main/en/conceptual_guides/lora) | dokumentacja | pobrane 2026-10-14 | 10 |
-| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | README | pobrane 2026-10-14 | 10 |
-| [karpathy/nanochat](https://github.com/karpathy/nanochat) | README | pobrane 2026-10-14 | 10 |
-| Blogi/porównania (dev.to, forkast.news, morphllm, insiderllm, reintech, enterno, webreference, tutoriale LoRA) | wtórne | różne | oznaczone „Niska" |
+| [OWASP Top 10 for LLM Apps 2025](https://genai.owasp.org/llm-top-10/) | standard | fetched 2026-10-14 | 9 |
+| [Anthropic – Streaming](https://platform.claude.com/docs/en/build-with-claude/streaming) | documentation | fetched 2026-10-14 | 9 |
+| [HF PEFT – LoRA](https://huggingface.co/docs/peft/main/en/conceptual_guides/lora) | documentation | fetched 2026-10-14 | 10 |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | README | fetched 2026-10-14 | 10 |
+| [karpathy/nanochat](https://github.com/karpathy/nanochat) | README | fetched 2026-10-14 | 10 |
+| Blogs/comparisons (dev.to, forkast.news, morphllm, insiderllm, reintech, enterno, webreference, LoRA tutorials) | secondary | various | marked "Low" |

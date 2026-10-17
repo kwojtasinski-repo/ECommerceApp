@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Symulacja reguly doboru wzorca agentowego na historii git (200 commitow).
+Simulation of the agent-pattern selection rule on git history (200 commits).
 
-UWAGA: to jest test SPOJNOSCI I ODPORNOSCI reguly na proxy-cechach z git,
-a NIE test trafnosci doboru. Cechy zadania (niezaleznosc podzadan, niepewnosc sciezki,
-ryzyko) sa tu przyblizane z danych git. Wynik nie dowodzi, ze wybor jest dobry.
+NOTE: this is a test of the rule's CONSISTENCY AND ROBUSTNESS on proxy features from git,
+not a test of selection accuracy. Task features (subtask independence, path uncertainty,
+risk) are approximated here from git data. The result does not prove that the choice is good.
 
-Uruchomienie:  python -I select_pattern.py [liczba_commitow] > results.md
-Wymaga: git w PATH, repo w REPO.
+Usage:  python -I select_pattern.py [number_of_commits] > results.md
+Requires: git in PATH, the repo at REPO.
 """
 import subprocess, re, sys, random, collections, statistics, io
 
@@ -109,7 +109,7 @@ def is_risk_high(f, p):
 
 
 def recommend(f, p):
-    """Zwraca (zbior wzorcow, poziom autonomii A/B/C lub '-')."""
+    """Returns (set of patterns, autonomy level A/B/C or '-')."""
     s = size_class(f, p)
     risk_high = is_risk_high(f, p)
     if (f["docs_only"] or f["tests_only"]) and s != "L":
@@ -151,19 +151,19 @@ def main():
     base = [recommend(f, BASE) for f in feats]
     n = len(commits)
     out = print
-    out("# Wyniki symulacji doboru wzorca (proxy z git)\n")
-    out("Commity: %d (od %s do %s). Skrypt: `scripts/select_pattern.py`.\n" % (n, commits[-1]["d"], commits[0]["d"]))
-    out("**To jest test spójności i odporności reguły na przybliżonych cechach, nie test trafności doboru.**\n")
-    out("## 1. Rozkład rekomendacji (progi bazowe: %s)\n" % BASE)
+    out("# Pattern selection simulation results (git proxies)\n")
+    out("Commits: %d (from %s to %s). Script: `scripts/select_pattern.py`.\n" % (n, commits[-1]["d"], commits[0]["d"]))
+    out("**This is a test of the rule's consistency and robustness on approximate features, not a test of selection accuracy.**\n")
+    out("## 1. Distribution of recommendations (base thresholds: %s)\n" % BASE)
     cnt, tiers = dist(base, n)
-    out("| Wzorzec | Commity | Udział |\n|---|---|---|")
+    out("| Pattern | Commits | Share |\n|---|---|---|")
     for k, v in cnt.most_common():
         out("| %s | %d | %.0f%% |" % (k, v, 100.0 * v / n))
-    out("\n| Poziom autonomii | Commity | Udział |\n|---|---|---|")
+    out("\n| Autonomy level | Commits | Share |\n|---|---|---|")
     for t in ["-", "A", "B", "C"]:
-        out("| %s | %d | %.0f%% |" % (t if t != "-" else "brak wzorca", tiers[t], 100.0 * tiers[t] / n))
+        out("| %s | %d | %.0f%% |" % (t if t != "-" else "no pattern", tiers[t], 100.0 * tiers[t] / n))
     sizes = collections.Counter(size_class(f, BASE) for f in feats)
-    out("\nRozmiar (S/M/L): %s\n" % dict(sizes))
+    out("\nSize (S/M/L): %s\n" % dict(sizes))
 
     rnd = random.Random(20261015)
     space = {"S_f": [1, 2, 3], "S_l": [40, 60, 100], "L_f": [8, 12, 16], "L_l": [500, 800, 1200],
@@ -185,19 +185,19 @@ def main():
             for pt in pats.symmetric_difference(base[i][0]):
                 patflip[pt] += 1
     stab = [s / K for s in same]
-    out("## 2. Odporność na zmianę progów (%d losowych kombinacji progów, ziarno stałe)\n" % K)
-    out("- Średni odsetek kombinacji, w których rekomendacja commita jest identyczna z bazową: **%.0f%%**" % (100 * statistics.mean(stab)))
-    out("- Commity ze stabilną rekomendacją (identyczna w ≥ 90%% kombinacji): **%.0f%%**" % (100.0 * sum(1 for s in stab if s >= 0.9) / n))
-    out("- Commity niestabilne (identyczna w < 60%% kombinacji): **%.0f%%**" % (100.0 * sum(1 for s in stab if s < 0.6) / n))
-    out("- Średni odsetek kombinacji ze zmianą poziomu autonomii: **%.0f%%**\n" % (100.0 * statistics.mean(t / K for t in tierflip)))
-    out("| Wzorzec | Zmiany (obecność/nieobecność) łącznie |\n|---|---|")
+    out("## 2. Robustness to threshold changes (%d random threshold combinations, fixed seed)\n" % K)
+    out("- Mean share of combinations in which a commit's recommendation is identical to the base one: **%.0f%%**" % (100 * statistics.mean(stab)))
+    out("- Commits with a stable recommendation (identical in ≥ 90%% of combinations): **%.0f%%**" % (100.0 * sum(1 for s in stab if s >= 0.9) / n))
+    out("- Unstable commits (identical in < 60%% of combinations): **%.0f%%**" % (100.0 * sum(1 for s in stab if s < 0.6) / n))
+    out("- Mean share of combinations with a change of autonomy level: **%.0f%%**\n" % (100.0 * statistics.mean(t / K for t in tierflip)))
+    out("| Pattern | Changes (presence/absence) in total |\n|---|---|")
     for k, v in patflip.most_common():
         out("| %s | %d |" % (k, v))
 
-    out("\n## 3. Arkusz do oznaczenia (20 ostatnich commitów M/L, nie dokumentacja/testy-only)\n")
-    out("Kolumna „Zgoda?” jest pusta: wpisz T/N, jeśli proponowany wzorzec miałby sens. "
-        "Propozycja pochodzi z reguły i proxy z git, a **nie** z oceny agenta.\n")
-    out("| # | Commit | Data | Temat | Pliki / linie / obszary | Proponowane | Poziom | Zgoda? |\n|---|---|---|---|---|---|---|---|")
+    out("\n## 3. Sheet to label (the 20 latest M/L commits, not docs/tests-only)\n")
+    out("The \"Agree?\" column is empty: enter Y/N if the proposed pattern would make sense. "
+        "The proposal comes from the rule and git proxies, **not** from an agent's assessment.\n")
+    out("| # | Commit | Date | Subject | Files / lines / areas | Proposed | Level | Agree? |\n|---|---|---|---|---|---|---|---|")
     k = 0
     for c, f, (pats, tier) in zip(commits, feats, base):
         if size_class(f, BASE) == "S" or f["docs_only"] or f["tests_only"]:
@@ -211,8 +211,8 @@ def main():
 
     smalls = [i for i, f in enumerate(feats) if size_class(f, BASE) == "S"]
     nonone = [i for i in smalls if base[i][0] != frozenset(["NONE"])]
-    out("\n## 4. Test brzegowy: małe zadania (S)\n")
-    out("- Commity S: %d; z nich z rekomendowanym wzorcem (powinno być tylko przy wysokim ryzyku): **%d**" % (len(smalls), len(nonone)))
+    out("\n## 4. Edge test: small tasks (S)\n")
+    out("- S commits: %d; of which with a recommended pattern (should occur only at high risk): **%d**" % (len(smalls), len(nonone)))
     for i in nonone[:5]:
         out("  - `%s` %s -> %s" % (commits[i]["h"], commits[i]["s"][:60], ", ".join(sorted(base[i][0]))))
 
@@ -223,8 +223,8 @@ def main():
                 trig[key] += 1
         if f["nproj"] >= 3:
             trig["nproj>=3"] += 1
-    out("\n## 5. Diagnostyka: co uruchamia „wysokie ryzyko” w wariancie szerokim\n")
-    out("| Wyzwalacz | Commity |\n|---|---|")
+    out("\n## 5. Diagnostics: what triggers \"high risk\" in the broad variant\n")
+    out("| Trigger | Commits |\n|---|---|")
     for key, v in trig.most_common():
         out("| %s | %d |" % (key, v))
 
@@ -232,29 +232,29 @@ def main():
     nb["risk_mode"] = "narrow"
     narrow = [recommend(f, nb) for f in feats]
     cn, tn = dist(narrow, n)
-    out("\n## 6. Wariant z węższym ryzykiem (migracje, sagi, ≥ 4 projekty): jedna zmiana względem bazy\n")
-    out("| Wzorzec | Baza | Wariant |\n|---|---|---|")
+    out("\n## 6. Variant with narrower risk (migrations, sagas, ≥ 4 projects): one change relative to the base\n")
+    out("| Pattern | Base | Variant |\n|---|---|---|")
     for key in ["SEQUENTIAL_GATES", "INDEPENDENT_VALIDATION", "ADD_DETERMINISTIC_CHECK_FIRST",
                 "FANOUT_DECOMP_CHECK", "PLANNER_EXECUTOR", "DEBATE_CANDIDATE_ASK", "NONE"]:
         out("| %s | %d (%.0f%%) | %d (%.0f%%) |" % (key, cnt[key], 100.0 * cnt[key] / n, cn[key], 100.0 * cn[key] / n))
-    out("\n| Poziom | Baza | Wariant |\n|---|---|---|")
+    out("\n| Level | Base | Variant |\n|---|---|---|")
     for t in ["-", "A", "B", "C"]:
-        out("| %s | %d (%.0f%%) | %d (%.0f%%) |" % (t if t != "-" else "brak", tiers[t], 100.0 * tiers[t] / n,
+        out("| %s | %d (%.0f%%) | %d (%.0f%%) |" % (t if t != "-" else "none", tiers[t], 100.0 * tiers[t] / n,
                                                  tn[t], 100.0 * tn[t] / n))
 
     nb2 = dict(BASE)
     nb2["risk_mode"] = "src"
     src = [recommend(f, nb2) for f in feats]
     cs, ts = dist(src, n)
-    out("\n## 7. Wariant 2: ryzyko = migracje, sagi lub ≥ 3 projekty ŹRÓDŁOWE (bez docs, testów i .github)\n")
-    out("Przyczyna: w wariancie bazowym „≥ 3 projekty” liczyło też `docs/` i projekty testowe jako osobne projekty.\n")
-    out("| Wzorzec | Baza | Wariant 2 |\n|---|---|---|")
+    out("\n## 7. Variant 2: risk = migrations, sagas or ≥ 3 SOURCE projects (excluding docs, tests and .github)\n")
+    out("Reason: in the base variant \"≥ 3 projects\" also counted `docs/` and test projects as separate projects.\n")
+    out("| Pattern | Base | Variant 2 |\n|---|---|---|")
     for key in ["SEQUENTIAL_GATES", "INDEPENDENT_VALIDATION", "ADD_DETERMINISTIC_CHECK_FIRST",
                 "FANOUT_DECOMP_CHECK", "PLANNER_EXECUTOR", "DEBATE_CANDIDATE_ASK", "NONE"]:
         out("| %s | %d (%.0f%%) | %d (%.0f%%) |" % (key, cnt[key], 100.0 * cnt[key] / n, cs[key], 100.0 * cs[key] / n))
-    out("\n| Poziom | Baza | Wariant 2 |\n|---|---|---|")
+    out("\n| Level | Base | Variant 2 |\n|---|---|---|")
     for t in ["-", "A", "B", "C"]:
-        out("| %s | %d (%.0f%%) | %d (%.0f%%) |" % (t if t != "-" else "brak", tiers[t], 100.0 * tiers[t] / n,
+        out("| %s | %d (%.0f%%) | %d (%.0f%%) |" % (t if t != "-" else "none", tiers[t], 100.0 * tiers[t] / n,
                                                  ts[t], 100.0 * ts[t] / n))
 
 

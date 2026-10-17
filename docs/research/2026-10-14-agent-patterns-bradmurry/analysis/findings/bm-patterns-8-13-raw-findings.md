@@ -1,6 +1,6 @@
 # Findings: bm-patterns-8-13-raw
 
-Scope: patterns 8-13 of Brad Murry's "13 Multi-Agent Orchestration Patterns, Implemented via the Reactive Reducer" series, gathered from the full text of the articles in (źródła: SOURCES.md).
+Scope: patterns 8-13 of Brad Murry's "13 Multi-Agent Orchestration Patterns, Implemented via the Reactive Reducer" series, gathered from the full text of the articles in (sources: SOURCES.md).
 
 Source key (used in every `Source:` line below):
 - **[05]** = [05 reactive-reducer-patterns](https://bradmurry.com/software/reactive-reducer-patterns/), URL https://bradmurry.com/software/reactive-reducer-patterns/ (index post; only its sections 8-13 and the closing idioms were read for this file).

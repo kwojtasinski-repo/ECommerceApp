@@ -1,130 +1,130 @@
-# Dobór wzorca agentowego: czy da się go wyliczyć, i sprawdzenie hipotez niepopartych / niesprawdzonych
+# Agent pattern selection: can it be computed, and checking the unsupported / unchecked hypotheses
 
-- **Data:** 2026-10-15 (źródła pobrane tego dnia; daty publikacji przy każdym źródle)
-- **Tryb:** samodzielny research asystenta (WebSearch + WebFetch + skrypty lokalne). Nie przeszedł niezależnej weryfikacji krzyżowej.
-- **Powiązane:** [raport o przeglądzie i hipotezach H1–H9](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md) · [dopasowanie wzorców i guardrails](../../reports/2026-10-14-agent-patterns-fit-tradeoffs-guardrails.md) · [główny research](../2026-10-14-agent-patterns-bradmurry/README.md) · [self research](../2026-10-14-llm-self-research/README.md)
-- **Pliki w tym folderze:** `scripts/select_pattern.py` (symulacja), `results.md` (jej wynik), `pattern-decision-card.draft.md` (szkic karty wzorców, tylko artefakt badawczy).
+- **Date:** 2026-10-15 (sources fetched on that day; publication dates next to each source)
+- **Mode:** the assistant's own research (WebSearch + WebFetch + local scripts). It did not undergo independent cross-verification.
+- **Related:** [report on the review and hypotheses H1–H9](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md) · [pattern fit and guardrails](../../reports/2026-10-14-agent-patterns-fit-tradeoffs-guardrails.md) · [main research](../2026-10-14-agent-patterns-bradmurry/README.md) · [self research](../2026-10-14-llm-self-research/README.md)
+- **Files in this folder:** `scripts/select_pattern.py` (simulation), `results.md` (its output), `pattern-decision-card.draft.md` (draft of the pattern card, a research artifact only).
 
-**Pytanie użytkownika:** czy da się dynamicznie dobrać właściwy wzorzec (debata, planner/executor itd.) do problemu i czy da się to „wyliczyć"? Do tego: sprawdzić hipotezy, które w poprzednim przeglądzie wyszły jako niepoparte lub niesprawdzone.
-
----
-
-## 1. Krótka odpowiedź
-
-**Tak, częściowo.** Da się to **policzyć jawną regułą** z kilku cech zadania; da się ją przetestować pod kątem spójności i odporności. **Nie da się dziś wykazać jej trafności**, bo nie mamy etykiet „który wzorzec był właściwy". Literatura zna dwa poziomy: (a) **jakościowe** modele decyzyjne (opisy „kiedy co"), (b) **wyuczone predyktory** na danych z benchmarków. Nasza reguła to poziom pośredni: przejrzysta reguła z cech, do skalibrowania w trybie cienia. Dwóch rzeczy z git nie obliczysz: **czy podzadania są naprawdę niezależne** i **czy wniosek jest sporny**. To musi oszacować agent albo człowiek.
+**User's question:** is it possible to dynamically choose the right pattern (debate, planner/executor, etc.) for a problem, and can it be "computed"? In addition: check the hypotheses that came out as unsupported or unchecked in the previous review.
 
 ---
 
-## 2. Co mówi literatura (stan na 2026-10-15)
+## 1. Short answer
 
-Poziom pewności: **Wysoka** = pierwotne źródło pobrane, **Średnia** = abstrakt lub jedno źródło, **Niska** = fragment z wyszukiwarki.
+**Yes, partially.** It can be **computed with an explicit rule** from a few task features; the rule can be tested for consistency and robustness. **Its accuracy cannot be demonstrated today**, because we have no labels saying "which pattern was the right one". The literature knows two levels: (a) **qualitative** decision models (descriptions of "when what"), (b) **learned predictors** on benchmark data. Our rule is an intermediate level: a transparent rule over features, to be calibrated in shadow mode. Two things cannot be computed from git: **whether the subtasks are truly independent** and **whether the conclusion is contested**. An agent or a human has to estimate that.
 
-| Źródło (data) | Co mówi o doborze | Pewność | Zastrzeżenia |
+---
+
+## 2. What the literature says (as of 2026-10-15)
+
+Confidence level: **High** = primary source fetched, **Medium** = abstract or a single source, **Low** = search-engine snippet.
+
+| Source (date) | What it says about selection | Confidence | Caveats |
 |---|---|---|---|
-| **Anthropic, *How we built our multi-agent research system*** ([link](https://www.anthropic.com/engineering/multi-agent-research-system); data publikacji niepodana w wyciągu) | **Jedyna znaleziona jawna reguła skalowania wysiłku:** proste ustalenie faktów: 1 agent, 3–10 wywołań narzędzi; porównania: 2–4 subagentów po 10–15 wywołań; złożone badanie: > 10 subagentów z jasno podzieloną odpowiedzialnością. Koszt: agenci ≈ 4× tokenów względem czatu, multi-agent ≈ 15×. **Słabe dopasowanie:** zadania wymagające wspólnego kontekstu u wszystkich agentów, z wieloma zależnościami, oraz kodowanie („fewer truly parallelizable tasks than research"). Obserwowane błędy: 50 subagentów dla prostych zapytań, zdublowana praca przy niejasnym zleceniu | Średnia–wysoka | źródło producenta; reguła jest **w promptach**, nie obliczana |
-| **Kim i in., *Towards a Science of Scaling Agent Systems*** ([arXiv 2512.08296](https://arxiv.org/abs/2512.08296), v1 2025-12-09, v3 2026-04-08; [wpis Google Research](https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/)) | Model predykcyjny dobiera najlepszą architekturę dla **87%** konfiguracji spoza próby uczącej. Koordynacja pomaga przy zadaniach podzielnych (do ok. +80%), **szkodzi przy sekwencyjnych** (do −70%, wg wpisu: „39–70%"), zadania z wieloma narzędziami mają narzut. Architektury bez centralnej weryfikacji **wzmacniają błędy** (niezależni: 17,2×; scentralizowany: 4,4×). Wejścia predyktora: liczba narzędzi, podzielność zadania, zależności sekwencyjne | Średnia | **Rozbieżność wersji:** abstrakt v3: 260 konfiguracji, 6 benchmarków, R² (CV) 0,373; wpis: 180 konfiguracji, 4 benchmarki, R² 0,513. Nie rozstrzygnąłem, która wersja jest właściwa. Dopasowanie skromne, benchmarki nie są naszą domeną |
-| **Zhang i in., *Stop Overvaluing Multi-Agent Debate…*** ([arXiv 2502.08788](https://arxiv.org/abs/2502.08788), v1 2025-02-12, v3 2025-06-21; wcześniejszy tytuł: *If Multi-Agent Debate is the Answer, What is the Question?*) | 5 metod debaty, 9 benchmarków, 4 modele: debata **często nie przewyższa** prostych baz (Chain-of-Thought, Self-Consistency), mimo większego kosztu obliczeń. **Heterogeniczność modeli** jako „universal antidote" | Średnia (abstrakt) | benchmarki rozumowania i QA, nie ocena syntezy źródeł |
-| **Huang i in.** ([arXiv 2310.01798](https://arxiv.org/abs/2310.01798), 2023-10-03) | wg fragmentów z wyszukiwarki: na GSM8K debata ≈ self-consistency przy 3 odpowiedziach (83,2 vs 82,5), a przy 9 odpowiedziach wypada gorzej (83,0 vs 88,2) | **Niska** | liczby z fragmentów wyszukiwarki, nie z samego artykułu |
-| **Yue i in., *MasRouter*** ([ACL 2025](https://aclanthology.org/2025.acl-long.757), [arXiv 2502.11133](https://www.arxiv.org/pdf/2502.11133)) | wyuczony kontroler wybiera po kolei tryb współpracy, role i model; deklaracja autorów: do 52,07% niższy narzut na HumanEval | Niska–średnia | deklaracje autorów, nie weryfikowane niezależnie; wymaga danych treningowych |
-| **Liu i in., katalog wzorców** ([arXiv 2405.10467](https://arxiv.org/abs/2405.10467), v4 2024-11-06, §5.1) | **Model decyzyjny jest jakościowy:** np. incremental querying, gdy chcemy większej pewności rozumowania; one-shot, gdy budżet wywołań jest ograniczony; single-path vs multi-path plan; self/cross/human reflection; wieloagentowa refleksja przez głosowanie, role lub debatę. **Nie omawia kosztu tokenów ani zbieżności** dla debaty i głosowania | Średnia | z pobranego HTML v4 |
+| **Anthropic, *How we built our multi-agent research system*** ([link](https://www.anthropic.com/engineering/multi-agent-research-system); publication date not given in the excerpt) | **The only explicit effort-scaling rule found:** simple fact-finding: 1 agent, 3–10 tool calls; comparisons: 2–4 subagents with 10–15 calls each; complex research: > 10 subagents with clearly divided responsibilities. Cost: agents ≈ 4× the tokens of a chat, multi-agent ≈ 15×. **Poor fit:** tasks requiring shared context across all agents, with many dependencies, and coding ("fewer truly parallelizable tasks than research"). Observed errors: 50 subagents for simple queries, duplicated work given a vague assignment | Medium–high | vendor source; the rule is **in the prompts**, not computed |
+| **Kim et al., *Towards a Science of Scaling Agent Systems*** ([arXiv 2512.08296](https://arxiv.org/abs/2512.08296), v1 2025-12-09, v3 2026-04-08; [Google Research post](https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/)) | A predictive model picks the best architecture for **87%** of held-out configurations. Coordination helps with divisible tasks (up to about +80%), **hurts sequential ones** (up to −70%, per the post: "39–70%"), tasks with many tools carry overhead. Architectures without central verification **amplify errors** (independent: 17.2×; centralized: 4.4×). Predictor inputs: number of tools, task divisibility, sequential dependencies | Medium | **Version discrepancy:** abstract v3: 260 configurations, 6 benchmarks, R² (CV) 0.373; post: 180 configurations, 4 benchmarks, R² 0.513. I did not determine which version is correct. The fit is modest, the benchmarks are not our domain |
+| **Zhang et al., *Stop Overvaluing Multi-Agent Debate…*** ([arXiv 2502.08788](https://arxiv.org/abs/2502.08788), v1 2025-02-12, v3 2025-06-21; earlier title: *If Multi-Agent Debate is the Answer, What is the Question?*) | 5 debate methods, 9 benchmarks, 4 models: debate **often does not outperform** simple baselines (Chain-of-Thought, Self-Consistency), despite higher compute cost. **Model heterogeneity** as a "universal antidote" | Medium (abstract) | reasoning and QA benchmarks, not evaluation of source synthesis |
+| **Huang et al.** ([arXiv 2310.01798](https://arxiv.org/abs/2310.01798), 2023-10-03) | per search-engine snippets: on GSM8K debate ≈ self-consistency with 3 answers (83.2 vs 82.5), and with 9 answers it does worse (83.0 vs 88.2) | **Low** | numbers from search-engine snippets, not from the paper itself |
+| **Yue et al., *MasRouter*** ([ACL 2025](https://aclanthology.org/2025.acl-long.757), [arXiv 2502.11133](https://www.arxiv.org/pdf/2502.11133)) | a learned controller sequentially chooses the collaboration mode, roles and model; authors' claim: up to 52.07% lower overhead on HumanEval | Low–medium | authors' claims, not independently verified; requires training data |
+| **Liu et al., pattern catalogue** ([arXiv 2405.10467](https://arxiv.org/abs/2405.10467), v4 2024-11-06, §5.1) | **The decision model is qualitative:** e.g. incremental querying when we want greater reasoning certainty; one-shot when the call budget is limited; single-path vs multi-path plan; self/cross/human reflection; multi-agent reflection via voting, roles or debate. **Does not discuss token cost or convergence** for debate and voting | Medium | from the fetched HTML of v4 |
 
-**Wniosek z literatury:** dla debaty dowody **nie są po jej stronie jako domyślnego wyboru** (Zhang), a jedyny realnie testowany **predyktor** doboru (Kim) wykorzystuje cechy, które da się częściowo ocenić: podzielność, zależności sekwencyjne, liczbę narzędzi. Nasz własny wynik z 2026-10-14 (5 z 7 opisanych twierdzeń syntezy było błędnie przypisanych lub przesadzonych) dotyczy **krytyki syntezy ze sprawdzaniem źródeł**, a nie zadań, które testują te prace; nie przenoszę go automatycznie.
+**Conclusion from the literature:** for debate, the evidence is **not on its side as a default choice** (Zhang), and the only really tested **predictor** of selection (Kim) uses features that can be partially assessed: divisibility, sequential dependencies, number of tools. Our own result from 2026-10-14 (5 of 7 described synthesis claims were wrongly attributed or exaggerated) concerns **critique of a synthesis with source checking**, not the tasks tested by these papers; I do not transfer it automatically.
 
 ---
 
-## 3. Trzy poziomy „wyliczania"
+## 3. Three levels of "computing"
 
-| Poziom | Opis | Wymaga | Dziś |
+| Level | Description | Requires | Today |
 |---|---|---|---|
-| (a) Jakościowy | drzewo pytań „kiedy co" (Liu §5.1, Anthropic) | wiedzy eksperckiej | jest w literaturze i w naszych raportach |
-| (b) Reguła z cech | jawny wynik/priorytet z kilku oszacowanych cech, z progami | oszacowania cech | **zrobione** w `scripts/select_pattern.py`, przetestowane na git |
-| (c) Wyuczony predyktor | model trenowany na etykietach (Kim, MasRouter) | danych: zadanie → najlepszy wzorzec i wynik | **brak danych** |
+| (a) Qualitative | a decision tree of "when what" questions (Liu §5.1, Anthropic) | expert knowledge | exists in the literature and in our reports |
+| (b) Rule over features | an explicit score/priority from a few estimated features, with thresholds | feature estimates | **done** in `scripts/select_pattern.py`, tested on git |
+| (c) Learned predictor | a model trained on labels (Kim, MasRouter) | data: task → best pattern and outcome | **no data** |
 
 ---
 
-## 4. Proponowana reguła doboru (poziom b)
+## 4. Proposed selection rule (level b)
 
-Cechy zadania (do oszacowania przez agenta lub człowieka; w symulacji przybliżane z git): **rozmiar** (S/M/L), **niezależność podzadań**, **niepewność ścieżki** (kroki nieznane z góry), **dostępność deterministycznego checku**, **ryzyko / odwracalność**, **czy wniosek jest sporny**, **gęstość narzędzi i zależności**.
+Task features (to be estimated by an agent or a human; in the simulation approximated from git): **size** (S/M/L), **subtask independence**, **path uncertainty** (steps not known in advance), **availability of a deterministic check**, **risk / reversibility**, **whether the conclusion is contested**, **density of tools and dependencies**.
 
-Kolejność decyzji (pierwsza pasująca gałąź wygrywa, wzorce się nakładają):
+Decision order (the first matching branch wins, patterns overlap):
 
-| # | Warunek | Wzorzec | Poziom autonomii |
+| # | Condition | Pattern | Autonomy level |
 |---|---|---|---|
-| 1 | mały rozmiar i niskie ryzyko | **brak wzorca** | – |
-| 2 | wszystko pozostałe | **sekwencja z bramkami** (domyślna) | A |
-| 3 | kroki nieznane z góry, może być potrzebne ponowne planowanie | **Planner → Executor**; po 2 re-planach pytaj | B |
-| 4 | duże zadanie, ≥ 3 niezależne obszary, mały wspólny stan | **fan-out tylko do odczytu + kontrola podziału** (nie dla edycji na wspólnych plikach: Kim, Anthropic) | A |
-| 5 | wysokie ryzyko | najpierw checki deterministyczne, potem **niezależna walidacja** (inna sesja/model); jeśli nie ma checku, dodać go najpierw | B |
-| 6 | wniosek sporny i wpływa na kosztowną decyzję | **jeden krytyk ze sprawdzaniem źródeł** | A |
-| 7 | ≥ 2 realne alternatywy, brak checku deterministycznego, kosztowny błąd | **debata** (3 perspektywy + sędzia, enum werdyktu, ≤ 2 rundy, **różne modele, jeśli dostępne**) | C: zapytaj najpierw |
-| 8 | binarna decyzja o wysokiej stawce | **quorum 3 niezależnych głosów** | C |
+| 1 | small size and low risk | **no pattern** | – |
+| 2 | everything else | **sequence with gates** (default) | A |
+| 3 | steps not known in advance, re-planning may be needed | **Planner → Executor**; ask after 2 re-plans | B |
+| 4 | large task, ≥ 3 independent areas, little shared state | **read-only fan-out + decomposition check** (not for edits on shared files: Kim, Anthropic) | A |
+| 5 | high risk | deterministic checks first, then **independent validation** (another session/model); if there is no check, add it first | B |
+| 6 | conclusion contested and affects a costly decision | **one critic with source checking** | A |
+| 7 | ≥ 2 real alternatives, no deterministic check, costly error | **debate** (3 perspectives + judge, enum verdict, ≤ 2 rounds, **different models if available**) | C: ask first |
+| 8 | binary high-stakes decision | **quorum of 3 independent votes** | C |
 
-**Podreguła „debata czy nie":** domyślnie jeden krytyk (poz. 6). Debata dopiero, gdy **wszystkie** warunki z poz. 7 są spełnione; zadania sekwencyjne i gęste w narzędzia traktować jako niekorzystne dla koordynacji (Kim).
-**Podreguła „planner/executor czy nie":** gdy specyfikacja jest jasna i kroki znane, pomijamy plan-wykonanie i robimy sekwencję; gdy kroki zależą od odkryć w trakcie (Anthropic: orchestrator-workers dla nieprzewidywalnych podzadań), dobieramy poz. 3.
+**Sub-rule "debate or not":** by default one critic (row 6). Debate only when **all** conditions from row 7 are met; treat sequential and tool-dense tasks as unfavorable for coordination (Kim).
+**Sub-rule "planner/executor or not":** when the specification is clear and the steps known, we skip plan-execute and do a sequence; when the steps depend on discoveries along the way (Anthropic: orchestrator-workers for unpredictable subtasks), we choose row 3.
 
-**Czego ta reguła nie liczy:** niezależności podzadań (potrzebuje oceny agenta albo człowieka) i spornych wniosków. To właśnie dlatego traktuję ją jako **doradczą**, nie decydującą.
+**What this rule does not compute:** subtask independence (needs an agent's or a human's assessment) and contested conclusions. That is exactly why I treat it as **advisory**, not decisive.
 
 ---
 
-## 5. Symulacja na historii git (200 commitów, 2026-05-27 – 2026-10-14)
+## 5. Simulation on git history (200 commits, 2026-05-27 – 2026-10-14)
 
-Pełne wyniki: [`results.md`](results.md). Wersja ostrzegawcza: commit to nie zadanie, cechy to proxy z git, więc **testuję spójność i odporność, nie trafność**.
+Full results: [`results.md`](results.md). Warning version: a commit is not a task, the features are git proxies, so **I test consistency and robustness, not accuracy**.
 
-| Wynik | Wartość |
+| Result | Value |
 |---|---|
-| Brak wzorca (mała zmiana, niskie ryzyko) | 34% commitów |
-| Test brzegowy: małe zadania (S) z rekomendowanym wzorcem | **0 z 21** |
-| Średnia zgodność rekomendacji przy losowej zmianie progów (300 kombinacji) | **90%**; 70% commitów stabilnych (≥ 90%), 6% niestabilnych (< 60%) |
-| Zmiana poziomu autonomii przy zmianie progów | średnio 5% kombinacji |
+| No pattern (small change, low risk) | 34% of commits |
+| Edge test: small tasks (S) with a recommended pattern | **0 of 21** |
+| Mean agreement of the recommendation under random threshold changes (300 combinations) | **90%**; 70% of commits stable (≥ 90%), 6% unstable (< 60%) |
+| Autonomy level change under threshold changes | on average 5% of combinations |
 
-**Kalibracja pokazała istotną rzecz.** W wariancie bazowym niezależna walidacja wypada dla **42%** commitów, bo „≥ 3 projekty" liczyło `docs/` i projekty testowe jako osobne projekty (81 commitów). Po **jednej zmianie** (liczyć tylko projekty źródłowe, bez docs/testów/.github) wypada dla **20%**:
+**Calibration showed something important.** In the base variant independent validation occurs for **42%** of commits, because "≥ 3 projects" counted `docs/` and test projects as separate projects (81 commits). After **one change** (count only source projects, excluding docs/tests/.github) it occurs for **20%**:
 
-| Poziom autonomii | Baza | Wariant 2 |
+| Autonomy level | Base | Variant 2 |
 |---|---|---|
-| brak wzorca | 34% | 34% |
+| no pattern | 34% | 34% |
 | A | 23% | 44% |
-| B (ogłoś i działaj) | 38% | 20% |
-| C (zapytaj) | 5% | 4% |
+| B (announce and act) | 38% | 20% |
+| C (ask) | 5% | 4% |
 
-**Co z tego wynika (hipotezy):**
-1. Reguła jest **stabilna**, ale **stabilna ≠ trafna**: nadmierne uruchamianie walidacji wynikało z jednej niedokładnej cechy, nie z progów. Jakość doboru zależy głównie od **definicji cech**, a nie od liczb w progach.
-2. Przy wariancie 2 pytań do użytkownika (poziom C) byłoby ok. **4%** zadań; ogłoszeń (B) ok. **20%**. To da się sprawdzić na prawdziwym ruchu w trybie cienia.
-3. Prawdziwą trafność da się ocenić dopiero na etykietach: **arkusz 20 commitów** do oznaczenia jest w `results.md` §3 (kolumna „Zgoda?" pusta).
+**What follows from this (hypotheses):**
+1. The rule is **stable**, but **stable ≠ accurate**: the excessive triggering of validation came from one imprecise feature, not from the thresholds. The quality of selection depends mainly on the **definition of the features**, not on the numbers in the thresholds.
+2. With variant 2, questions to the user (level C) would be about **4%** of tasks; announcements (B) about **20%**. This can be checked on real traffic in shadow mode.
+3. Real accuracy can be assessed only on labels: the **sheet of 20 commits** to label is in `results.md` §3 (the "Agree?" column is empty).
 
 ---
 
-## 6. Sprawdzenie hipotez niepopartych / niesprawdzonych (H1–H9)
+## 6. Checking the unsupported / unchecked hypotheses (H1–H9)
 
-Pierwotne definicje i warunki PASS: [raport o przeglądzie §6](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md). Poniżej **zaktualizowany stan po dzisiejszych sprawdzeniach**.
+Original definitions and PASS conditions: [review report §6](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md). Below is the **status updated after today's checks**.
 
-| ID | Było | Co sprawdziłem | Jest teraz |
+| ID | Was | What I checked | Now |
 |---|---|---|---|
-| **H1** dobór z kontekstu ma sens, bo zadania są M/L | częściowo | symulacja: 66% commitów dostaje co najmniej sekwencję z bramkami, a 34% brak wzorca; M/L ≈ 90% (S1) | **częściowo poparte**; brakuje oznaczeń człowieka (arkusz gotowy) |
-| **H2** deterministyczne checki reguł złapią coś realnego | niepoparte | rozszerzony skan (11 sprawdzeń); naruszenia w 2 grupach: **8 linii rejestracji usług w `Startup.cs`** (reguła w `dotnet.instructions.md:169` nie ma wyjątku dla Web/API, a Web ma `WebExtensions.cs`) i **bezpośrednie `fetch(...)` w 2 plikach JS** (`cartNotification.js`, `checkout-placeorder.js`; reguła: używać helpera `ajaxRequest`). `User.Claims` tylko w `BaseController` (dozwolone) | **częściowo poparte, skala mała** (ok. 10 linii/2 pliki); nie wiadomo, czy to tolerowane wyjątki |
-| **H3** bramki dowodowe w researchu | poparte | bez zmian | **poparte** |
-| **H4** debata ponad jednego krytyka | niesprawdzone | literatura: Zhang i in. (debata często nie przewyższa prostych baz; pomaga heterogeniczność modeli) | **niepoparte jako domyślny wybór**; zostaje poziom C, wymóg heterogeniczności; nasz wynik dotyczy krytyki syntezy, nie benchmarków |
-| **H5** trafny dobór przez agenta | niesprawdzone | reguła policzona i przetestowana na odporność; nie testowałem decyzji LLM | **nadal niesprawdzone**; przygotowany arkusz trybu cienia (reguła, nie agent) |
-| **H6** karta wzorców nie zjada tokenów | niesprawdzone | **zmierzyłem szkic karty**: 1 821 znaków, 321 słów, **≈ 455 tokenów** (zakres 387–524 wg heurystyki z `context-cost-analysis.md`, ±15%) = ok. **6,4%** stałego bloku 7 110 tokenów, gdyby była ładowana zawsze | **zmierzone na szkicu**; uzasadnia ładowanie na żądanie (dla zadań S zero), nie ładowanie stałe |
-| **H7** czatbot tylko do odczytu jest wykonalny | częściowo | w warstwie Application istnieje **dostęp oparty o token bez ClaimsPrincipal**: `IOrderAccessService.GetScopeAsync(token)` i `HasAccessAsync(orderId, token)` | **lepiej poparte** (backend może sprawdzić dostęp bez cookie); end-to-end niesprawdzone |
-| **H8** spójność Copilot i Claude Code | niesprawdzone | nie da się bez uruchomienia obu narzędzi | **niesprawdzone** |
-| **H9** brak regresji jakości i kosztu | niesprawdzone | wymaga zestawu zadań referencyjnych | **niesprawdzone** |
+| **H1** selection from context makes sense, because tasks are M/L | partially | simulation: 66% of commits get at least a sequence with gates, and 34% no pattern; M/L ≈ 90% (S1) | **partially supported**; human labels are missing (sheet ready) |
+| **H2** deterministic rule checks will catch something real | unsupported | extended scan (11 checks); violations in 2 groups: **8 service-registration lines in `Startup.cs`** (the rule in `dotnet.instructions.md:169` has no exception for Web/API, and Web has `WebExtensions.cs`) and **direct `fetch(...)` in 2 JS files** (`cartNotification.js`, `checkout-placeorder.js`; rule: use the `ajaxRequest` helper). `User.Claims` only in `BaseController` (allowed) | **partially supported, small scale** (about 10 lines/2 files); unknown whether these are tolerated exceptions |
+| **H3** evidence gates in research | supported | unchanged | **supported** |
+| **H4** debate over a single critic | unchecked | literature: Zhang et al. (debate often does not outperform simple baselines; model heterogeneity helps) | **unsupported as a default choice**; stays at level C, heterogeneity requirement; our result concerns critique of a synthesis, not benchmarks |
+| **H5** accurate selection by an agent | unchecked | the rule computed and tested for robustness; I did not test an LLM's decisions | **still unchecked**; shadow-mode sheet prepared (rule, not agent) |
+| **H6** the pattern card does not eat tokens | unchecked | **I measured the card draft**: 1,821 characters, 321 words, **≈ 455 tokens** (range 387–524 per the heuristic from `context-cost-analysis.md`, ±15%) = about **6.4%** of the constant block of 7,110 tokens, if it were always loaded | **measured on the draft**; justifies on-demand loading (zero for S tasks), not constant loading |
+| **H7** a read-only chatbot is feasible | partially | in the Application layer there is **token-based access without a ClaimsPrincipal**: `IOrderAccessService.GetScopeAsync(token)` and `HasAccessAsync(orderId, token)` | **better supported** (the backend can check access without a cookie); end-to-end unchecked |
+| **H8** Copilot and Claude Code consistency | unchecked | cannot be done without running both tools | **unchecked** |
+| **H9** no quality and cost regression | unchecked | requires a set of reference tasks | **unchecked** |
 
-**Nadal niesprawdzone (wymaga Twojego udziału lub realnego uruchomienia):** H5 w wersji z LLM, H8, H9, ocena arkusza H1/H5.
+**Still unchecked (requires your involvement or a real run):** H5 in the LLM version, H8, H9, labeling of the H1/H5 sheet.
 
 ---
 
-## 7. Co się zmienia w raportach po tym sprawdzeniu
-1. **Debata:** zostaje na poziomie C (na prośbę), z wymogiem różnych modeli; nie ma dowodów, że jest lepsza niż jeden krytyk ze sprawdzaniem źródeł.
-2. **Fan-out:** tylko do odczytu i dla naprawdę niezależnych pytań; unikać przy edycjach na wspólnych plikach i przy zadaniach sekwencyjnych (dowód: Kim, Anthropic).
-3. **Reguła skalowania wysiłku** (Anthropic: 1 agent / 2–4 subagentów / > 10) to **jedyna znaleziona jawna reguła liczbowa**; traktujemy ją jako punkt odniesienia, nie jako naszą.
-4. **Koszt kotwica:** multi-agent ≈ 15× tokenów względem czatu (Anthropic); nasza debata ≈ 0,52 mln tokenów subagentów.
-5. **H2 częściowo odzyskuje sens:** wykryto 2 grupy realnych odstępstw od reguł; skala mała.
-6. **H6 zmierzone na szkicu:** ≈ 455 tokenów.
+## 7. What changes in the reports after this check
+1. **Debate:** stays at level C (on request), with a requirement of different models; there is no evidence that it is better than one critic with source checking.
+2. **Fan-out:** read-only and only for truly independent questions; avoid for edits on shared files and for sequential tasks (evidence: Kim, Anthropic).
+3. **Effort-scaling rule** (Anthropic: 1 agent / 2–4 subagents / > 10) is the **only explicit numeric rule found**; we treat it as a reference point, not as ours.
+4. **Cost anchor:** multi-agent ≈ 15× the tokens of a chat (Anthropic); our debate ≈ 0.52 million subagent tokens.
+5. **H2 partially regains meaning:** 2 groups of real deviations from the rules were detected; small scale.
+6. **H6 measured on the draft:** ≈ 455 tokens.
 
-## 8. Ograniczenia
-- Wszystkie źródła naukowe przeczytane wyłącznie przez abstrakt lub streszczenie narzędzia; liczby z wyszukiwarki oznaczone jako **Niska**.
-- Kim i in.: rozbieżne wersje (liczba konfiguracji, R², wartości zysku/straty).
-- Symulacja na git testuje spójność reguły, nie trafność; commit ≠ zadanie.
-- Regexy skanu reguł są przybliżeniami; nie rozdzieliłem kodu legacy od nowego.
-- Pomiar karty to heurystyka znaków/4 na szkicu, nie rzeczywisty tokenizer ani rzeczywiste ładowanie w narzędziu.
-- Nie zrobiłem testu LLM doboru (H5), testu A/B debaty (H4) ani testu w Copilocie (H8).
+## 8. Limitations
+- All scientific sources read only through the abstract or a tool's summary; numbers from the search engine marked as **Low**.
+- Kim et al.: divergent versions (number of configurations, R², gain/loss values).
+- The git simulation tests the rule's consistency, not accuracy; a commit ≠ a task.
+- The rule-scan regexes are approximations; I did not separate legacy code from new.
+- The card measurement is a characters/4 heuristic on the draft, not a real tokenizer nor real loading in a tool.
+- I did not do an LLM test of selection (H5), an A/B test of debate (H4) or a test in Copilot (H8).

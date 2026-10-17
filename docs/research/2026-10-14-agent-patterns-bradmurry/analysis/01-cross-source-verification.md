@@ -1,62 +1,62 @@
 # Cross-Source Verification (Phase 3, step 2)
 
-Data: 2026-10-14. Konwencja pewności: methodology §8 (High = ≥2 niezależne źródła/jawne dowody; Medium = jedno źródło; Low = spekulacja/sprzeczne). **Uwaga:** w plikach `*-raw-findings.md` „High" oznacza „twierdzenie jest jawnie w tekście", a **nie** „zweryfikowane niezależnie". W tym dokumencie stosuję ścisłą skalę.
+Date: 2026-10-14. Confidence convention: methodology §8 (High = ≥2 independent sources/explicit evidence; Medium = one source; Low = speculation/contradictory). **Note:** in the `*-raw-findings.md` files "High" means "the claim is explicitly in the text", **not** "independently verified". In this document I use the strict scale.
 
-## 1. Sprzeczności i niespójności (nie rozstrzygam wyboru jednej strony)
+## 1. Contradictions and inconsistencies (I do not decide in favor of one side)
 
-| # | Źródło A mówi | Źródło B mówi | Charakter |
+| # | Source A says | Source B says | Nature |
 |---|---|---|---|
-| C1 | `08` (intro serii): każda pętla jest ograniczona „by a verdict enum, policy.maxIterations, and the reducer's no-progress guard" | `13`, `14`, `16` (autor sam się poprawia): no-progress guard „does not span turns", zabezpieczenia to enum + `maxIterations`, „two rather than three" | **Autokorekta autora** — wcześniejsze deklaracje osłabione. Intro serii nie poprawione. |
-| C2 | `09` (pipeline): `implemented` „NOT a bool" (bool resetowany do `false` zostaje „present") | `09`, tabela końcowa: „implemented = true" | Wewnętrzna niespójność, niewyjaśniona przez autora |
-| C3 | `26` (AiP Part 1): YAML incident-triage ma `derive-key`, `notifyKey`, `attempts`, re-entrant `notify` | `27`: ta sama nazwa FSM, `notify` wymaga `notifyRef` z `opsTool`, bez `derive-key` | Dwie różne wersje „tego samego" workflow |
-| C4 | `23` (data quality): tabela sygnałów ma 3 fakty + 1 opinię | tekst: „Two facts, one opinion" | Błąd redakcyjny (oznaczony `[sic]`) |
-| C5 | `23`: tokeny po Round 2 = 38 000 | optimum = 41 000 (wyższe niż po Round 2, choć nazwane „optimum") | Metryka rośnie w „optimum" — niewyjaśnione |
-| C6 | `25` (entity resolution): finalny FSM bez bloku `policy` | tekst serii wszędzie podkreśla `maxIterations`/policy jako zabezpieczenie | Niespójność przykład–zasada; podział strojenia na rundy w podsumowaniu też nie zgadza się z opisem rund |
-| C7 | AutoGen debate (`39`): proza „agent A is connected to agents B and C" | rysunek i `TypeSubscription`: A sąsiaduje z B i D | Proza vs kod (oba zacytowane) |
-| C8 | AutoGen debate: proza „SolverRequest" rozpoczyna debatę | kod publikuje `Question` | Proza vs kod |
-| C9 | AutoGen reflection (`40`): proza wymienia „max iterations" jako warunek stopu | kod nie ma limitu iteracji | Proza vs kod — możliwa pętla nieskończona |
-| C10 | AutoGen group chat (`36`): proza „APPORVED" od edytora | kod sprawdza tylko wiadomość użytkownika „approve" | Proza vs kod; strona sama: „not meant to be used in real applications" |
-| C11 | AutoGen mixture-of-agents (`38`): 3 warstwy workerów, orkiestrator syntetyzuje, wynik „published" | `range(num_layers-1)` → 2 warstwy; syntezę robią workerzy; wynik zwracany bezpośrednio | Proza vs kod |
-| C12 | AutoGen handoffs (`37`): „Refund Agent" | kod: `IssuesAndRepairsAgent` | Nazwa w prozie ≠ kod |
-| C13 | `32` (config-driven-transforms): nagłówek „schleppy transforms" | import `plot.transform.processor` | Nazwa narzędzia niespójna |
-| C14 | użytkownik: „14 postów" | indeks bloga: 13 postów + strona indeksu = 14 URL-i | Nie sprzeczność źródeł — doprecyzowanie liczby |
+| C1 | `08` (series intro): each loop is bounded "by a verdict enum, policy.maxIterations, and the reducer's no-progress guard" | `13`, `14`, `16` (the author corrects himself): the no-progress guard "does not span turns", the safeguards are the enum + `maxIterations`, "two rather than three" | **Author's self-correction** — earlier claims weakened. The series intro was not corrected. |
+| C2 | `09` (pipeline): `implemented` is "NOT a bool" (a bool reset to `false` stays "present") | `09`, final table: "implemented = true" | Internal inconsistency, not explained by the author |
+| C3 | `26` (AiP Part 1): the incident-triage YAML has `derive-key`, `notifyKey`, `attempts`, re-entrant `notify` | `27`: the same FSM name, `notify` requires `notifyRef` from `opsTool`, no `derive-key` | Two different versions of "the same" workflow |
+| C4 | `23` (data quality): the signals table has 3 facts + 1 opinion | text: "Two facts, one opinion" | Editorial error (marked `[sic]`) |
+| C5 | `23`: tokens after Round 2 = 38,000 | optimum = 41,000 (higher than after Round 2, although called the "optimum") | The metric grows at the "optimum" — unexplained |
+| C6 | `25` (entity resolution): the final FSM has no `policy` block | the series text everywhere stresses `maxIterations`/policy as a safeguard | Example–principle inconsistency; the split of tuning into rounds in the summary also does not match the description of the rounds |
+| C7 | AutoGen debate (`39`): prose "agent A is connected to agents B and C" | the figure and `TypeSubscription`: A neighbors B and D | Prose vs code (both quoted) |
+| C8 | AutoGen debate: prose "SolverRequest" starts the debate | the code publishes `Question` | Prose vs code |
+| C9 | AutoGen reflection (`40`): prose lists "max iterations" as a stop condition | the code has no iteration limit | Prose vs code — a possible infinite loop |
+| C10 | AutoGen group chat (`36`): prose "APPORVED" from the editor | the code only checks the user's "approve" message | Prose vs code; the page itself: "not meant to be used in real applications" |
+| C11 | AutoGen mixture-of-agents (`38`): 3 layers of workers, the orchestrator synthesizes, the result is "published" | `range(num_layers-1)` → 2 layers; the synthesis is done by workers; the result is returned directly | Prose vs code |
+| C12 | AutoGen handoffs (`37`): "Refund Agent" | code: `IssuesAndRepairsAgent` | Name in prose ≠ code |
+| C13 | `32` (config-driven-transforms): the heading "schleppy transforms" | import `plot.transform.processor` | Inconsistent tool name |
+| C14 | user: "14 posts" | blog index: 13 posts + the index page = 14 URLs | Not a contradiction of the sources — a clarification of the count |
 
-## 2. Korelacja między źródłami (co jest potwierdzone niezależnie, a co nie)
+## 2. Correlation between sources (what is confirmed independently and what is not)
 
-| Twierdzenie | Źródła | Niezależne? | Ocena |
+| Claim | Sources | Independent? | Assessment |
 |---|---|---|---|
-| „Sędzia/krytyk LLM to słaby sygnał; potrzebny zewnętrzny, deterministyczny check" | Brad (`07`, `22`–`25`: „the weakest signal… drifts toward 'looks thorough'") ⟷ Zheng i in. 2023 (biasy position/verbosity/self-enhancement) ⟷ Huang i in. 2023 („struggle to self-correct… without external feedback") | trzy niezależne grupy, ale **różne twierdzenia** (patrz erratum E1 na końcu pliku) | **Medium** (skorygowane po debacie; pierwotnie „High kierunkowo") |
-| „Pętla musi mieć jawny limit/stop poza modelem" | Brad (maxIterations, cap 128) ⟷ Anthropic („Stopping conditions, such as a maximum iteration count") ⟷ blogi o ReAct | częściowo | **High** (kierunkowo) |
-| „Zacznij od najprostszego; autonomia = koszt i błędy kumulacyjne" | Anthropic ⟷ Brad („Not every workflow needs a full FSM… a for-loop could do for free", `29`) | tak | **High** |
-| „Różnorodność modeli, nie inna pętla, pomaga na wspólne ślepe punkty (debata/quorum)" | Brad (`14`, `20`) ⟷ literatura o biasach sędziów (self-enhancement) | częściowo; literatura nie testuje debaty u Brada | **Medium** |
-| „Wzorzec reactive reducer daje determinizm, replay, ograniczony koszt" | tylko Brad (kilka postów) | **nie** — jeden autor, kilka postów to nie niezależne potwierdzenie | **Medium** (twierdzenie autora) |
-| Metryki baseline→optimum (4 przykłady) | tylko Brad | nie; bez prób/powtórzeń | **Low–Medium** |
-| „Debata wielu agentów poprawia wynik" | AutoGen: tylko opis + jeden przykład z pełną zgodnością; Brad: brak liczb | nie ma danych w źródłach | **Low** (brak dowodu skuteczności w zebranym materiale) |
-| Zewnętrzne dowody skuteczności multi-agent debate (np. paper o sparse topology wymieniony na stronie AutoGen) | strona AutoGen linkuje arXiv 2406.11776 — nie pobrane | — | **luka** |
+| "An LLM judge/critic is a weak signal; an external, deterministic check is needed" | Brad (`07`, `22`–`25`: "the weakest signal… drifts toward 'looks thorough'") ⟷ Zheng et al. 2023 (position/verbosity/self-enhancement biases) ⟷ Huang et al. 2023 ("struggle to self-correct… without external feedback") | three independent groups, but **different claims** (see erratum E1 at the end of the file) | **Medium** (corrected after the debate; originally "High directionally") |
+| "A loop must have an explicit limit/stop outside the model" | Brad (maxIterations, cap 128) ⟷ Anthropic ("Stopping conditions, such as a maximum iteration count") ⟷ blogs on ReAct | partially | **High** (directionally) |
+| "Start with the simplest; autonomy = cost and compounding errors" | Anthropic ⟷ Brad ("Not every workflow needs a full FSM… a for-loop could do for free", `29`) | yes | **High** |
+| "Model diversity, not a different loop, helps with shared blind spots (debate/quorum)" | Brad (`14`, `20`) ⟷ literature on judge biases (self-enhancement) | partially; the literature does not test Brad's debate | **Medium** |
+| "The reactive reducer pattern gives determinism, replay, bounded cost" | Brad only (several posts) | **no** — one author, several posts are not independent confirmation | **Medium** (the author's claim) |
+| Baseline→optimum metrics (4 examples) | Brad only | no; no trials/repetitions | **Low–Medium** |
+| "Multi-agent debate improves the result" | AutoGen: only a description + one example with full agreement; Brad: no numbers | no data in the sources | **Low** (no evidence of effectiveness in the collected material) |
+| External evidence of multi-agent debate effectiveness (e.g. the paper on sparse topology mentioned on the AutoGen page) | the AutoGen page links to arXiv 2406.11776 — not fetched | — | **gap** |
 
-## 3. Luki (Missing Information)
-- Medium (403), Mastra (treść rozdziałów).
-- Brak jakiegokolwiek niezależnego benchmarku dla runtime'u „Aegis"; brak publicznego repo w materiale.
-- Brak danych o skuteczności debaty/quorum w źródłach (Brad: opisy mechaniki, autor sam: „can't tell you the consensus is right").
-- AiP części 5–7 oraz akty II–III; 13 podstron wzorców były dostępne tylko dzięki wklejeniu przez użytkownika.
-- Zatrzymano się na „stanie z 2026-10-14"; daty publikacji większości postów Brada nie są znane (część stron ma „Jul 2026", „Sep 2026" w wyciągu).
+## 3. Gaps (Missing Information)
+- Medium (403), Mastra (chapter content).
+- No independent benchmark whatsoever for the "Aegis" runtime; no public repo in the material.
+- No data on the effectiveness of debate/quorum in the sources (Brad: descriptions of the mechanics, the author himself: "can't tell you the consensus is right").
+- AiP parts 5–7 and acts II–III; the 13 pattern subpages were available only thanks to pasting by the user.
+- Stopped at the "state as of 2026-10-14"; the publication dates of most of Brad's posts are not known (some pages have "Jul 2026", "Sep 2026" in the excerpt).
 
 ## 4. Declarative Conclusions (consolidated)
-Nie dotyczy — źródła zewnętrzne (publikacje), nie transkrypty z mówcami. Potraktowane jako *twierdzenia autora*: oznaczone w findings jako „single-source / self-reported". Najbardziej ryzykowne dla późniejszych wniosków (filtr wpływu analitycznego, methodology §9):
+Not applicable — external sources (publications), not transcripts with speakers. Treated as the *author's claims*: marked in the findings as "single-source / self-reported". The most risky for later conclusions (analytical influence filter, methodology §9):
 
-| # | Twierdzenie | Autor | Uzasadnienie w źródle | Korroboracja | Werdykt |
+| # | Claim | Author | Justification in the source | Corroboration | Verdict |
 |---|---|---|---|---|---|
-| D1 | „the glue code is gone" | Brad (`03`) | tylko deklaracja | brak | **Unsupported** |
-| D2 | „This series is all true. Not a thought experiment" (`07`) | Brad | archiwum 5 wersji disease-etl | pliki archiwum niedostępne | **Partially supported** |
-| D3 | Wynik 2020 „billions of requests… didn't even break a sweat" (`30`) | Brad | brak liczb poza tym | brak | **Unsupported** (samoopis) |
-| D4 | „90% fast track / 80% of use case" (`43`) | Brad | brak | brak | **Unsupported** |
-| D5 | „An LLM is a fantastic contributor. It is a terrible state machine." (`03`) | Brad | uzasadnienie narracyjne | zgodne z Huang i in. na poziomie kierunku (nie dosłownie) | **Partially supported** |
-| D6 | SLM „sufficiently powerful, inherently more suitable, necessarily more economical" (arXiv 2506.02153) | Belcak i in. | position paper | brak niezależnych w zebranych materiałach | **Partially supported** (autorzy sami nazywają to „value statement") |
+| D1 | "the glue code is gone" | Brad (`03`) | declaration only | none | **Unsupported** |
+| D2 | "This series is all true. Not a thought experiment" (`07`) | Brad | archive of 5 versions of disease-etl | archive files unavailable | **Partially supported** |
+| D3 | The 2020 result "billions of requests… didn't even break a sweat" (`30`) | Brad | no numbers besides this | none | **Unsupported** (self-description) |
+| D4 | "90% fast track / 80% of use case" (`43`) | Brad | none | none | **Unsupported** |
+| D5 | "An LLM is a fantastic contributor. It is a terrible state machine." (`03`) | Brad | narrative justification | consistent with Huang et al. at the level of direction (not literally) | **Partially supported** |
+| D6 | SLM "sufficiently powerful, inherently more suitable, necessarily more economical" (arXiv 2506.02153) | Belcak et al. | position paper | no independent ones in the collected materials | **Partially supported** (the authors themselves call it a "value statement") |
 
-## 5. Weryfikacja cytatów (automatyczna, 2026-10-14)
-Skrypt porównał cytaty w cudzysłowach (≥25 znaków) z plików `*-raw-*findings.md` z tekstem źródeł (adresy w [`../SOURCES.md`](../SOURCES.md)) (po normalizacji białych znaków, apostrofów, backticków). Wynik:
+## 5. Quote verification (automatic, 2026-10-14)
+A script compared the quotes in quotation marks (≥25 characters) from the `*-raw-*findings.md` files with the source text (addresses in [`../SOURCES.md`](../SOURCES.md)) (after normalizing whitespace, apostrophes, backticks). Result:
 
-| Plik findings | Cytaty | Zgodne | Niezgodne |
+| Findings file | Quotes | Matching | Non-matching |
 |---|---|---|---|
 | autogen-raw-9pages | 173 | 160 | 13 |
 | bm-agentic-core-raw | 177 | 173 | 4 |
@@ -64,10 +64,10 @@ Skrypt porównał cytaty w cudzysłowach (≥25 znaków) z plików `*-raw-*findi
 | bm-patterns-1-7-raw | 232 | 212 | 20 |
 | bm-patterns-8-13-raw | 279 | 273 | 6 |
 | bm-series-parts-raw | 293 | 270 | 23 |
-| **Razem** | **1 448** | **1 373 (94,8%)** | **75 (5,2%)** |
+| **Total** | **1,448** | **1,373 (94.8%)** | **75 (5.2%)** |
 
-Ręczny przegląd próbki niezgodnych: większość to **artefakty detektora** (fragmenty kodu w backtickach, pary cudzysłowów obejmujące zdania zamiast cytatów, wewnętrzne cudzysłowy podwójne zamienione na pojedyncze przy cytowaniu, np. `'how many have answered'`) — nie zmyślone cytaty. **Nie przejrzałem wszystkich 75 pojedynczo**; traktuj 94,8% jako dolną granicę zgodności dosłownej, a pozostałe jako „do ręcznego sprawdzenia przed użyciem w publikacji".
+Manual review of a sample of the non-matching ones: most are **detector artifacts** (code fragments in backticks, pairs of quotation marks enclosing sentences instead of quotes, inner double quotation marks changed to single ones when quoting, e.g. `'how many have answered'`) — not fabricated quotes. **I did not review all 75 individually**; treat 94.8% as a lower bound of verbatim agreement, and the rest as "to be checked manually before use in a publication".
 
-## 6. Erratum (po debacie, 2026-10-14)
-- **E1 (wiersz „Sędzia/krytyk LLM to słaby sygnał…" w §2):** pierwotnie zgrupowałem trzy źródła jako potwierdzające jedno twierdzenie i dałem „High". Sędzia debaty (`../debate/judge-round1.md`) uznał to za przesadę. Prawidłowo: Zheng i in. 2023 pokazują **biasy sędziego** (position, verbosity, self-enhancement) i >80% zgodności z ludźmi, czyli sędzia wymaga kalibracji, a nie „jest słaby"; Huang i in. 2023 dotyczą **samokorekty bez zewnętrznego feedbacku**; Brad twierdzi, że krytyk LLM to „weakest signal". To trzy zbliżone, ale różne twierdzenia, więc zgodność jest tylko kierunkowa (**Medium**). Błąd był w mojej syntezie, nie w źródłach.
-- **E2:** „Low" w §2 dotyczy wyłącznie skuteczności **debaty**. Nie obejmuje wzorców 10 (aukcja) i 13 (dynamic team), dla których w materiale nie ma żadnej oceny skuteczności (brak danych, nie dowód przeciw).
+## 6. Erratum (after the debate, 2026-10-14)
+- **E1 (the row "An LLM judge/critic is a weak signal…" in §2):** originally I grouped three sources as confirming a single claim and gave "High". The debate judge (`../debate/judge-round1.md`) deemed this an overstatement. Correctly: Zheng et al. 2023 show **judge biases** (position, verbosity, self-enhancement) and >80% agreement with humans, i.e. the judge needs calibration, rather than "is weak"; Huang et al. 2023 concern **self-correction without external feedback**; Brad claims that the LLM critic is the "weakest signal". These are three similar but different claims, so the agreement is only directional (**Medium**). The error was in my synthesis, not in the sources.
+- **E2:** "Low" in §2 concerns solely the effectiveness of **debate**. It does not cover patterns 10 (auction) and 13 (dynamic team), for which there is no assessment of effectiveness in the material (no data, not evidence against).

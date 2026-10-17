@@ -1,70 +1,70 @@
-# Pomysły zastosowań: aplikacja ECommerceApp i setup Claude Code / Copilot
+# Application ideas: the ECommerceApp application and the Claude Code / Copilot setup
 
-- **Data:** 2026-10-14
-- **Status:** **hipotezy do przetestowania**, nie rekomendacje wdrożeniowe. Wynik rozmowy po researchu i debacie ([`debate/decision.md`](debate/decision.md)).
-- **Co przejrzałem:** strukturę repo, [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md), foldery `.claude/` i `.github/`, `.github/AGENT-PIPELINE.md`, `.github/context-cost-analysis.md`, `tools/hooks/README.md`, `.github/instructions/{rag,agent-memory}.instructions.md`, `.claude/settings.json`.
-- **Czego NIE przejrzałem:** kodu domenowego głębiej niż nazwy plików, wolumenu zamówień/zwrotów/zgłoszeń (brak danych), `mcp-routing-eval.prompt.md`, `tools/rag/queries.yaml`, treści pięciu folderów z agentami w korzeniu repo (`classifier`, `requirements-critic`, `linguistic-boundary-verifier`, `test-strategy-reviewer`, `transcriptor-criticor`, `maet-program-classifierator`).
-- **Zasada przewodnia (z debaty):** LLM tam, gdzie wynik da się zmierzyć na własnych danych i gdzie człowiek lub deterministyczny check stoi za nim. Ścieżka transakcyjna (rezerwacje, płatności, sagi, naliczanie kuponów) zostaje bez LLM.
+- **Date:** 2026-10-14
+- **Status:** **hypotheses to be tested**, not implementation recommendations. The outcome of the conversation after the research and the debate ([`debate/decision.md`](debate/decision.md)).
+- **What I reviewed:** the repo structure, [`docs/architecture/bounded-context-map.md`](../../architecture/bounded-context-map.md), the `.claude/` and `.github/` folders, `.github/AGENT-PIPELINE.md`, `.github/context-cost-analysis.md`, `tools/hooks/README.md`, `.github/instructions/{rag,agent-memory}.instructions.md`, `.claude/settings.json`.
+- **What I did NOT review:** the domain code deeper than file names, the volume of orders/returns/tickets (no data), `mcp-routing-eval.prompt.md`, `tools/rag/queries.yaml`, the contents of the six agent folders in the repo root (`classifier`, `requirements-critic`, `linguistic-boundary-verifier`, `test-strategy-reviewer`, `transcriptor-criticor`, `maet-program-classifierator`).
+- **Guiding principle (from the debate):** an LLM where the result can be measured on your own data and where a human or a deterministic check stands behind it. The transactional path (reservations, payments, sagas, coupon calculation) stays without an LLM.
 
 ---
 
-## A. Aplikacja ECommerceApp (rdzeń sklepu)
+## A. The ECommerceApp application (the core of the shop)
 
-Dziś w repo nie ma integracji z LLM (sprawdzone przez pragmatyka debaty i potwierdzone przez użytkownika).
+Today there is no LLM integration in the repo (checked by the debate's pragmatist and confirmed by the user).
 
-| # | Pomysł | Gdzie w repo | Co daje | Jak zmierzyć | Kryterium „stop" (propozycja) | Ryzyko |
+| # | Idea | Where in the repo | What it gives | How to measure | "Stop" criterion (proposal) | Risk |
 |---|---|---|---|---|---|---|
-| A1 | Porządkowanie katalogu przez admina: szkic opisu/kategorii/tagów z krótkiego wejścia, wykrywanie duplikatów produktów | `Catalog/Products`, `Backoffice` | oszczędność ręcznej pracy admina; admin zatwierdza | odsetek szkiców przyjętych bez zmian, minuty na produkt | przyjęte bez zmian < ok. połowy na próbce 50–100 produktów | niskie (człowiek w pętli) |
-| A2 | Diagnoza „czemu to zamówienie utknęło": LLM czyta stan sagi, outbox i historię płatności (tylko odczyt) i tłumaczy po ludzku | `Sagas`, `Messaging`, `Payments` | najboleśniejsze miejsce systemu asynchronicznego; narzędzie dla dev/ops | zgodność diagnozy ze znaną przyczyną na sztucznych przypadkach z testów E2E | diagnoza trafna w mniej niż większości znanych przypadków | niskie (tylko odczyt, wewnętrznie) |
-| A3 | Klasyfikacja powodów zwrotów/anulowań do stałej taksonomii + dashboard | `Fulfillment/Refund` (ma `Reason`), `OrderCancelledPayload` | widać, dlaczego klienci zwracają | zgodność z ręcznie oznaczonymi ok. 100 przypadkami | zgodność niska lub wolumen zbyt mały, by dashboard coś pokazał | niskie; wartość zależy od wolumenu |
-| A4 | Wyszukiwanie semantyczne po katalogu | Catalog + wyszukiwarka | mniej zapytań bez wyniku | odsetek wyszukań bez wyniku i kliknięć | brak poprawy względem obecnej wyszukiwarki | średnie (infrastruktura embeddingów) |
-| A5 | Szkic reguły kuponu z opisu słownego, walidowany istniejącym schematem parametrów | `Sales/Coupons` | szybsze tworzenie reguł | odsetek poprawnych reguł na zestawie fraz | admin i tak szybciej w istniejącym UI | niskie, zysk raczej mały |
-| A6 | Czatbot klienta (FAQ, polityka zwrotów, status zamówienia tylko do odczytu) | nowy moduł | odciążenie supportu, o ile jest ruch | odsetek rozmów rozwiązanych bez człowieka | brak ruchu/zgłoszeń do odciążenia | najwyższe (ruch publiczny) |
+| A1 | Catalog curation by the admin: a draft of the description/category/tags from a short input, detection of duplicate products | `Catalog/Products`, `Backoffice` | saves the admin's manual work; the admin approves | share of drafts accepted unchanged, minutes per product | accepted unchanged < about half on a sample of 50–100 products | low (human in the loop) |
+| A2 | Diagnosis "why is this order stuck": the LLM reads the saga state, the outbox and the payment history (read-only) and explains it in plain language | `Sagas`, `Messaging`, `Payments` | the most painful spot of an asynchronous system; a tool for dev/ops | agreement of the diagnosis with the known cause on artificial cases from the E2E tests | diagnosis correct in fewer than the majority of known cases | low (read-only, internal) |
+| A3 | Classification of return/cancellation reasons into a fixed taxonomy + a dashboard | `Fulfillment/Refund` (has `Reason`), `OrderCancelledPayload` | shows why customers return | agreement with about 100 manually labeled cases | agreement low or volume too small for the dashboard to show anything | low; value depends on volume |
+| A4 | Semantic search over the catalog | Catalog + search | fewer queries without a result | share of searches without a result and clicks | no improvement relative to the current search | medium (embeddings infrastructure) |
+| A5 | A coupon rule draft from a verbal description, validated by the existing parameter schema | `Sales/Coupons` | faster rule creation | share of correct rules on a set of phrases | the admin is faster anyway in the existing UI | low, the gain is rather small |
+| A6 | Customer chatbot (FAQ, return policy, order status read-only) | new module | offloads support, provided there is traffic | share of conversations resolved without a human | no traffic/tickets to offload | highest (public traffic) |
 
-**Poza LLM:** rezerwacje zapasu, płatności, sagi, naliczanie kuponów. Powód: Wasze zasady (saga bez blokad, natychmiastowy status zamówienia) i debata (SKIP/DEFER dla akcji z efektem).
+**Outside the LLM:** stock reservations, payments, sagas, coupon calculation. Reason: your rules (saga without locks, immediate order status) and the debate (SKIP/DEFER for actions with an effect).
 
-**Metoda zanim cokolwiek powstanie:** 1–2 dni na teście offline: eksport ok. 100 rekordów, przepuszczenie przez model, policzenie zgodności z ręcznymi etykietami. Słabo → koniec, zanim powstanie kod.
+**Method before anything is built:** 1–2 days on an offline test: export about 100 records, run them through the model, count the agreement with manual labels. Weak → stop, before any code exists.
 
 ---
 
-## B. Setup Claude Code / GitHub Copilot (to, jak pracujecie nad repo)
+## B. The Claude Code / GitHub Copilot setup (how you work on the repo)
 
-### Co już macie i jak się to ma do researchu
-Dane z repo, nie z mojej pamięci:
+### What you already have and how it relates to the research
+Data from the repo, not from my memory:
 
-| Wzorzec z researchu | Co macie w repo |
+| Pattern from the research | What you have in the repo |
 |---|---|
-| Deterministyczna powłoka, legalność strukturalna | GO gate: hooki `UserPromptSubmit` i `PreToolUse` blokują `Edit/Write/NotebookEdit` do czasu `IMPLEMENT` (`.claude/settings.json`, `tools/hooks/`, ADR-0033) |
-| Człowiek w pętli, jawne limity pętli | `AGENT-PIPELINE.md`: planner max-iter 3, implementer max 5 przebiegów, 3 próby weryfikacji (build + unit + integration), `bc-switch` max-iter 10, dwa punkty HITL |
-| Zewnętrzny sygnał zamiast samokrytyki (reflection) | embedded `@verifier`: build + testy jako deterministyczny gate |
-| Journal / wznawianie po restarcie | `session-continuity.instructions.md`: numerowane pliki faz plan/walidacja |
-| RAG nad dokumentacją + graf wiedzy | `tools/rag` (Qdrant, MCP), `tools/kg` (Neo4j, ADR-0031) |
-| Routing modeli | `context-cost-analysis.md` §7: tańsze (included) modele do eksploracji, droższy do implementacji; gatherery `research-gather` na tańszym modelu |
-| Pamięć między sesjami | `.github/context/agent-decisions.md` + pamięć Claude Code |
-| Walidator z innej rodziny modeli | z Waszych notatek wynika praktyka: implementacja jednym modelem, niezależna walidacja innym |
+| Deterministic shell, structural legality | GO gate: the `UserPromptSubmit` and `PreToolUse` hooks block `Edit/Write/NotebookEdit` until `IMPLEMENT` (`.claude/settings.json`, `tools/hooks/`, ADR-0033) |
+| Human in the loop, explicit loop limits | `AGENT-PIPELINE.md`: planner max-iter 3, implementer max 5 passes, 3 verification attempts (build + unit + integration), `bc-switch` max-iter 10, two HITL points |
+| External signal instead of self-critique (reflection) | embedded `@verifier`: build + tests as a deterministic gate |
+| Journal / resuming after a restart | `session-continuity.instructions.md`: numbered plan/validation phase files |
+| RAG over documentation + knowledge graph | `tools/rag` (Qdrant, MCP), `tools/kg` (Neo4j, ADR-0031) |
+| Model routing | `context-cost-analysis.md` §7: cheaper (included) models for exploration, a more expensive one for implementation; `research-gather` gatherers on a cheaper model |
+| Memory between sessions | `.github/context/agent-decisions.md` + Claude Code memory |
+| Validator from a different model family | your notes show the practice: implementation with one model, independent validation with another |
 
-Wniosek: **jesteście z przodu względem większości tego, co opisują źródła.** Poniżej tylko luki, nie „dodajmy wszystko".
+Conclusion: **you are ahead of most of what the sources describe.** Below are only gaps, not "let's add everything".
 
-### Pomysły (kolejność = moja ocena wartości do kosztu)
+### Ideas (order = my assessment of value to cost)
 
-| # | Pomysł | Dlaczego | Jak zmierzyć | Kryterium „stop" (propozycja) |
+| # | Idea | Why | How to measure | "Stop" criterion (proposal) |
 |---|---|---|---|---|
-| B1 | **Zmierzyć, nie szacować**: `context-cost-analysis.md` opiera się na założeniach (4 znaki = 1 token, założony hit rate cache'u, stan z 2026-06-03). Zrobić pomiar rzeczywisty w Claude Code (`/context`, `/cost`) i w Copilot (jeśli panel pokazuje) | bez pomiaru nie wiadomo, czy 7 110 tokenów stałego bloku i „warm turn" to prawda | tokeny stałego bloku i koszt typowej sesji, przed i po | pomiar zgodny z szacunkiem ±15% → nic nie zmieniać |
-| B2 | **Odchudzanie stałego bloku instrukcji metodą Brada** (jedna zmiana naraz, pomiar, raport sufitu): największy to `mcp-routing.instructions.md` 2 058 tokenów, potem `copilot-instructions.md` 2 184; cel: ta sama jakość routingu przy mniejszej liczbie tokenów. Wymaga małego zestawu „złotych zadań" z checkami deterministycznymi (czy agent użył RAG zamiast czytać cały plik? czy przeczytał `agent-decisions.md`?) | to dokładnie „prompt optimization" w skali, w której macie dane | tokeny/turę i odsetek zdanych złotych zadań | spadek jakości na złotych zadaniach → wycofać zmianę |
-| B3 | **Stabilny prefiks = tańsza sesja**: wg dokumentacji API zmiana definicji narzędzi lub systemowego prefiksu unieważnia cache dalszych poziomów (tools → system → messages). W praktyce: nie edytować plików ładowanych zawsze i nie dodawać/odłączać serwerów MCP w środku drogiej sesji. W tej sesji `ecommerceapp-kg` nie połączył się, więc zestaw narzędzi był inny niż zwykle. **Uwaga:** to wynika z dokumentacji API Anthropic, nie sprawdziłem, jak dokładnie Claude Code buforuje | tańsze długie sesje | porównanie kosztu sesji z/bez zmian narzędzi w trakcie | brak różnicy w pomiarze → odpuścić |
-| B4 | **Dziennik zdarzeń z hooków** (append-only JSONL): dodać hook `PostToolUse`, który zapisuje narzędzie, czas i wynik. Dziś macie hooki tylko na `UserPromptSubmit` i `PreToolUse`. Pozwala odtworzyć, co agent faktycznie zrobił, gdy relacja agenta rozjeżdża się z rzeczywistością (Wasze notatki zawierają przypadek: regresja logowania opisana jako „pre-existing") | „The run is the debug artifact" (Brad); post-mortem na faktach | czy dziennik rozstrzyga spór „co agent zrobił" w kolejnym incydencie | brak użycia po miesiącu → wyłączyć |
-| B5 | **Policzyć, ile daje niezależna walidacja, na własnych danych**: z notatek faz (plan/walidacja) zrobić tabelę „co walidator znalazł, a implementer przeoczył" (np. brakujące testy, błąd POST płatności gościa, regresja logowania). To Wasz własny „kalibrowany sędzia" i mocniejszy dowód niż paper z 2023 | Zheng i in. mierzyli czat, nie Wasz workflow | odsetek faz, w których walidator znalazł realny błąd | jeśli walidator rzadko coś znajduje → rozważyć tańszą walidację |
-| B6 | **Debata multi-agent tylko dla spornych ADR**: np. wciąż odroczona decyzja o zakresie usunięcia martwego kodu ADR-0026. Reguły z naszej debaty: różne perspektywy, wspólna baza dowodów, krytyki z weryfikacją źródeł, sędzia z enumem i limitem rund | koszt debaty jest znany; wartość tylko tam, gdzie są realne alternatywy | czy debata ujawniła kwestię, której zwykły plan nie wykrył | jeśli nic nowego → nie powtarzać |
-| B7 | **Parytet agentów Claude Code z Copilot**: w `.github/agents/` jest 19 agentów (`planner`, `implementer`, `research-planner`…), a w `.claude/agents/` tylko 2 (`assumption-check`, `what-if`). Skill `research-gather` użyty w tej sesji pochodzi z repo Gradebook (dodatkowy katalog roboczy). Opcja: lekkie odpowiedniki w `.claude/agents/` albo świadoma decyzja, że Claude Code korzysta z instrukcji `.github/` przez `CLAUDE.md` | mniej zależności od innego repo | czy research/plan da się uruchomić bez Gradebooka z tą samą jakością | jeśli rzadko używane → nie robić |
-| B8 | **Konsolidacja pamięci**: `agent-decisions.md` rośnie. Okresowo scalać wpisy epizodyczne w reguły i usuwać nieaktualne (pamięć o plikach/funkcjach weryfikować przed użyciem). Macie już `ac-knowledge-review.prompt.md` — prawdopodobnie to pokrywa; nie sprawdzałem | pamięć długoterminowa bez pielęgnacji dryfuje | liczba wpisów i odsetek nadal prawdziwych | jeśli prompt już to robi → nic |
+| B1 | **Measure, don't estimate**: `context-cost-analysis.md` rests on assumptions (4 characters = 1 token, an assumed cache hit rate, state from 2026-06-03). Do a real measurement in Claude Code (`/context`, `/cost`) and in Copilot (if the panel shows it) | without a measurement it is not known whether 7,110 tokens of the fixed block and the "warm turn" are true | tokens of the fixed block and the cost of a typical session, before and after | measurement consistent with the estimate ±15% → change nothing |
+| B2 | **Slimming down the fixed instruction block using Brad's method** (one change at a time, measure, report the ceiling): the biggest is `mcp-routing.instructions.md` at 2,058 tokens, then `copilot-instructions.md` at 2,184; goal: the same routing quality with fewer tokens. Requires a small set of "golden tasks" with deterministic checks (did the agent use RAG instead of reading the whole file? did it read `agent-decisions.md`?) | this is exactly "prompt optimization" at a scale where you have the data | tokens/turn and the share of golden tasks passed | quality drop on the golden tasks → roll back the change |
+| B3 | **Stable prefix = cheaper session**: per the API documentation, changing the tool definitions or the system prefix invalidates the cache of the later levels (tools → system → messages). In practice: don't edit the always-loaded files and don't add/detach MCP servers in the middle of an expensive session. In this session `ecommerceapp-kg` did not connect, so the toolset was different than usual. **Note:** this follows from the Anthropic API documentation; I did not check exactly how Claude Code caches | cheaper long sessions | comparison of session cost with/without tool changes mid-session | no difference in the measurement → drop it |
+| B4 | **Event log from hooks** (append-only JSONL): add a `PostToolUse` hook that records the tool, time and result. Today you have hooks only on `UserPromptSubmit` and `PreToolUse`. It lets you reconstruct what the agent actually did when the agent's account diverges from reality (your notes contain a case: a login regression described as "pre-existing") | "The run is the debug artifact" (Brad); post-mortem on facts | whether the log settles the "what did the agent do" dispute in the next incident | no use after a month → turn it off |
+| B5 | **Count how much independent validation gives, on your own data**: from the phase notes (plan/validation) make a table "what the validator found that the implementer missed" (e.g. missing tests, the guest payment POST bug, the login regression). This is your own "calibrated judge" and stronger evidence than a 2023 paper | Zheng et al. measured chat, not your workflow | share of phases in which the validator found a real bug | if the validator rarely finds anything → consider cheaper validation |
+| B6 | **Multi-agent debate only for contentious ADRs**: e.g. the still-deferred decision on the scope of removing the ADR-0026 dead code. Rules from our debate: different perspectives, a shared evidence base, critiques with source verification, a judge with an enum and a round limit | the cost of a debate is known; the value only where there are real alternatives | whether the debate surfaced an issue that an ordinary plan did not detect | if nothing new → do not repeat |
+| B7 | **Claude Code parity with Copilot**: `.github/agents/` has 19 agents (`planner`, `implementer`, `research-planner`…), and `.claude/agents/` only 2 (`assumption-check`, `what-if`). The `research-gather` skill used in this session comes from the Gradebook repo (an additional working directory). Option: lightweight equivalents in `.claude/agents/` or a conscious decision that Claude Code uses the `.github/` instructions via `CLAUDE.md` | less dependence on another repo | whether research/plan can be run without Gradebook with the same quality | if rarely used → don't do it |
+| B8 | **Memory consolidation**: `agent-decisions.md` is growing. Periodically merge episodic entries into rules and remove outdated ones (memory about files/functions should be verified before use). You already have `ac-knowledge-review.prompt.md` — it probably covers this; I did not check | long-term memory without upkeep drifts | number of entries and the share still true | if the prompt already does this → nothing |
 
-### Czego bym w setupie NIE dodawał
-- Własnego runtime'u reducera (Aegis) ani frameworku multi-agent: macie już HITL, limity i gate; źródła nie dają niezależnego dowodu na przewagę.
-- Automatycznych optymalizatorów promptów (GEPA/DSPy) przed istnieniem zestawu złotych zadań (B2).
-- Debaty jako stałego kroku każdej zmiany: koszt rośnie z liczbą debaterów i rund, a w źródłach nie ma danych o skuteczności.
+### What I would NOT add to the setup
+- A custom reducer runtime (Aegis) or a multi-agent framework: you already have HITL, limits and a gate; the sources give no independent evidence of an advantage.
+- Automatic prompt optimizers (GEPA/DSPy) before the set of golden tasks exists (B2).
+- Debate as a permanent step of every change: the cost grows with the number of debaters and rounds, and the sources have no data on effectiveness.
 
-## C. Co z tym dalej (propozycja kolejności)
-1. A2 i B1 (oba tanie i mierzalne), potem A1/A3 jako test offline.
-2. B2 po B1 (potrzebny pomiar bazowy).
-3. B5 jako analiza istniejących danych, bez budowania czegokolwiek.
-4. Czatbot (A6) dopiero przy realnym ruchu.
+## C. What next (proposed order)
+1. A2 and B1 (both cheap and measurable), then A1/A3 as an offline test.
+2. B2 after B1 (a baseline measurement is needed).
+3. B5 as an analysis of existing data, without building anything.
+4. The chatbot (A6) only with real traffic.

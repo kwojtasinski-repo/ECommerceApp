@@ -1,40 +1,40 @@
-# Research 2026-10-14: wzorce agentowe (Brad Murry + AutoGen + inne) i debata multi-agent
+# Research 2026-10-14: agent patterns (Brad Murry + AutoGen + others) and multi-agent debate
 
-Workflow: `research-gather` (Faza 1 brief → Faza 2 plan + gatherery → Faza 3 merge/weryfikacja), potem debata (wzorzec Debate/Consensus). Typ: external, actor-agnostic.
+Workflow: `research-gather` (Phase 1 brief → Phase 2 plan + gatherers → Phase 3 merge/verification), then a debate (Debate/Consensus pattern). Type: external, actor-agnostic.
 
-| Folder / plik | Zawartość |
+| Folder / file | Contents |
 |---|---|
 | `planning/` | `research-brief.md`, `research-plan.md`, `sources.md` |
-| `analysis/findings/` | findings z cytatami; `*-raw-*` = z pełnego tekstu (obowiązujące), `bm-agents-fsm`, `bm-data-infra-ops`, `autogen-patterns` = pierwsza tura z WebFetch (zastąpione, zostają jako ślad audytu), `medium-12-patterns` i `mastra-book` = luki |
-| `analysis/00-summary.md` | podsumowanie i katalog 13 wzorców + AutoGen |
-| `analysis/01-cross-source-verification.md` | sprzeczności, korelacje, werdykty twierdzeń, weryfikacja cytatów (94,8% dosłownie zgodnych) |
-| `analysis/02-rejected-information.md` | odrzucone informacje |
-| `debate/positions/`, `debate/critiques/` | runda 1: 3 stanowiska i 3 krytyki (pro / con / prag) |
-| `debate/judge-round1.md`, `debate/decision.md` | werdykt sędziego (`consensus`) i uzgodniona decyzja z zachowanym zdaniem odrębnym |
-| `analysis/sources-index.md` | indeks proweniencji: każdy plik surowy ↔ URL/opis ↔ czy był w pierwotnej liście ↔ jak pozyskano (generowany z nagłówków) |
-| [`../../reports/2026-10-14-agent-patterns-workflow-improvements.md`](../../reports/2026-10-14-agent-patterns-workflow-improvements.md) | **raport końcowy**: gdzie wzorce poprawią nasz workflow (z dowodami z tej sesji i referencjami) |
-| [`../../reports/2026-10-14-agent-patterns-fit-tradeoffs-guardrails.md`](../../reports/2026-10-14-agent-patterns-fit-tradeoffs-guardrails.md) | 13 wzorców vs nasz setup (co mamy, gdzie warto, gdzie nie), kompromisy i wspólne guardrails G1–G11; pomysły i uwagi użytkownika |
-| [`../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md`](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md) | przegląd raportu (assumption-check + 2 symulacje) i punkty weryfikacji kierunku H1–H9 z regułą GO/ADJUST/PIVOT |
-| `application-ideas.md` | pomysły zastosowań: aplikacja ECommerceApp (A1–A6) i setup Claude Code/Copilot (B1–B8), z miarami i kryteriami „stop"; hipotezy do testu |
-| `../2026-10-14-llm-self-research/README.md` | dodatkowy self research (LLM-as-judge, reflection, prompt optimization, SLM, caching, pamięć, agent loop, czatbot, nauka modeli) |
+| `analysis/findings/` | findings with quotes; `*-raw-*` = from the full text (authoritative), `bm-agents-fsm`, `bm-data-infra-ops`, `autogen-patterns` = first round via WebFetch (superseded, kept as an audit trail), `medium-12-patterns` and `mastra-book` = gaps |
+| `analysis/00-summary.md` | summary and catalog of 13 patterns + AutoGen |
+| `analysis/01-cross-source-verification.md` | contradictions, correlations, claim verdicts, quote verification (94.8% verbatim matches) |
+| `analysis/02-rejected-information.md` | rejected information |
+| `debate/positions/`, `debate/critiques/` | round 1: 3 positions and 3 critiques (pro / con / pragmatic) |
+| `debate/judge-round1.md`, `debate/decision.md` | judge's verdict (`consensus`) and the agreed decision with the dissenting opinion preserved |
+| `analysis/sources-index.md` | provenance index: each raw file ↔ URL/description ↔ whether it was in the original list ↔ how it was obtained (generated from the headers) |
+| [`../../reports/2026-10-14-agent-patterns-workflow-improvements.md`](../../reports/2026-10-14-agent-patterns-workflow-improvements.md) | **final report**: where the patterns will improve our workflow (with evidence from this session and references) |
+| [`../../reports/2026-10-14-agent-patterns-fit-tradeoffs-guardrails.md`](../../reports/2026-10-14-agent-patterns-fit-tradeoffs-guardrails.md) | 13 patterns vs our setup (what we have, where they are worth it, where not), trade-offs and shared guardrails G1–G11; user ideas and remarks |
+| [`../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md`](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md) | report review (assumption-check + 2 simulations) and direction-check points H1–H9 with a GO/ADJUST/PIVOT rule |
+| `application-ideas.md` | application ideas: the ECommerceApp application (A1–A6) and the Claude Code/Copilot setup (B1–B8), with metrics and "stop" criteria; hypotheses to test |
+| `../2026-10-14-llm-self-research/README.md` | additional self research (LLM-as-judge, reflection, prompt optimization, SLM, caching, memory, agent loop, chatbot, model learning) |
 
-**Ograniczenia:** Medium (HTTP 403) i Mastra (treść za bramką e-mail) = luki; 8 artykułów serii i 13 wzorców to rozszerzenie zakresu poza pierwotne 18 URL; konsensus debaty nie jest niezależnym potwierdzeniem (jedna baza dowodów, dominuje jeden autor).
+**Limitations:** Medium (HTTP 403) and Mastra (content behind an email gate) = gaps; 8 articles of the series and the 13 patterns are an extension of scope beyond the original 18 URLs; the debate consensus is not independent confirmation (one evidence base, dominated by one author).
 
-**Aktualizacja 2026-10-15:** dobór wzorca jako reguła z cech, symulacja na historii git i sprawdzenie hipotez: [`../2026-10-15-pattern-selection/README.md`](../2026-10-15-pattern-selection/README.md).
+**Update 2026-10-15:** pattern selection as a rule derived from features, simulation on git history, and hypothesis checks: [`../2026-10-15-pattern-selection/README.md`](../2026-10-15-pattern-selection/README.md).
 
 ---
 
-## Dla agenta weryfikującego ten research na kodzie
+## For the agent verifying this research against the code
 
-Cel tego folderu: **solidny punkt startowy**, nie gotowa decyzja. Agent, który go dostaje, ma sprawdzić na kodzie, co z tego jest trafne dla ECommerceApp.
+The purpose of this folder: **a solid starting point**, not a finished decision. The agent that receives it is to check against the code what of this is accurate for ECommerceApp.
 
-- **Pełna bibliografia i proweniencja:** [`SOURCES.md`](SOURCES.md) (z adresami URL, datami dostępu i zakresem odczytu).
-- **Najpierw przeczytaj:** [`../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md`](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md) (hipotezy H1–H9, stan GO/ADJUST/PIVOT) i [`debate/decision.md`](debate/decision.md) razem z erratum.
-- **Co już zweryfikowano na kodzie (2026-10-14/15):** liczby w `.github/setup-state.md`; brak integracji LLM w kodzie sklepu; `Product` nie ma SKU ani URL (jest `Name`, `Cost`); `IOrderAccessService` działa po tokenie bez `ClaimsPrincipal`; 9 z 10 reguł BLOCKS MERGE bez naruszeń w skanie regexem.
-- **Do sprawdzenia na kodzie (otwarte):**
-  1. Czy 8 linii rejestracji usług w `ECommerceApp.Web/Startup.cs` i `ECommerceApp.API/Startup.cs` to tolerowany wyjątek, czy naruszenie reguły z `dotnet.instructions.md` (linie 167–169).
-  2. Czy bezpośrednie `fetch(...)` w `cartNotification.js` i `checkout-placeorder.js` jest wyjątkiem od reguły „używaj `ajaxRequest`".
-  3. Czy czatbot tylko do odczytu może wywołać `IOrderAccessService` + istniejące zapytania o zamówienie z backendowego proxy (end-to-end).
-  4. Które reguły z `anti-patterns-critical.context.md` są już egzekwowane (analizatory, testy, `.editorconfig`); znaleziono tylko `BoundedContextDependencyTests`.
-- **Czego nie przyjmować na wiarę:** twierdzeń o runtime „Aegis" i metryk „baseline vs optimum" (jeden autor, bez prób i powtórzeń); liczb progów i budżetów (to propozycje); konsensusu debaty (jedna rodzina modeli, jedna baza dowodów).
-- **Znane korekty:** erratum E1 i E2 w `analysis/01-cross-source-verification.md` §6; erratum w `debate/decision.md` (SKU/URL).
+- **Full bibliography and provenance:** [`SOURCES.md`](SOURCES.md) (with URLs, access dates and scope of reading).
+- **Read first:** [`../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md`](../../reports/2026-10-14-agent-patterns-review-and-direction-checks.md) (hypotheses H1–H9, GO/ADJUST/PIVOT state) and [`debate/decision.md`](debate/decision.md) together with the erratum.
+- **What has already been verified against the code (2026-10-14/15):** the numbers in `.github/setup-state.md`; no LLM integration in the shop's code; `Product` has no SKU or URL (it has `Name`, `Cost`); `IOrderAccessService` works by token without a `ClaimsPrincipal`; 9 of 10 BLOCKS MERGE rules have no violations in a regex scan.
+- **To check against the code (open):**
+  1. Whether the 8 service-registration lines in `ECommerceApp.Web/Startup.cs` and `ECommerceApp.API/Startup.cs` are a tolerated exception or a violation of the rule in `dotnet.instructions.md` (lines 167–169).
+  2. Whether the direct `fetch(...)` in `cartNotification.js` and `checkout-placeorder.js` is an exception to the "use `ajaxRequest`" rule.
+  3. Whether a read-only chatbot can call `IOrderAccessService` + the existing order queries from a backend proxy (end-to-end).
+  4. Which rules from `anti-patterns-critical.context.md` are already enforced (analyzers, tests, `.editorconfig`); only `BoundedContextDependencyTests` was found.
+- **What not to take on faith:** claims about the "Aegis" runtime and "baseline vs optimum" metrics (one author, no trials or repetitions); the numbers of thresholds and budgets (these are proposals); the debate consensus (one model family, one evidence base).
+- **Known corrections:** errata E1 and E2 in `analysis/01-cross-source-verification.md` §6; the erratum in `debate/decision.md` (SKU/URL).

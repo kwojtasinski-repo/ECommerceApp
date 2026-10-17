@@ -1,12 +1,12 @@
-# Wyniki symulacji doboru wzorca (proxy z git)
+# Pattern selection simulation results (git proxies)
 
-Commity: 200 (od 2026-05-27 do 2026-10-14). Skrypt: `scripts/select_pattern.py`.
+Commits: 200 (from 2026-05-27 to 2026-10-14). Script: `scripts/select_pattern.py`.
 
-**To jest test spójności i odporności reguły na przybliżonych cechach, nie test trafności doboru.**
+**This is a test of the rule's consistency and robustness on approximate features, not a test of selection accuracy.**
 
-## 1. Rozkład rekomendacji (progi bazowe: {'S_f': 2, 'S_l': 60, 'L_f': 12, 'L_l': 800, 'L_p': 4, 'A_thr': 4, 'share': 0.6, 'U_add': 0.4, 'U_files': 8, 'risk_mode': 'broad'})
+## 1. Distribution of recommendations (base thresholds: {'S_f': 2, 'S_l': 60, 'L_f': 12, 'L_l': 800, 'L_p': 4, 'A_thr': 4, 'share': 0.6, 'U_add': 0.4, 'U_files': 8, 'risk_mode': 'broad'})
 
-| Wzorzec | Commity | Udział |
+| Pattern | Commits | Share |
 |---|---|---|
 | SEQUENTIAL_GATES | 133 | 66% |
 | INDEPENDENT_VALIDATION | 85 | 42% |
@@ -16,23 +16,23 @@ Commity: 200 (od 2026-05-27 do 2026-10-14). Skrypt: `scripts/select_pattern.py`.
 | PLANNER_EXECUTOR | 12 | 6% |
 | DEBATE_CANDIDATE_ASK | 10 | 5% |
 
-| Poziom autonomii | Commity | Udział |
+| Autonomy level | Commits | Share |
 |---|---|---|
-| brak wzorca | 67 | 34% |
+| no pattern | 67 | 34% |
 | A | 46 | 23% |
 | B | 77 | 38% |
 | C | 10 | 5% |
 
-Rozmiar (S/M/L): {'L': 84, 'M': 95, 'S': 21}
+Size (S/M/L): {'L': 84, 'M': 95, 'S': 21}
 
-## 2. Odporność na zmianę progów (300 losowych kombinacji progów, ziarno stałe)
+## 2. Robustness to threshold changes (300 random threshold combinations, fixed seed)
 
-- Średni odsetek kombinacji, w których rekomendacja commita jest identyczna z bazową: **90%**
-- Commity ze stabilną rekomendacją (identyczna w ≥ 90% kombinacji): **70%**
-- Commity niestabilne (identyczna w < 60% kombinacji): **6%**
-- Średni odsetek kombinacji ze zmianą poziomu autonomii: **5%**
+- Mean share of combinations in which a commit's recommendation is identical to the base one: **90%**
+- Commits with a stable recommendation (identical in ≥ 90% of combinations): **70%**
+- Unstable commits (identical in < 60% of combinations): **6%**
+- Mean share of combinations with a change of autonomy level: **5%**
 
-| Wzorzec | Zmiany (obecność/nieobecność) łącznie |
+| Pattern | Changes (presence/absence) in total |
 |---|---|
 | FANOUT_DECOMP_CHECK | 3835 |
 | NONE | 2065 |
@@ -42,11 +42,11 @@ Rozmiar (S/M/L): {'L': 84, 'M': 95, 'S': 21}
 | ADD_DETERMINISTIC_CHECK_FIRST | 222 |
 | INDEPENDENT_VALIDATION | 222 |
 
-## 3. Arkusz do oznaczenia (20 ostatnich commitów M/L, nie dokumentacja/testy-only)
+## 3. Sheet to label (the 20 latest M/L commits, not docs/tests-only)
 
-Kolumna „Zgoda?” jest pusta: wpisz T/N, jeśli proponowany wzorzec miałby sens. Propozycja pochodzi z reguły i proxy z git, a **nie** z oceny agenta.
+The "Agree?" column is empty: enter Y/N if the proposed pattern would make sense. The proposal comes from the rule and git proxies, **not** from an agent's assessment.
 
-| # | Commit | Data | Temat | Pliki / linie / obszary | Proponowane | Poziom | Zgoda? |
+| # | Commit | Date | Subject | Files / lines / areas | Proposed | Level | Agree? |
 |---|---|---|---|---|---|---|---|
 | 1 | `8a768281` | 2026-10-14 | feat(agents): add agent discipline pack and GO-gate hooks (ADR-0033) | 29 / 1286 / 7 | ADD_DETERMINISTIC_CHECK_FIRST, DEBATE_CANDIDATE_ASK, FANOUT_DECOMP_CHECK, INDEPENDENT_VALIDATION, PLANNER_EXECUTOR, SEQUENTIAL_GATES | C | |
 | 2 | `a907f475` | 2026-09-03 | fix(orders,presale,messaging): stop showing success before stock/statu | 15 / 312 / 7 | FANOUT_DECOMP_CHECK, INDEPENDENT_VALIDATION, SEQUENTIAL_GATES | B | |
@@ -69,22 +69,22 @@ Kolumna „Zgoda?” jest pusta: wpisz T/N, jeśli proponowany wzorzec miałby s
 | 19 | `b6cf9b28` | 2026-08-20 | fix(test): stabilize outbox polling and hosted shutdown | 19 / 1008 / 11 | FANOUT_DECOMP_CHECK, INDEPENDENT_VALIDATION, SEQUENTIAL_GATES | B | |
 | 20 | `846d10a3` | 2026-08-20 | docs: mark context-mode ADR-0029 retired with rationale, fix stale roa | 12 / 105 / 3 | SEQUENTIAL_GATES | A | |
 
-## 4. Test brzegowy: małe zadania (S)
+## 4. Edge test: small tasks (S)
 
-- Commity S: 21; z nich z rekomendowanym wzorcem (powinno być tylko przy wysokim ryzyku): **0**
+- S commits: 21; of which with a recommended pattern (should occur only at high risk): **0**
 
-## 5. Diagnostyka: co uruchamia „wysokie ryzyko” w wariancie szerokim
+## 5. Diagnostics: what triggers "high risk" in the broad variant
 
-| Wyzwalacz | Commity |
+| Trigger | Commits |
 |---|---|
 | nproj>=3 | 81 |
 | msg | 22 |
 | saga | 10 |
 | mig | 7 |
 
-## 6. Wariant z węższym ryzykiem (migracje, sagi, ≥ 4 projekty): jedna zmiana względem bazy
+## 6. Variant with narrower risk (migrations, sagas, ≥ 4 projects): one change relative to the base
 
-| Wzorzec | Baza | Wariant |
+| Pattern | Base | Variant |
 |---|---|---|
 | SEQUENTIAL_GATES | 133 (66%) | 133 (66%) |
 | INDEPENDENT_VALIDATION | 85 (42%) | 64 (32%) |
@@ -94,18 +94,18 @@ Kolumna „Zgoda?” jest pusta: wpisz T/N, jeśli proponowany wzorzec miałby s
 | DEBATE_CANDIDATE_ASK | 10 (5%) | 9 (4%) |
 | NONE | 67 (34%) | 67 (34%) |
 
-| Poziom | Baza | Wariant |
+| Level | Base | Variant |
 |---|---|---|
-| brak | 67 (34%) | 67 (34%) |
+| none | 67 (34%) | 67 (34%) |
 | A | 46 (23%) | 66 (33%) |
 | B | 77 (38%) | 58 (29%) |
 | C | 10 (5%) | 9 (4%) |
 
-## 7. Wariant 2: ryzyko = migracje, sagi lub ≥ 3 projekty ŹRÓDŁOWE (bez docs, testów i .github)
+## 7. Variant 2: risk = migrations, sagas or ≥ 3 SOURCE projects (excluding docs, tests and .github)
 
-Przyczyna: w wariancie bazowym „≥ 3 projekty” liczyło też `docs/` i projekty testowe jako osobne projekty.
+Reason: in the base variant "≥ 3 projects" also counted `docs/` and test projects as separate projects.
 
-| Wzorzec | Baza | Wariant 2 |
+| Pattern | Base | Variant 2 |
 |---|---|---|
 | SEQUENTIAL_GATES | 133 (66%) | 133 (66%) |
 | INDEPENDENT_VALIDATION | 85 (42%) | 41 (20%) |
@@ -115,9 +115,9 @@ Przyczyna: w wariancie bazowym „≥ 3 projekty” liczyło też `docs/` i proj
 | DEBATE_CANDIDATE_ASK | 10 (5%) | 7 (4%) |
 | NONE | 67 (34%) | 67 (34%) |
 
-| Poziom | Baza | Wariant 2 |
+| Level | Base | Variant 2 |
 |---|---|---|
-| brak | 67 (34%) | 67 (34%) |
+| none | 67 (34%) | 67 (34%) |
 | A | 46 (23%) | 87 (44%) |
 | B | 77 (38%) | 39 (20%) |
 | C | 10 (5%) | 7 (4%) |

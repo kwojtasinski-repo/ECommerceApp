@@ -1,31 +1,31 @@
-# Rejected Information (Phase 3, step 3 — skonsolidowane)
+# Rejected Information (Phase 3, step 3 — consolidated)
 
-Data: 2026-10-14 · Pytanie: wzorce/umiejętności agentowe z podanych źródeł (bez rekomendacji) · Zakres: 18 URL-i + rozszerzenie (13 artykułów per wzorzec, serie Self-evolving/AiP, 7 dodatkowych stron AutoGen).
+Date: 2026-10-14 · Question: agent patterns/skills from the given sources (no recommendations) · Scope: 18 URLs + extension (13 per-pattern articles, Self-evolving/AiP series, 7 additional AutoGen pages).
 
-## Poza zakresem (inny moduł/komponent)
+## Out of scope (another module/component)
 
-| # | Informacja | Źródło | Dlaczego odrzucone | Re-include, jeśli |
+| # | Information | Source | Why rejected | Re-include if |
 |---|---|---|---|---|
-| R1 | Pełne YAML-e incident-triage powtórzone w AiP 3 i 4 | `28`, `29` | duplikat YAML z `27` (zastąpiony odsyłaczem) | potrzebny diff między wersjami |
-| R2 | Szczegóły domenowe przykładów (logi 40 MB, tickety, rekordy klientów) | `22`–`25` | konkretna domena, nie wzorzec | analiza samego benchmarku |
-| R3 | Konfiguracja PyFlink (`make fresh`, venv), sprzęt DGX Spark | `45`, `42` | szczegóły środowiska, nie wzorce agentowe | wdrażanie tej infrastruktury |
-| R4 | Narracyjne otwarcia/„Until next time", teasery | wszystkie posty | brak treści analitycznej | analiza stylu/tonu |
-| R5 | Spłaszczone diagramy Mermaid i sekwencyjne | źródła | artefakt kopiowania, brak informacji | dostęp do oryginalnych diagramów |
-| R6 | Wynik wygenerowanej opowieści w group-chat | `36` | tekst generowany, nie wzorzec | ewaluacja jakości wyjścia |
-| R7 | Linki wychodzące (arXiv 2406.11776 sparse topology, repo aegis, tool-use pages) | `39`, `03` | spoza listy URL; nie pobrane | rozszerzenie zakresu o weryfikację zewnętrzną skuteczności debaty |
+| R1 | Full incident-triage YAMLs repeated in AiP 3 and 4 | `28`, `29` | duplicate of the YAML from `27` (replaced by a cross-reference) | a diff between versions is needed |
+| R2 | Domain details of the examples (40 MB logs, tickets, customer records) | `22`–`25` | a specific domain, not a pattern | analysis of the benchmark itself |
+| R3 | PyFlink configuration (`make fresh`, venv), DGX Spark hardware | `45`, `42` | environment details, not agent patterns | deploying this infrastructure |
+| R4 | Narrative openings/"Until next time", teasers | all posts | no analytical content | analysis of style/tone |
+| R5 | Flattened Mermaid and sequence diagrams | sources | copying artifact, no information | access to the original diagrams |
+| R6 | The output of the generated story in group-chat | `36` | generated text, not a pattern | evaluation of output quality |
+| R7 | Outgoing links (arXiv 2406.11776 sparse topology, aegis repo, tool-use pages) | `39`, `03` | outside the URL list; not fetched | scope extended to external verification of debate effectiveness |
 
-## Rozwiązanie zamiast problemu / opinia
+## Solution instead of problem / opinion
 
-| # | Informacja | Źródło | Dlaczego odrzucone | Re-include, jeśli |
+| # | Information | Source | Why rejected | Re-include if |
 |---|---|---|---|---|
-| R8 | „Outcome" apis-at-massive-scale („didn't even break a sweat") | `30` | samoopis bez liczb | pojawią się dane ruchu |
-| R9 | Liczby „90% fast track", „80% of use case" | `43` | niepoparte | autor poda metodologię |
-| R10 | Paraphrazowana lista 12 wzorców z lustra Medium | gatherer `medium` | niezweryfikowana domena, parafraza | użytkownik poda tekst artykułu |
+| R8 | The "Outcome" of apis-at-massive-scale ("didn't even break a sweat") | `30` | self-description without numbers | traffic data appears |
+| R9 | The numbers "90% fast track", "80% of use case" | `43` | unsupported | the author provides the methodology |
+| R10 | A paraphrased list of 12 patterns from a Medium mirror | gatherer `medium` | unverified domain, paraphrase | the user provides the article text |
 
-## Luki zamiast odrzuceń
-Medium (HTTP 403), Mastra (treść rozdziałów za bramką e-mail), AiP Parts 5–7 — patrz `01-cross-source-verification.md` §3.
+## Gaps instead of rejections
+Medium (HTTP 403), Mastra (chapter content behind an email gate), AiP Parts 5–7 — see `01-cross-source-verification.md` §3.
 
-## Podsumowanie
-- Findings w plikach `*-raw`: ok. 490 sekcji `##` (część to sekcje pomocnicze), 1 448 zacytowanych fragmentów, 94,8% zgodnych dosłownie z plikami źródłowymi.
-- Odrzucone grupy: ~10 (w każdym pliku findings od 5 do 9 wierszy tabeli „Rejected Information").
-- Nic nie zostało odrzucone jako „nieprawdziwe" — odrzucenia dotyczą zakresu i niepoparcia.
+## Summary
+- Findings in the `*-raw` files: about 490 `##` sections (some are auxiliary sections), 1,448 quoted fragments, 94.8% verbatim matches with the source files.
+- Rejected groups: ~10 (in each findings file from 5 to 9 rows of the "Rejected Information" table).
+- Nothing was rejected as "untrue" — the rejections concern scope and lack of support.

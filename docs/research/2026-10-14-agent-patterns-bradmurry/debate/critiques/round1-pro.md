@@ -1,26 +1,26 @@
 # Debater: pro, Round 1, critique
 
-Skróty: 00 = analysis/00-summary.md, 01 = analysis/01-cross-source-verification.md, LSR = llm-self-research/README.md. Otwarte i sprawdzone: 00, 01, LSR, bm-patterns-1-7-raw (F5c/F6g), bm-patterns-8-13-raw (F8.9), autogen-raw-9pages, bm-series-parts-raw.
+Abbreviations: 00 = analysis/00-summary.md, 01 = analysis/01-cross-source-verification.md, LSR = llm-self-research/README.md. Opened and checked: 00, 01, LSR, bm-patterns-1-7-raw (F5c/F6g), bm-patterns-8-13-raw (F8.9), autogen-raw-9pages, bm-series-parts-raw.
 
-## Krytyka con
+## Critique of con
 
-1. **con#1** ("runtime Aegis to jednoosobowy stos bez weryfikacji... koszt bez gwarancji"). Fakt wsparty: 00#Gaps i 01 D1 (Unsupported) potwierdzają jedno źródło. Słabość: con spłaszcza dwie rzeczy. Ja nie bronię runtime'u, tylko zasady "limity i walidacja poza modelem", którą con sam przyznaje na końcu ("limity pętli poza modelem"). Teza 1 i sekcja "przyznaję" są więc częściowo sprzeczne.
-2. **con#3** (no-progress guard nie obejmuje tur, intro nie poprawiono). **Poparte**: 01 C1 oraz bm-patterns-1-7 F5c ("it does not span turns"). Ale wniosek "to luka dotycząca nas najbardziej" jest interpretacją con. Źródło mówi, że tury pilnuje enum + `maxIterations`, a tego nasz kod ma trzymać sam. To argument za limitem w naszym kodzie, nie przeciw wzorcowi.
-3. **con#7** (ryzyko pamięci: "STRONG (OWASP)"). **Przesadzone.** LSR#7 oznacza "Ryzyka" jako "moja ocena", a OWASP LLM04 dotyczy zatrucia danych i modelu, nie wprost pamięci użytkownika. Lista OWASP jest STRONG, jej zastosowanie do pamięci to MEDIUM.
-4. **con#6** (AutoGen: rozbieżności proza/kod). **Poparte**: autogen-raw linia 549 ("no max iterations in code"), linia 199 ("not meant to be used in real applications"). Zgoda w całości.
+1. **con#1** ("the Aegis runtime is a one-person stack without verification... cost without guarantees"). Fact supported: 00#Gaps and 01 D1 (Unsupported) confirm a single source. Weakness: con flattens two things. I am not defending the runtime, only the principle "limits and validation outside the model", which con itself admits at the end ("loop limits outside the model"). Thesis 1 and the "I concede" section are therefore partly contradictory.
+2. **con#3** (the no-progress guard does not span turns, the intro was not corrected). **Supported**: 01 C1 and bm-patterns-1-7 F5c ("it does not span turns"). But the conclusion "this is the gap that concerns us most" is con's interpretation. The source says turns are guarded by an enum + `maxIterations`, and our code is to hold that itself. That is an argument for a limit in our code, not against the pattern.
+3. **con#7** (memory risk: "STRONG (OWASP)"). **Overstated.** LSR#7 marks "Risks" as "my assessment", and OWASP LLM04 concerns data and model poisoning, not user memory directly. The OWASP list is STRONG, its application to memory is MEDIUM.
+4. **con#6** (AutoGen: prose/code discrepancies). **Supported**: autogen-raw line 549 ("no max iterations in code"), line 199 ("not meant to be used in real applications"). Full agreement.
 
-## Krytyka prag
+## Critique of prag
 
-5. **prag ADOPT, limit pętli** ("zgodne: Anthropic, ReAct, Brad"). **Błędnie przypisane.** 01#2 podaje "blogi o ReAct", a LSR#8 cytuje warunki stopu z Anthropic; abstrakt ReAct ich nie zawiera. Dwa źródła, nie trzy.
-6. **prag ADOPT, RAG + checki SKU/URL = "MEDIUM [README#9]"**. Rozdział 9 jest oznaczony "Średnia/Niska — blogi", a cytat o SKU/URL to punkt 8 tego rozdziału, nie dowód. Ocena MEDIUM jest życzliwa, ale prag trafnie umieszcza to w tierze ADOPT jako praktykę, nie wynik badań.
-7. **prag ADOPT, "Zheng >80%" jako próg awansu**. Prag zaznacza, że próg to jego propozycja. LSR#2 mówi o ">80%" dla silnych sędziów (GPT-4) na MT-Bench, nie dla zbioru sklepu. Uczciwe oznaczenie, ale próg przenosi się słabo.
-8. **prag ADOPT, idempotency/journal "MEDIUM [00#A]"**. Tu trafia też w mój claim 5, więc **przyznaję błąd własny**: napisałem "brak automatycznego ponowienia przy nieznanym wyniku". Źródło (bm-series-parts A6) mówi odwrotnie: "back off and try again with the SAME key". Poprawka: retry z tym samym kluczem idempotencji, bez nowego efektu.
+5. **prag ADOPT, loop limit** ("consistent: Anthropic, ReAct, Brad"). **Wrongly attributed.** 01#2 gives "blogs about ReAct", and LSR#8 quotes the stop conditions from Anthropic; the ReAct abstract does not contain them. Two sources, not three.
+6. **prag ADOPT, RAG + SKU/URL checks = "MEDIUM [README#9]"**. Chapter 9 is marked "Medium/Low — blogs", and the quote about SKU/URL is point 8 of that chapter, not evidence. The MEDIUM rating is generous, but prag rightly places it in the ADOPT tier as a practice, not a research result.
+7. **prag ADOPT, "Zheng >80%" as the promotion threshold**. Prag notes that the threshold is its proposal. LSR#2 speaks of ">80%" for strong judges (GPT-4) on MT-Bench, not for a store dataset. Honest labeling, but the threshold transfers poorly.
+8. **prag ADOPT, idempotency/journal "MEDIUM [00#A]"**. This also hits my claim 5, so **I admit my own error**: I wrote "no automatic retry on an unknown outcome". The source (bm-series-parts A6) says the opposite: "back off and try again with the SAME key". Correction: retry with the same idempotency key, with no new effect.
 
-## Zgoda (kandydaci na konsensus)
-- Prompt caching prefiksu, backend-proxy i limity kosztu, brak uprawnień zapisu (LSR#6, #9) jako krok 1.
-- Debata, quorum, aukcje, dynamic team, AutoGen jako kod produkcyjny: SKIP (01#2 "Low", brak danych skuteczności).
-- Reflection/judge tylko z zewnętrznym sygnałem lub skalibrowany na etykietach ludzkich (Zheng, Huang; 3 niezależne grupy).
+## Agreement (consensus candidates)
+- Prompt caching of the prefix, backend proxy and cost limits, no write permissions (LSR#6, #9) as step 1.
+- Debate, quorum, auctions, dynamic team, AutoGen as production code: SKIP (01#2 "Low", no effectiveness data).
+- Reflection/judge only with an external signal or calibrated on human labels (Zheng, Huang; 3 independent groups).
 
-## Kwestie sporne
-- Czy "deterministyczna powłoka" w naszym repo to wymóg nowej pracy (moje twierdzenie 5) czy już istniejące Outbox/Saga (prag), i czy czatbot read-only w ogóle potrzebuje journala w v1?
-- Kiedy wprowadzać router intencji jako enum: od razu (ja) czy dopiero po pomiarze (con: "jedno wywołanie + RAG")? Żadne źródło nie mierzy zysku routera w czatbocie sklepu.
+## Disputed issues
+- Whether the "deterministic shell" in our repo is a requirement for new work (my claim 5) or the already existing Outbox/Saga (prag), and whether a read-only chatbot needs a journal in v1 at all?
+- When to introduce the intent router as an enum: right away (me) or only after measurement (con: "one call + RAG")? No source measures the router's gain in a store chatbot.

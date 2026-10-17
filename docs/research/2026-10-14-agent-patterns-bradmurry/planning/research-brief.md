@@ -1,44 +1,44 @@
-# Research Brief: Wzorce budowy agentów AI (Brad Murry + Medium/Mastra/AutoGen) i ich użycie na produkcji
+# Research Brief: AI agent building patterns (Brad Murry + Medium/Mastra/AutoGen) and their use in production
 
 ## Research Question
-Zebrać i zweryfikować krzyżowo treść 18 podanych źródeł (14 postów bradmurry.com/software, artykuł Medium
-"12 design patterns", Mastra "Patterns of Building AI Agents", 2 strony AutoGen: multi-agent-debate i
-design-patterns intro). Docelowo (poza tym workflow): na bazie zebranych faktów przeprowadzić pattern
-multi-agent debate z kilkoma agentami — jakie umiejętności/wzorce da się wykorzystać w AI na produkcji.
+Collect and cross-verify the content of 18 given sources (14 posts from bradmurry.com/software, the Medium article
+"12 design patterns", Mastra "Patterns of Building AI Agents", 2 AutoGen pages: multi-agent-debate and
+design-patterns intro). The ultimate goal (outside this workflow): based on the collected facts, run a
+multi-agent debate pattern with several agents — which skills/patterns can be used in production AI.
 
 ## Type
 external
-Self-check performed: pytanie wymaga wyłącznie wiedzy spoza organizacji (podane URL-e), brak źródeł
-wewnętrznych (kod/ticket/transkrypt) do odpytania. Odniesienie do ECommerceApp jest tylko kontekstem
-późniejszego kroku, nie źródłem tej fazy. Klasyfikacja prosta.
+Self-check performed: the question requires only knowledge from outside the organization (the given URLs), there are no
+internal sources (code/ticket/transcript) to query. The reference to ECommerceApp is only the context of the
+later step, not a source for this phase. Simple classification.
 
 ## Scope
 
 ### In Scope
-- Wzorce, architektury i umiejętności agentowe opisane w 18 podanych URL-ach
+- Agent patterns, architectures and skills described in the 18 given URLs
 - Reactive reducer pattern, FSM + LLM, human-in-the-loop, self-evolving agents, agents in production
-- Multi-agent debate (AutoGen) — mechanika wzorca
-- Wskazówki produkcyjne (niezawodność, kontrakty, konfiguracja, skala)
+- Multi-agent debate (AutoGen) — the mechanics of the pattern
+- Production guidance (reliability, contracts, configuration, scale)
 
 ### Out of Scope
-- Synteza, rekomendacja i końcowy raport (osobny krok po tym workflow)
-- Samo przeprowadzenie debaty agentów (osobny krok po tym workflow)
-- Źródła spoza podanej listy (poza ewentualną weryfikacją podstawowych faktów)
+- Synthesis, recommendation and the final report (a separate step after this workflow)
+- Actually running the agent debate (a separate step after this workflow)
+- Sources outside the given list (except possible verification of basic facts)
 
 ### Source Restrictions
-- Tylko 18 podanych URL-i; każdy fakt musi mieć URL + cytat
+- Only the 18 given URLs; every fact must have a URL + quote
 
 ## Success Criteria
 
 ### Concrete Deliverables
-- [ ] Per źródło: lista wzorców/pojęć/umiejętności z cytatami i confidence
-- [ ] Katalog wzorców z deduplikacją między źródłami (np. HITL, FSM, reflection)
-- [ ] Opis mechaniki multi-agent debate (role, rundy, agregacja) z AutoGen
-- [ ] Lista wzorców oznaczonych jako nadających się na produkcję (z uzasadnieniem ze źródeł)
-- [ ] Kontradykcje i luki między źródłami
+- [ ] Per source: a list of patterns/concepts/skills with quotes and confidence
+- [ ] A pattern catalog with deduplication across sources (e.g. HITL, FSM, reflection)
+- [ ] A description of the multi-agent debate mechanics (roles, rounds, aggregation) from AutoGen
+- [ ] A list of patterns marked as suitable for production (with justification from the sources)
+- [ ] Contradictions and gaps between sources
 
 ### Information Quality Requirements
-- Każdy finding z URL i cytatem; brak faktów z pamięci treningowej; niedostępne strony logowane jako luka
+- Every finding with a URL and a quote; no facts from training memory; unavailable pages logged as a gap
 
 ## Actors
 None — research is actor-agnostic
@@ -46,13 +46,13 @@ None — research is actor-agnostic
 ## Information Layers
 
 ### Big Picture
-- Jakie klasy problemów rozwiązują te wzorce, czemu agenci zawodzą na produkcji
+- What classes of problems these patterns solve, why agents fail in production
 
 ### Modeling
-- FSM, reducer, stany, kontrakty, partycjonowanie DSL/AI
+- FSM, reducer, states, contracts, DSL/AI partitioning
 
 ### Implementation
-- Konkretne frameworki (AutoGen, Mastra, Flink, sparkctl), konfiguracja, API
+- Specific frameworks (AutoGen, Mastra, Flink, sparkctl), configuration, API
 
 ## Output Location
-docs/research/2026-10-14-agent-patterns-bradmurry/ — potwierdzone przez użytkownika (AskUserQuestion, 2026-10-14)
+docs/research/2026-10-14-agent-patterns-bradmurry/ — confirmed by the user (AskUserQuestion, 2026-10-14)

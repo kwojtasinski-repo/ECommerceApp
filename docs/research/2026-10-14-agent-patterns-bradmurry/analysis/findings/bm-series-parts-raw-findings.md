@@ -1,6 +1,6 @@
 # Findings: bm-series-parts-raw
 
-Scope for EVERY finding below: **scope: extended (outside original 18 URLs)**. Sources are pasted the full text of the articles in (źródła: SOURCES.md) (called "file NN" below):
+Scope for EVERY finding below: **scope: extended (outside original 18 URLs)**. Sources are pasted the full text of the articles in (sources: SOURCES.md) (called "file NN" below):
 - 22 = Self-evolving agents Part 1 (log triage); 23 = Part 2 (data quality); 24 = Part 3 (ticket mining); 25 = Part 4 (entity resolution)
 - 26 = Agents in Production (AIP) Part 1 (distributed systems); 27 = AIP Part 2 (Kafka/Flink); 28 = AIP Part 3 (deterministic shell); 29 = AIP Part 4 (task lists vs FSM)
 

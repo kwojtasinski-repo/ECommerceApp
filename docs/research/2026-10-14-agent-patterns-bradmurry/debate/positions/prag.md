@@ -1,50 +1,50 @@
 # Debater: prag, Round 1, position
 
-Perspektywa: zespół 1-3 dev., istniejąca aplikacja .NET (Outbox/Inbox, saga, przepływy zamówień/płatności). Ranking = (wartość x siła dowodów) / (koszt x ryzyko). Skala dowodów: STRONG = niezależne/pierwotne, MEDIUM = jedno jawne źródło, WEAK = samoopis jednego autora.
+Perspective: a team of 1-3 devs, an existing .NET application (Outbox/Inbox, saga, order/payment flows). Ranking = (value x strength of evidence) / (cost x risk). Evidence scale: STRONG = independent/primary, MEDIUM = one explicit source, WEAK = one author's self-description.
 
-## (a) Tiery
+## (a) Tiers
 
 **ADOPT NOW**
-- **Proxy backendowe + klucz tylko na serwerze + limity (żądania i budżet kosztowy, `max_tokens`)** - OWASP LLM10 Unbounded Consumption. STRONG [2026-10-14-llm-self-research/README.md#9].
-- **Zasada "najprostsze najpierw": workflow zamiast agenta** - Anthropic i Brad zgodnie: "a for-loop could do for free". STRONG [01-cross-source-verification.md#2].
-- **Brak uprawnień zapisu do zamówień (LLM06 Excessive Agency)**; status zamówienia tylko przez istniejące, autoryzowane endpointy. STRONG [README#9].
-- **Jawny limit pętli poza modelem** (max iteracji, budżet tokenów) - zgodne: Anthropic, ReAct, Brad. STRONG kierunkowo [01#2].
-- **Prompt caching stałego prefiksu** (system prompt + FAQ + polityki): odczyt 0.1x ceny wejścia, zapis 1.25x. STRONG (dokumentacja dostawców, ceny z 2026-10-14) [README#6].
-- **RAG po katalogu/FAQ/zwrotach + deterministyczne checki** (czy SKU/URL istnieje). MEDIUM [README#9].
-- **Deterministyczna powłoka wokół modelu** (idempotency, journal, timeout = UNKNOWN, DLQ): to już macie w Outbox/Inbox/sadze - wzorzec Brada jest tu tylko potwierdzeniem, nie nowym kosztem. MEDIUM [00-summary.md#A].
+- **Backend proxy + key only on the server + limits (requests and cost budget, `max_tokens`)** - OWASP LLM10 Unbounded Consumption. STRONG [2026-10-14-llm-self-research/README.md#9].
+- **The "simplest first" principle: workflow instead of agent** - Anthropic and Brad agree: "a for-loop could do for free". STRONG [01-cross-source-verification.md#2].
+- **No write permissions to orders (LLM06 Excessive Agency)**; order status only through existing, authorized endpoints. STRONG [README#9].
+- **Explicit loop limit outside the model** (max iterations, token budget) - consistent: Anthropic, ReAct, Brad. STRONG directionally [01#2].
+- **Prompt caching of the fixed prefix** (system prompt + FAQ + policies): read at 0.1x the input price, write at 1.25x. STRONG (vendor documentation, prices as of 2026-10-14) [README#6].
+- **RAG over catalog/FAQ/returns + deterministic checks** (whether the SKU/URL exists). MEDIUM [README#9].
+- **Deterministic shell around the model** (idempotency, journal, timeout = UNKNOWN, DLQ): you already have this in Outbox/Inbox/saga - Brad's pattern is here only a confirmation, not a new cost. MEDIUM [00-summary.md#A].
 
 **PILOT**
-- **LLM-as-judge skalibrowany na etykietach ludzkich** - Zheng: ">80% zgodności z ludźmi", ale position/verbosity/self-enhancement bias. STRONG co do biasów, MEDIUM co do praktyk [README#2].
-- **Routing do małego modelu (SLM/tańszy tier)** dla FAQ/klasyfikacji intencji - Anthropic routing; sam paper SLM to position paper. MEDIUM-WEAK [README#5].
-- **Reflection tylko z zewnętrznym sygnałem** (np. walidator linków/SKU) - Huang: bez feedbacku bywa gorzej. STRONG ostrzeżenie [README#3].
-- **Krótka pamięć sesji** (bez długoterminowej, bez danych osobowych).
+- **LLM-as-judge calibrated on human labels** - Zheng: ">80% agreement with humans", but position/verbosity/self-enhancement bias. STRONG as to biases, MEDIUM as to practices [README#2].
+- **Routing to a small model (SLM/cheaper tier)** for FAQ/intent classification - Anthropic routing; the SLM paper itself is a position paper. MEDIUM-WEAK [README#5].
+- **Reflection only with an external signal** (e.g. a link/SKU validator) - Huang: without feedback it is sometimes worse. STRONG warning [README#3].
+- **Short session memory** (no long-term memory, no personal data).
 
 **DEFER**
-- **Pamięć długoterminowa użytkownika** (Mem0/MemGPT) - RODO, zatrucie pamięci; liczby Mem0 to paper autorów produktu. WEAK-MEDIUM [README#7].
-- **Automatyczna optymalizacja promptów (GEPA/DSPy)** - deklaracje autorów, brak niezależnej weryfikacji; najpierw potrzebny zbiór ewaluacyjny. MEDIUM [README#4].
-- **Własny hosting SLM / fine-tuning LoRA** - koszt utrzymania przy małym ruchu nie ma uzasadnienia. WEAK.
+- **Long-term user memory** (Mem0/MemGPT) - GDPR, memory poisoning; Mem0's numbers come from the paper of the product's authors. WEAK-MEDIUM [README#7].
+- **Automatic prompt optimization (GEPA/DSPy)** - the authors' claims, no independent verification; an evaluation set is needed first. MEDIUM [README#4].
+- **Own SLM hosting / LoRA fine-tuning** - the maintenance cost at low traffic has no justification. WEAK.
 
 **SKIP**
-- **Debata multi-agent, quorum, aukcje, dynamiczne zespoły (wzorce 6, 10, 12, 13)** - "Low (brak dowodu skuteczności)" [01#2]; koszt = debaterzy x rundy; czatbot sklepu tego nie potrzebuje.
-- **Runtime reactive reducer (Aegis) jako zależność** - jeden autor, brak publicznej, zweryfikowanej implementacji [00-summary.md#Gaps]; metryki baseline->optimum to WEAK (niespójność C5).
-- **Self-evolving loop na produkcji** - patrz wyżej; Mastra/Medium bez treści, nie wchodzą w ogóle.
-- **Wzorce AutoGen jako kod produkcyjny** - sama strona: "not meant to be used in real applications" (C10), liczne rozbieżności proza/kod (C7-C12).
+- **Multi-agent debate, quorum, auctions, dynamic teams (patterns 6, 10, 12, 13)** - "Low (no evidence of effectiveness)" [01#2]; cost = debaters x rounds; a store chatbot does not need it.
+- **Reactive reducer runtime (Aegis) as a dependency** - one author, no public, verified implementation [00-summary.md#Gaps]; the baseline->optimum metrics are WEAK (inconsistency C5).
+- **Self-evolving loop in production** - see above; Mastra/Medium without content, they do not enter at all.
+- **AutoGen patterns as production code** - the page itself: "not meant to be used in real applications" (C10), numerous prose/code discrepancies (C7-C12).
 
-## (b) Minimalna architektura czatbota
+## (b) Minimal chatbot architecture
 
-1. Widget (JS, SSE) -> endpoint ASP.NET (proxy). Klucz i prompty tylko po stronie serwera.
-2. Limity: per IP/sesja/dzień, dzienny budżet kosztowy z kill-switchem, `max_tokens`, limit tur.
-3. RAG: indeks katalogu, FAQ, polityk; treść pobrana = niezaufana (injection pośrednia); zakładać wyciek system promptu.
-4. Prompt: stały prefiks (cache), zmienne na końcu; monitorować `cache_read_input_tokens`.
-5. Dostęp do danych: wyłącznie odczyt przez istniejące, autoryzowane zapytania (status zamówienia po weryfikacji użytkownika); zero komend zapisu. Eskalacja do człowieka jako stan końcowy.
-6. Logowanie rozmów (bez nadmiarowych danych osobowych), wsparcie kasowania.
-7. Ewaluacja: zestaw pytań (start ~50-100 z realnych zgłoszeń - to moja propozycja, nie z źródeł), checki deterministyczne, sędzia jako sygnał pomocniczy, kalibrowany na etykietach ludzkich; zamiana kolejności odpowiedzi; sędzia z innej rodziny niż generator (wniosek, nie cytat) [README#2].
+1. Widget (JS, SSE) -> ASP.NET endpoint (proxy). Key and prompts only on the server side.
+2. Limits: per IP/session/day, daily cost budget with a kill-switch, `max_tokens`, turn limit.
+3. RAG: index of catalog, FAQ, policies; retrieved content = untrusted (indirect injection); assume the system prompt leaks.
+4. Prompt: fixed prefix (cache), variables at the end; monitor `cache_read_input_tokens`.
+5. Data access: read-only through existing, authorized queries (order status after user verification); zero write commands. Escalation to a human as the terminal state.
+6. Conversation logging (without excessive personal data), support for deletion.
+7. Evaluation: a question set (start with ~50-100 from real tickets - this is my proposal, not from the sources), deterministic checks, the judge as an auxiliary signal, calibrated on human labels; swapping the answer order; a judge from a different family than the generator (a conclusion, not a quote) [README#2].
 
-## (c) Kryteria awansu PILOT -> ADOPT
+## (c) Promotion criteria PILOT -> ADOPT
 
-Progi są moimi propozycjami do kalibracji, nie danymi ze źródeł.
-- **Judge:** zgodność z etykietami ludzkimi na własnym zbiorze >= ok. 80% (punkt odniesienia Zheng) i stabilność po zamianie kolejności; inaczej zostaje tylko sygnałem.
-- **Routing/SLM:** spadek kosztu na rozmowę bez spadku jakości na zbiorze ewaluacyjnym ponad ustalony margines, mierzony na własnym ruchu.
-- **Reflection:** poprawa na zbiorze z zewnętrznym walidatorem, bez wzrostu opóźnienia ponad budżet.
-- **Pamięć sesji:** brak incydentów prywatności i zatwierdzenie podstawy prawnej.
-- Każdy awans: jedna zmiana naraz (dyscyplina Brada), mierzone przed/po na stałym zbiorze, z rollbackiem.
+The thresholds are my proposals for calibration, not data from the sources.
+- **Judge:** agreement with human labels on our own set >= approx. 80% (Zheng's reference point) and stability after swapping the order; otherwise it stays only a signal.
+- **Routing/SLM:** a drop in cost per conversation without a drop in quality on the evaluation set beyond a set margin, measured on our own traffic.
+- **Reflection:** improvement on a set with an external validator, without an increase in latency beyond budget.
+- **Session memory:** no privacy incidents and approval of the legal basis.
+- Every promotion: one change at a time (Brad's discipline), measured before/after on a fixed set, with a rollback.
