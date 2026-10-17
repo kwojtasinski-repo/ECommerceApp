@@ -27,7 +27,7 @@ infrastructure, environment, and test-isolation failures.
 
 - Unit-test-only failures with no application host or external dependency: use the normal unit-test
   workflow.
-- RAG MCP or context-mode startup failures: use `diagnose-rag` or `ctx-doctor-playbook`.
+- RAG MCP startup failures: use `diagnose-rag`.
 - A request to add a new test without an observed failure: use `create-integration-test` or the
   relevant implementation workflow.
 

@@ -24,7 +24,7 @@ applyTo: "**"
 
 Per [mcp-routing.instructions.md](mcp-routing.instructions.md) rule #3:
 
-- **For any project-related URL** (ADR references, docs, GitHub links, package registries cited in repo work) → use the approved project URL retrieval path. **Never** route through the retired context-mode integration.
+- **For any project-related URL** (ADR references, docs, GitHub links, package registries cited in repo work) → use the approved project URL retrieval path.
 - **Carve-out**: non-project URLs the user explicitly asks you to read in raw form (e.g. "read this random blog post for me") may use direct `fetch_webpage`, but say so in the answer.
 - Use raw `fetch_webpage` sparingly and only for clearly necessary non-project lookups; never for content already in the indexed `docs/`.
 

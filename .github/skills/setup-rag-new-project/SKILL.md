@@ -36,8 +36,6 @@ Qdrant, queryable via `query_docs` / `read_docs` over MCP.
   `python tools/rag/ingest.py` directly; no setup needed.
 - Existing project, want to add a new file type to ingest — use
   `.github/skills/generate-rag-rules/SKILL.md` to edit `metadata-rules.yaml`.
-- Project uses ONLY context-mode (no RAG) — skip this skill;
-  `.github/skills/setup-context-mode-new-project/SKILL.md` (E2) is enough.
 
 ---
 
@@ -264,9 +262,7 @@ VS Code / GitHub Copilot Web / Visual Studio shapes.
 
 ## Related skills / docs
 
-- [.github/skills/setup-context-mode-new-project/SKILL.md](../setup-context-mode-new-project/SKILL.md) — context-mode sandbox (E2)
 - [.github/skills/setup-mcp-clients/SKILL.md](../setup-mcp-clients/SKILL.md) — client configuration (E4)
-- [.github/skills/setup-auto-cache-hook/SKILL.md](../setup-auto-cache-hook/SKILL.md) — L3 cache wire-up (E5)
 - [.github/skills/generate-rag-rules/SKILL.md](../generate-rag-rules/SKILL.md) — extending `metadata-rules.yaml`
 - [.github/skills/generate-eval-questions/SKILL.md](../generate-eval-questions/SKILL.md) — building a `queries.yaml`
 - [.github/skills/tune-rag-weights/SKILL.md](../tune-rag-weights/SKILL.md) — ranking weight tuning

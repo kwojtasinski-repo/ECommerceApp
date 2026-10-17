@@ -26,11 +26,8 @@ This prompt is the **generic** counterpart to [mcp-routing-eval.prompt.md](mcp-r
 These are not optional. They come from [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) and apply to every item in the batch:
 
 1. **KNOWLEDGE** (ADRs, project state, known issues, roadmap, BCs, anti-patterns, agent decisions) \u2192 **RAG MCP first** (`query_docs`, `read_docs`, `get_history`, `list_adrs`). NEVER `grep_search` / `read_file` on `.github/context/`, `docs/adr/`, `docs/roadmap/`, `docs/architecture/bounded-context-map.md` as first move.
-2. **EXECUTION** (hashes, math, regex, file parsing, derivations) \u2192 **context-mode MCP** (`ctx_execute`, `ctx_execute_file`). NEVER compute from training memory. Verified langs: `js`, `ts`, `sh`, `ruby`, `go`, `rust`, `php`, `perl`, `R`, `elixir`, `csharp`. Python is NOT shipped.
-3. **EXTERNAL URL** (project-related) \u2192 `ctx_fetch_and_index` ONLY. Carve-out: non-project URLs the user explicitly marks as "not project" may use direct `fetch_webpage`.
-4. **EMPTY RAG RESULT** \u2014 MANDATORY ORDERED retry: (a) retry without `bc=`, (b) retry with reworded full-name synonyms (not literal IDs). Only after BOTH fail may you report empty.
-5. **NEVER call both RAG and context-mode for the same atomic intent.** Sequential calls for different intents are fine.
-6. **CODE EDITS** \u2014 if an item asks you to edit a file, use the appropriate edit tool. Do not skip to a textual diff in the output unless the user explicitly asked for a diff.
+2. **EMPTY RAG RESULT** \u2014 MANDATORY ORDERED retry: (a) retry without `bc=`, (b) retry with reworded full-name synonyms (not literal IDs). Only after BOTH fail may you report empty.
+3. **CODE EDITS** \u2014 if an item asks you to edit a file, use the appropriate edit tool. Do not skip to a textual diff in the output unless the user explicitly asked for a diff.
 
 ---
 

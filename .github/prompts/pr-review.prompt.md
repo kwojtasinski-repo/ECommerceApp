@@ -31,8 +31,6 @@ Per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routi
 
 - Use `query_docs` / `get_history` to load the ADRs you'll cite — never quote from memory.
 - Use bare `query_docs("<area>")` to surface `agent-decisions.md` / `project-state.md` / `known-issues.md` rows relevant to the PR area.
-- Do NOT call `ctx_*` tools — review is read-only.
-- **NEVER call both RAG and context-mode for the same atomic intent.**
 
 ### Step 1 — Identify PR scope
 

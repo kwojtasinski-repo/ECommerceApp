@@ -20,7 +20,6 @@
 
 1. `list_adrs()` then `get_history(id="NNNN")` for the BC's governing ADR.
 2. `query_docs("<BC name>")` — surface project-state + known-issues + agent-decisions rows.
-3. **NEVER call both RAG and context-mode for the same atomic intent.**
 
 **Step 0b — mandatory blocker check before touching any code:**
 

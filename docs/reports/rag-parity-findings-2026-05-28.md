@@ -1,5 +1,7 @@
 # RAG parity audit — findings & actionable recommendations
 
+> Historical: context-mode was a POC retired 2026-08-10 (ADR-0029); not current guidance.
+
 **Date**: 2026-05-28  
 **Source data**: [docs/reports/rag-parity-audit-2026-05-28.md](rag-parity-audit-2026-05-28.md)  
 **Script**: [tools/rag/compare_queries.py](../../tools/rag/compare_queries.py)  

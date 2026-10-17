@@ -190,6 +190,5 @@ separately.
 ## References
 
 - [rag-bootstrap.md](rag-bootstrap.md)
-- [context-mode-bootstrap.md](context-mode-bootstrap.md)
 - [SETUP-GUIDE.md](../rag/SETUP-GUIDE.md)
 - [rag-architecture.md](../rag/rag-architecture.md)

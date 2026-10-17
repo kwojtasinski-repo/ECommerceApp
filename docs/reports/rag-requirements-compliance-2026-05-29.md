@@ -1,5 +1,7 @@
 # RAG requirements and decisions audit — 2026-05-29
 
+> Historical: context-mode was a POC retired 2026-08-10 (ADR-0029); not current guidance.
+
 ## Scope
 
 This report verifies:

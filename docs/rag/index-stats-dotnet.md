@@ -1,5 +1,7 @@
 ﻿# RAG Index Stats
 
+> Historical: context-mode was a POC retired 2026-08-10 (ADR-0029); not current guidance.
+
 Last indexed: 2026-05-31 23:14 UTC  
 Collection: `ecommerceapp_docs_dotnet`  
 Files: 190  

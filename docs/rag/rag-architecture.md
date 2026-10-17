@@ -254,7 +254,7 @@ match (one caveat noted under `query_docs_cached`).
 | `query_docs(question, bc?, top_k=5)` | semantic query, optional bounded-context substring filter | Ranked chunks with `rel_path`, `breadcrumb`, `lines`, `score`, `weight`, `text` |
 | `read_docs(question, bc?, top_files=3)` | semantic query | Best chunks grouped by file; switches to full-file content when the query contains explicit "full content" intent phrases |
 | `get_history(id)` | history group identifier (e.g. ADR number) | All chunks for that group, sorted by `start_line` |
-| `query_docs_cached(question, bc?, top_files=3)` | semantic query, optional bc filter | Formatted markdown + deterministic `source` label ready for `ctx_index(content=<markdown>, source=<source>)`. L2 RAG ↔ context-mode handoff. See [mcp-routing instructions §L2](../../.github/instructions/mcp-routing.instructions.md) and [playbook §13.10](mcp-first-routing-migration-playbook.md). **Caveat**: .NET clamps `top_k` to `MaxTopK=20`; Python uses `max(30, top_files*15)`. Label format and markdown shape identical. Open observation: [roadmap §Phase 7.4](../roadmap/context-mode-integration.md). |
+| `query_docs_cached(question, bc?, top_files=3)` | semantic query, optional bc filter | Formatted markdown + deterministic `source` label. See [mcp-routing instructions §L2](../../.github/instructions/mcp-routing.instructions.md). **Caveat**: .NET clamps `top_k` to `MaxTopK=20`; Python uses `max(30, top_files*15)`. Label format and markdown shape identical. |
 
 `get_history` replaced the older `get_adr_history` (parameter `adr_id` →
 `id`); the grouping field is collection-configurable (defaults to `adr_id`).

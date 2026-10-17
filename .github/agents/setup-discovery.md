@@ -120,4 +120,4 @@ Audit the following artifact classes — each one maps to a setup skill or playb
 - [.github/skills/](../skills/) — all setup skills
 - [.github/instructions/docs-index.instructions.md](../instructions/docs-index.instructions.md) — full routing table
 - [docs/adr/0028/0028-remote-multitenant-rag-ingest.md](../../docs/adr/0028/0028-remote-multitenant-rag-ingest.md) — RAG multi-tenancy expectations
-- [docs/adr/0029/README.md](../../docs/adr/0029/README.md) — retired context-mode decision, historical reference only
+- [docs/adr/0029/README.md](../../docs/adr/0029/README.md) — retired POC sandbox decision, historical reference only

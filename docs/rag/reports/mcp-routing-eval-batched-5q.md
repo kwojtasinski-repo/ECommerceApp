@@ -1,5 +1,7 @@
 # MCP Routing Evaluation — 10 Batched Mini-Prompts (5q each)
 
+> Historical, DO NOT RUN: this prompt targets context-mode (`ctx_*` tools), a POC retired 2026-08-10 (ADR-0029). It is kept only as a record of past measurements, not as guidance or a test to execute.
+
 > Companion to [mcp-routing-eval-50q.md](mcp-routing-eval-50q.md). **Use this for usage measurement and per-block iteration.** Use the 50q version only for full end-to-end scoring runs.
 >
 > Each batch is **5 questions, paste-ready in a fresh chat**, designed to fit comfortably in a 200K-token window even with heavy MCP tool calls. Each batch maps to one logical block of the routing rules, so you can identify exactly where a model fails.

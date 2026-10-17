@@ -1,5 +1,7 @@
 # Sprint 3 + Sprint 4 — Requirements brief
 
+> Historical: context-mode was a POC retired 2026-08-10 (ADR-0029); not current guidance.
+
 > **Purpose**: Hand off Sprint 3 (cross-project setup skills + playbooks + @setup-discovery agent) and Sprint 4 (maintainer Workflow 13 + doc-suggestions extensions) to a fresh session with full context. **Quality bar: full-fledged artifacts (200–300 lines per skill), commit-ready.**
 
 > **Context for the next session**: Sprint 1 done (committed on `feat/sprint1-rag-quick-wins-skills-plan`, 3 commits, not pushed). Sprint 2 done (single squash-ready commit prepared at end of this session). Sprint 3 + 4 are an additive layer; no Sprint 2 file should be modified.

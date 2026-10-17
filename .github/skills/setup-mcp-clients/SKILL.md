@@ -3,13 +3,13 @@ name: setup-mcp-clients
 description: >
   Configure MCP clients for a NEW project. Covers VS Code (`.vscode/mcp.json`), GitHub
   Copilot Web (`.github/copilot/mcp.json`), and Visual Studio 17.14+ (slightly different
-  JSON shape). Side-by-side schema comparison for the same RAG + context-mode endpoints.
+  JSON shape). Side-by-side schema comparison for the same RAG endpoints.
 argument-hint: "<client> <project-name>"
 ---
 
 # setup-mcp-clients — wire up MCP clients
 
-MCP servers (RAG, context-mode) are reachable from three different clients in this
+MCP servers (RAG) are reachable from three different clients in this
 project's ecosystem. Each client reads a DIFFERENT config file with a slightly
 DIFFERENT JSON shape. This skill documents all three.
 
@@ -23,11 +23,9 @@ DIFFERENT JSON shape. This skill documents all three.
 
 ## When NOT to use
 
-- Bringing up the servers themselves — use E1 / E2.
+- Bringing up the servers themselves — use E1.
 - Diagnosing why an MCP tool returns errors — use
-  [`.github/skills/diagnose-rag/SKILL.md`](../diagnose-rag/SKILL.md) (RAG) or
-  [`.github/skills/ctx-doctor-playbook/SKILL.md`](../ctx-doctor-playbook/SKILL.md)
-  (context-mode).
+  [`.github/skills/diagnose-rag/SKILL.md`](../diagnose-rag/SKILL.md).
 
 ---
 
@@ -66,22 +64,10 @@ The richest client. Supports stdio (preferred for local Docker containers) and H
     "<project>-rag-python": {
       "type": "http",
       "url": "http://localhost:3002"
-    },
-    "<project>-context-mode": {
-      "type": "stdio",
-      "command": "docker",
-      "args": [
-        "exec", "-i",
-        "<project>-context-mode",
-        "sh", "-lc",
-        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
-      ]
     }
   }
 }
 ```
-
-Why the shell wrapper: it makes the server infer the correct workspace mount from `$CONTEXT_MODE_WORKSPACE` and launch from there, so sandbox code can use the actual context of the current project without hardcoding `/workspace` in every call.
 
 Reload via Command Palette → "MCP: Reload servers".
 
@@ -100,13 +86,6 @@ must be reachable from GitHub's network, usually behind HTTPS + auth.
       "url": "https://<your-public-host>/rag",
       "headers": {
         "Authorization": "Bearer ${env:MCP_RAG_TOKEN}"
-      }
-    },
-    "<project>-context-mode": {
-      "type": "http",
-      "url": "https://<your-public-host>/context-mode",
-      "headers": {
-        "Authorization": "Bearer ${env:MCP_CTX_TOKEN}"
       }
     }
   }
@@ -130,23 +109,10 @@ Windows-only but works the same as VS Code.
     "<project>-rag-dotnet": {
       "type": "http",
       "url": "http://localhost:3001"
-    },
-    "<project>-context-mode": {
-      "type": "stdio",
-      "command": "docker.exe",
-      "args": [
-        "exec", "-i",
-        "<project>-context-mode",
-        "sh", "-lc",
-        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
-      ]
     }
   }
 }
 ```
-
-Note: Visual Studio uses `docker.exe` (not bare `docker`) to bypass `PATH` ordering
-issues with WSL.
 
 ### 5. HTTP transport — adding session header support
 
@@ -164,7 +130,7 @@ subsequent requests in the same conversation.
 
 ### 6. Smoke test each client
 
-VS Code: open chat → type "what MCP servers are connected?" → expected: list of 3.
+VS Code: open chat → type "what MCP servers are connected?" → expected: the configured RAG servers.
 
 Copilot Web: open repository in github.com → click the Copilot chat icon → expected:
 servers from `.github/copilot/mcp.json` listed.
@@ -190,13 +156,6 @@ servers with green status.
 - **Putting tokens inline in `.github/copilot/mcp.json`.** That file is committed to
   the repo — inline tokens leak. Use `${env:NAME}` references and store tokens as
   GitHub repo secrets.
-- **Using bare `docker` on Visual Studio Windows.** `PATH` ordering between
-  `docker.exe` (Docker Desktop) and WSL `docker` shim is fragile. Use the explicit
-  `.exe` to avoid 5-minute debugging sessions when VS picks the wrong one.
-- **Different container names across `.vscode/mcp.json` and the compose file.** The
-  stdio command does `docker exec -i <name>` — if `container_name:` in
-  `docker-compose.yaml` says `acmeapp-context-mode` but the MCP config says
-  `acmeapp_context_mode`, the exec fails silently and VS Code shows "server crashed".
 
 ---
 
@@ -212,18 +171,13 @@ acmeapp/
 └── (Visual Studio user file in %USERPROFILE%\.mcp\servers.json — not committed)
 ```
 
-`.vscode/mcp.json` — stdio for context-mode, HTTP for RAG (local):
+`.vscode/mcp.json` — HTTP for RAG (local):
 
 ```jsonc
 {
   "servers": {
     "acmeapp-rag-dotnet":    { "type": "http", "url": "http://localhost:3001" },
-    "acmeapp-rag-python":    { "type": "http", "url": "http://localhost:3002" },
-    "acmeapp-context-mode":  {
-      "type": "stdio",
-      "command": "docker",
-      "args": ["exec", "-i", "acmeapp-context-mode", "sh", "-lc", "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"]
-    }
+    "acmeapp-rag-python":    { "type": "http", "url": "http://localhost:3002" }
   }
 }
 ```
@@ -233,8 +187,7 @@ acmeapp/
 ```jsonc
 {
   "mcpServers": {
-    "acmeapp-rag":          { "type": "http", "url": "https://mcp.acmeapp.example/rag",          "headers": { "Authorization": "Bearer ${env:MCP_RAG_TOKEN}" } },
-    "acmeapp-context-mode": { "type": "http", "url": "https://mcp.acmeapp.example/context-mode", "headers": { "Authorization": "Bearer ${env:MCP_CTX_TOKEN}" } }
+    "acmeapp-rag":          { "type": "http", "url": "https://mcp.acmeapp.example/rag",          "headers": { "Authorization": "Bearer ${env:MCP_RAG_TOKEN}" } }
   }
 }
 ```
@@ -244,12 +197,7 @@ acmeapp/
 ```jsonc
 {
   "mcpServers": {
-    "acmeapp-rag-dotnet":    { "type": "http", "url": "http://localhost:3001" },
-    "acmeapp-context-mode":  {
-      "type": "stdio",
-      "command": "docker.exe",
-      "args": ["exec", "-i", "acmeapp-context-mode", "sh", "-lc", "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"]
-    }
+    "acmeapp-rag-dotnet":    { "type": "http", "url": "http://localhost:3001" }
   }
 }
 ```
@@ -259,8 +207,6 @@ acmeapp/
 ## Related skills / docs
 
 - [.github/skills/setup-rag-new-project/SKILL.md](../setup-rag-new-project/SKILL.md) (E1)
-- [.github/skills/setup-context-mode-new-project/SKILL.md](../setup-context-mode-new-project/SKILL.md) (E2)
-- [.github/skills/setup-auto-cache-hook/SKILL.md](../setup-auto-cache-hook/SKILL.md) (E5)
 - [.github/instructions/mcp-routing.instructions.md](../../instructions/mcp-routing.instructions.md) — routing rules across all clients
 - [.vscode/mcp.json](../../../.vscode/mcp.json) — this repo's reference config
 - [.github/copilot/mcp.json](../../copilot/mcp.json) — this repo's reference config

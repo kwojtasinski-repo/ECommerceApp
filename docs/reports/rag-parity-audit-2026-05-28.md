@@ -1,5 +1,7 @@
 # RAG parity audit — Python (:3002) vs .NET (:3001)
 
+> Historical: context-mode was a POC retired 2026-08-10 (ADR-0029); not current guidance.
+
 Generated: 2026-05-28 18:05 UTC  
 Queries: 26 (5 specific, 3 generic, 6 Sprint-1, 4 multilingual)
 

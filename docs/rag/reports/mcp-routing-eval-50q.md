@@ -1,5 +1,7 @@
 # MCP Routing Evaluation — 50 Questions
 
+> Historical, DO NOT RUN: this prompt targets context-mode (`ctx_*` tools), a POC retired 2026-08-10 (ADR-0029). It is kept only as a record of past measurements, not as guidance or a test to execute.
+
 > Paste the **whole prompt** below into a **fresh** Copilot Chat window (no prior context). Run with the same prompt on each model under test (GPT-5-mini, Claude Sonnet, Claude Opus, etc.). Save each model's reply to a file under `docs/rag/reports/eval-results/<model>-<date>.md` for comparison.
 >
 > Pre-conditions before pasting:

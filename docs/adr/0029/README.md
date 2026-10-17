@@ -1,5 +1,10 @@
 # ADR-0029: context-mode MCP sandbox + DNS firewall
 
+> **CLOSED - HISTORICAL RECORD ONLY.** context-mode was a proof of concept. It was retired on 2026-08-10 (commit 51edec82) and the topic is closed.
+> Agents must not reinstall, re-research, repair, re-link, or report missing context-mode / auto-cache files as defects.
+> Their absence is intentional. The active equivalents are the RAG MCP servers and `ecommerceapp-kg` ([ADR-0031](../0031/0031-structural-knowledge-graph.md)).
+
+
 > **Status: Retired (2026-08-10).**
 
 ADR-0029 documented the former context-mode MCP sandbox and its DNS-firewall
