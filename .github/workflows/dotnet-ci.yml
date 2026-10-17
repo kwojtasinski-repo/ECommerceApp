@@ -120,3 +120,28 @@ jobs:
           --configuration ${{ env.CONFIGURATION }}
           --no-build
           --filter "FullyQualifiedName!~GraphServiceTests&FullyQualifiedName!~RealGraphE2ETests"
+
+  # GO gate hook tests (ADR-0033). Pure Node, no dotnet; independent of the other jobs.
+  # Hooks use only node: built-ins and ESM, so any current LTS works; no package.json/engines pin exists.
+  # Trigger: when push/pull_request are enabled above, scope this job to `tools/hooks/**`,
+  # `.claude/hooks/**` and `.github/hooks/**` (path filters are workflow-level, so split it into its own workflow first).
+  hook-tests:
+    name: GO gate hook tests (node --test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Hook tests
+        run: >
+          node --test
+          tools/hooks/gate-core.test.mjs
+          .claude/hooks/go-gate-adapter.test.mjs
+          .github/hooks/go-gate-adapter.test.mjs

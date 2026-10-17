@@ -17,6 +17,12 @@ tool has its **own** permission system on top of the gate, and the two are indep
 | A normal "Allow this edit/command?" prompt | The tool's own permission prompt | Wait for the user's choice |
 | A hook error that is not the GO-gate text | A broken hook | Report it; the gate is fail-open, so a crash must not lock you out |
 
+**Fail-open is visible in Claude Code:** if the Claude adapter crashes it still exits 0 and allows the action,
+logs to `<tmp>/ecommerceapp-go-gate/errors.log`, and shows the user one `systemMessage` per session ("GO gate
+failed to run: …; edits are NOT protected"). The Copilot adapter stays silent (log only; its documented
+`preToolUse` output has no user-visible message field). The Claude hooks use exec form (`command: "node"`,
+`args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/go-gate-adapter.mjs"]`, no shell) with `timeout: 10`.
+
 `IMPLEMENT` only satisfies the gate. It never approves a tool's own permission prompt.
 
 ## Per tool

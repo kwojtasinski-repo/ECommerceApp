@@ -62,12 +62,28 @@ core / adapter error, bad payload --> ALLOW (fail-open, logged to <tmp>/ecommerc
   same repo share GO until `HOLD`/`STOP` or the TTL. A `sessionStart` event revokes a marker older than 10 s
   so a fresh session starts locked; that revoke is covered by unit tests only.
 - **`copilot -p` (non-interactive) does not load repo hooks** (CLI 1.0.97). The gate covers interactive sessions only.
+- **Copilot hook timeouts fail open** (documentation, checked 2026-10-17): a slow or unreachable hook does not
+  block the tool call, consistent with this gate's fail-open decision.
 - **Autopilot auto-answers `ask_user`**, so a dialog in autopilot never yields a real GO. The gate holds;
   the agent stops and reports. Intended safe outcome.
-- **VS Code** needs `chat.useHooks`, ignores matchers in Claude-format files (the core filters on tool name
-  itself) and reuses the parent `session_id` in subagents.
+- **VS Code**: `chat.useHooks` is on by default (Local harness); Claude-format files additionally need
+  `chat.useClaudeHooks` (off by default). It ignores matchers in Claude-format files (the core filters on tool
+  name itself) and reuses the parent `session_id` in subagents.
 - **Agents can self-grant.** The `grant` command exists for dialog approval, so an agent can run it without
   real approval. The transcript shows it and the deny reason says to run it only after explicit user approval.
+
+### VS Code documentation clarification (2026-10-17)
+
+The VS Code documentation states that `chat.useHooks` controls hook execution in the **Local
+harness** and is on by default; it is not an additional opt-in unless disabled. Discovering Claude-format
+hooks from `.claude/settings.json` additionally requires `chat.useClaudeHooks`, which is off by default.
+VS Code also offers Copilot and Claude harnesses with different hook implementations, so these setting
+defaults do not establish that this gate was re-tested or works in every harness. The ECommerceApp VS Code
+gate remains **not re-tested**; a follow-up probe must name the target harness.
+
+Source: [Configure agent hooks in Visual Studio Code](https://code.visualstudio.com/docs/agent-customization/hooks),
+checked 2026-10-17. Documentation states `chat.useHooks` is on by default and
+`chat.useClaudeHooks` is off by default.
 
 ### Verified live in ECommerceApp (2026-10-14, user-run)
 
@@ -110,7 +126,8 @@ shell approval. In autopilot `ask_user` is auto-answered ("best guess"), so a di
 
 ### Risks & mitigations
 - Hook bug locks agents out: mitigated by fail-open everywhere and `ECOMMERCEAPP_GATE=off`.
-- VS Code behaviour was not re-tested in this repo; the Gradebook findings are assumed to transfer.
+- VS Code behaviour remains not re-tested in this repo; Gradebook findings are not assumed to transfer, and any follow-up probe must name the harness (Local, Copilot or Claude).
+- Hook regressions: a CI job (`hook-tests` in `.github/workflows/dotnet-ci.yml`) runs the hook unit tests (added 2026-10-17; workflow is currently manual-trigger only).
 - Autopilot users who see "no one to approve" assume the gate is broken: documented in "Copilot: two independent permission layers".
 
 ## Alternatives considered

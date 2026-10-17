@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { isRunningInsideCopilotCli, toClaudeOutput, toNormalizedInput } from './go-gate-adapter.mjs';
+import { isRunningInsideCopilotCli, toClaudeOutput, toFailOpenOutput, toNormalizedInput } from './go-gate-adapter.mjs';
 
 const adapterPath = fileURLToPath(new URL('./go-gate-adapter.mjs', import.meta.url));
 const run = (payload, env = {}) =>
@@ -45,9 +48,49 @@ describe('claude adapter process', () => {
     assert.equal(result.status, 0);
     assert.equal(JSON.parse(result.stdout).hookSpecificOutput.permissionDecision, 'deny');
   });
-  it('fails open (exit 0, no output) on malformed stdin', () => {
-    const result = spawnSync('node', [adapterPath], { input: 'not json', encoding: 'utf8' });
+});
+
+describe('claude adapter fail-open warning', () => {
+  const isolatedTmp = () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gate-warn-'));
+    return { TMP: dir, TEMP: dir, TMPDIR: dir };
+  };
+  const runRaw = (input, env) =>
+    spawnSync('node', [adapterPath], { input, encoding: 'utf8', env: { ...process.env, CI: '', GITHUB_ACTIONS: '', ...env } });
+
+  it('fails open (exit 0) on malformed stdin and warns the user without blocking', () => {
+    const result = runRaw('not json', isolatedTmp());
     assert.equal(result.status, 0);
-    assert.equal(result.stdout, '');
+    const output = JSON.parse(result.stdout);
+    assert.match(output.systemMessage, /^GO gate failed to run: .*; edits are NOT protected/);
+    assert.equal(output.hookSpecificOutput, undefined);
+  });
+  it('warns only once per session', () => {
+    const env = isolatedTmp();
+    const first = runRaw('not json', env);
+    const second = runRaw('not json', env);
+    assert.match(JSON.parse(first.stdout).systemMessage, /edits are NOT protected/);
+    assert.equal(second.status, 0);
+    assert.equal(second.stdout, '');
+  });
+  it('failOpenWarning is once per session id and independent across sessions', () => {
+    const keys = ['TMP', 'TEMP', 'TMPDIR'];
+    const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+    Object.assign(process.env, isolatedTmp());
+    try {
+      const error = new Error('boom\nstack');
+      const first = toFailOpenOutput(error, 's-a');
+      assert.match(first.systemMessage, /GO gate failed to run: boom; edits are NOT protected/);
+      assert.equal(toFailOpenOutput(error, 's-a'), null);
+      assert.notEqual(toFailOpenOutput(error, 's-b'), null);
+    } finally {
+      for (const key of keys) {
+        if (previous[key] === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = previous[key];
+        }
+      }
+    }
   });
 });

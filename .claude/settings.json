@@ -6,7 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const d=process.env.CLAUDE_PROJECT_DIR||process.cwd();import(require('url').pathToFileURL(d+'/.claude/hooks/go-gate-adapter.mjs').href).then(m=>m.run(),()=>process.exit(0))\""
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/go-gate-adapter.mjs"],
+            "timeout": 10
           }
         ]
       }
@@ -17,7 +19,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const d=process.env.CLAUDE_PROJECT_DIR||process.cwd();import(require('url').pathToFileURL(d+'/.claude/hooks/go-gate-adapter.mjs').href).then(m=>m.run(),()=>process.exit(0))\""
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/go-gate-adapter.mjs"],
+            "timeout": 10
           }
         ]
       }

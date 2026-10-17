@@ -167,6 +167,31 @@ export function logError(error) {
   }
 }
 
+// Fail-open stays (ADR-0033), but a broken gate must not be invisible. Returns the user-facing warning the
+// first time a session hits an internal error, null afterwards (one marker file per session) or if the
+// marker cannot be written (never throws). Unknown session (e.g. unparseable stdin) shares one key.
+export function failOpenWarning(error, sessionId, nowMs = Date.now()) {
+  try {
+    const key = `${sessionId ? String(sessionId) : 'unknown-session'}.warned`;
+    const file = markerFile(key).replace(/\.go$/, '');
+    let ageMs = null;
+    try {
+      ageMs = nowMs - fs.statSync(file).mtimeMs;
+    } catch {
+      // no marker yet
+    }
+    if (ageMs !== null && ageMs <= warnTtlHours * 3600 * 1000) return null;
+    fs.mkdirSync(markerDirectory(), { recursive: true });
+    fs.writeFileSync(file, new Date(nowMs).toISOString());
+    const reason = String(error?.message ?? error).split('\n')[0].slice(0, 120);
+    return `GO gate failed to run: ${reason}; edits are NOT protected. Details: ${path.join(markerDirectory(), 'errors.log')}`;
+  } catch {
+    return null;
+  }
+}
+
+const warnTtlHours = 24;
+
 export async function readJsonStdin() {
   const chunks = [];
   for await (const chunk of process.stdin) chunks.push(chunk);

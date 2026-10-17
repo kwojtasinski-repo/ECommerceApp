@@ -58,7 +58,7 @@ Rules:
 - **Rationale**: [ADR-0029 Amendment 1](../../docs/adr/0029/amendments/0029-001-host-side-rag-auto-cache.md). Removes the most-skipped step in the RAG-with-memory pattern. Per-fire latency ~290–310ms, off the agent's turn wall-clock.
 - **Action**: Updated [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) — agent no longer needs an explicit `ctx_index` after RAG calls. Manual L1/L2 paths still work and interoperate (`ctx_search(source="rag-")` recalls both `rag-cache-` and `rag-auto-`).
 - **Promote?**: Already promoted (ADR + instruction). This entry serves as the audit trail.
-- **Status**: Resolved → ADR-0029 Amendment 1 + [docs/rag/auto-cache-hook.md](../../docs/rag/auto-cache-hook.md).
+- **Status**: Superseded → [2026-10-17 removal entry](#2026-10-17--agent--auto-cache-hook-and-its-docs-were-removed) (hook and docs removed).
 
 ## 2026-05-28 — Agent / Shape-driven formatter beats tool-name dispatch
 
@@ -67,7 +67,7 @@ Rules:
 - **Rationale**: RAG response shapes differ between tools, between transports (stdio/HTTP), and across server implementations (.NET/Python). A shape-driven walker is the only formatter that survives upstream schema drift.
 - **Action**: When extending the formatter for new tool shapes, add a **shape detector** (presence of a key), not a tool-name branch. The fallback path (`renderItem`) must always look for nested chunks before giving up.
 - **Promote?**: After 2nd occurrence of "tool-name dispatch missed a nested shape" → promote to an anti-pattern entry in `anti-patterns-critical.context.md`.
-- **Status**: Open — single occurrence; rule documented in [docs/rag/auto-cache-hook.md](../../docs/rag/auto-cache-hook.md) §"Source labels".
+- **Status**: Superseded → [2026-10-17 removal entry](#2026-10-17--agent--auto-cache-hook-and-its-docs-were-removed) (hook and docs removed).
 
 ## 2026-05-28 — Agent / JSONC parser must be string-aware
 
@@ -76,7 +76,7 @@ Rules:
 - **Rationale**: Any time we parse a config file that may contain URLs, escape sequences, or `/* */` inside strings, naive regex stripping is a foot-gun.
 - **Action**: When writing JSONC helpers, default to a string-aware stripper. The regex-only form is acceptable ONLY when content is guaranteed not to contain `//` or `/*` inside strings.
 - **Promote?**: After 2nd occurrence (e.g. another JSONC consumer in repo with the same bug) → promote to a small reusable helper in `tools/` and an anti-pattern entry.
-- **Status**: Open — single occurrence so far.
+- **Status**: Superseded → [2026-10-17 removal entry](#2026-10-17--agent--auto-cache-hook-and-its-docs-were-removed) (hook and docs removed).
 
 ---
 
@@ -359,4 +359,13 @@ Rules:
 - **Rationale**: Consistent block boundaries reduce accidental behavior changes during future edits and give all agents one unambiguous style rule.
 - **Action**: Apply the rule through [agent-workflow.instructions.md](../instructions/agent-workflow.instructions.md) and enforce it in future cleanup batches.
 - **Promote?**: Already promoted to the repository workflow instruction.
+- **Status**: Resolved
+
+## 2026-10-17 — Agent / Auto-cache hook and its docs were removed
+
+- **Trigger / Mistake**: The 2026-05-28 auto-cache entries cite `.github/hooks/auto-cache.mjs` and `docs/rag/auto-cache-hook.md`; neither exists any more, so the links were dead.
+- **Correction**: Both files were deleted in git history. `.github/hooks/auto-cache.mjs` was removed in `51edec82` (2026-08-10, "chore: retire context-mode and wire knowledge graph", together with `context-mode.json`, `posttooluse-chain.*`, `session-policy.mjs` and the `setup-auto-cache-hook` skill). `docs/rag/auto-cache-hook.md` was removed in `62b85843` (2026-08-26, "docs: align solution index with repository structure"). Reason: the hook indexed RAG responses into context-mode's store, and context-mode was retired; the explicit per-file reason for the doc deletion is not in the commit message (reason not found beyond that).
+- **Rationale**: Audit trail; the old entries stay as history and only their **Status** lines now point here.
+- **Action**: Do not rely on the auto-cache hook or its docs. ADR-0029 Amendment 1 was edited in `51edec82`; check it before citing.
+- **Promote?**: No.
 - **Status**: Resolved

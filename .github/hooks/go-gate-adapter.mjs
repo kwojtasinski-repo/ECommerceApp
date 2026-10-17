@@ -11,8 +11,9 @@ import { pathToFileURL } from 'node:url';
 import { evaluate, logError, readJsonStdin, repositoryRoot } from '../../tools/hooks/gate-core.mjs';
 
 // OBSERVED (Phase 0 probe): VS Code apply_patch + create_file; CLI apply_patch (toolArgs = raw patch text).
+// DOCUMENTED Copilot CLI tool names: edit, create.
 // UNVERIFIED names kept for safety: replace_string_in_file, multi_replace_string_in_file,
-// insert_edit_into_file, edit_notebook_file, edit, create.
+// insert_edit_into_file, edit_notebook_file.
 const editTools = new Set([
   'apply_patch',
   'create_file',
