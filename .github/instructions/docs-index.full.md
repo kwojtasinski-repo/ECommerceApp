@@ -213,5 +213,6 @@ Read a skill **before** scaffolding the corresponding artifact.
 | Skill              | When to read                                                                                           |
 | ------------------ | ------------------------------------------------------------------------------------------------------ |
 | `code-validator`   | Fast pre-commit check for BLOCKS MERGE violations only — lighter than full `@code-reviewer`            |
+| `linq-complexity-discovery` | Writing/changing LINQ over a `DbSet` or auditing queries: finds non-obvious ones and records their generated SQL above them |
 | `mermaid-diagram`  | Generate GitHub + ADO wiki compatible Mermaid diagrams                                                 |
 | `context-updater`  | Sync `.github/context/*.md` files after an ADR change or pattern shift                                |

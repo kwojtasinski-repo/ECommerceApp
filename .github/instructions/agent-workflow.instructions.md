@@ -16,6 +16,7 @@ applyTo: "**"
 - Implementation work -> inspect the smallest relevant files, then exact patching with classic tools.
 - Research / evidence gathering / source verification -> `research-gatherer` skill first, with human approval gates unless `--yolo` is explicit.
 - Domain modeling / concept distillation / boundary finding -> `context-distiller` skill first.
+- Writing or changing LINQ over a `DbSet`, or auditing existing queries -> `linq-complexity-discovery` skill (SQL next to non-obvious queries, generated not guessed).
 
 ## What to read next
 

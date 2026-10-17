@@ -144,6 +144,7 @@ Load context progressively — never bulk-load everything:
 | Task | Invoke | Load |
 |---|---|---|
 | Fast pre-commit check (BLOCKS MERGE only) | `.github/skills/code-validator` | `anti-patterns-critical.context.md` |
+| Write/change LINQ over a `DbSet`, or audit existing queries (SQL next to non-obvious queries) | `.github/skills/linq-complexity-discovery` | `efcore.instructions.md` |
 | Full pre-PR code review | `@code-reviewer` or `/pr-review` | auto — conditional per changed stack |
 | General codebase question | `/general` | only the relevant ADR or context file |
 | Distill domain concepts / find safe generalizations | `@context-distiller` | domain description / event storming output |

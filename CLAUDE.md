@@ -12,6 +12,16 @@ Start at [`.github/instructions/agent-workflow.instructions.md`](.github/instruc
 (front door for task routing) or [`.github/instructions/docs-index.instructions.md`](.github/instructions/docs-index.instructions.md)
 (full routing table).
 
+## LINQ over EF Core: show the SQL when it is not obvious
+
+When you write or change LINQ over a `DbSet` (mixed `&&`/`||`, nullable columns, `TypedId`/converters,
+`Any`/`All`/`Contains`, `ExecuteUpdate`/`ExecuteDelete`, `Join`/`GroupBy`, predicates duplicated across methods),
+use the `linq-complexity-discovery` skill. It generates the SQL deliberately (`ToQueryString()` on a SQL Server
+context, no live database needed; InMemory cannot do it) and keeps it in a `// SQL (EF Core, SQL Server):` comment
+above the query. Never write that SQL from memory, and when you change such a query regenerate or delete the comment.
+Canonical rules: [`.github/skills/linq-complexity-discovery/SKILL.md`](.github/skills/linq-complexity-discovery/SKILL.md),
+short form in [`.github/instructions/efcore.instructions.md`](.github/instructions/efcore.instructions.md).
+
 ## GO gate (edits locked until you write `IMPLEMENT`)
 
 Hooks in `.claude/settings.json` deny `Edit`/`Write`/`NotebookEdit` until the human's prompt starts with

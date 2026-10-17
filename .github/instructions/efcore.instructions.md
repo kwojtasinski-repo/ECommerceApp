@@ -28,6 +28,17 @@ Migrations policy (summary)
 Outbox & events
 - For any domain events that must be published reliably, implement the outbox pattern (persist event in DB within the same transaction, use background publisher).
 
+Complex LINQ queries (SQL visible next to the query)
+- When you write or change LINQ over a `DbSet`, check whether the generated SQL is obvious from the C#. It is NOT
+  when the query has: mixed `&&`/`||`, nullable columns in the predicate, `TypedId`/converters/enums/string
+  translation, `Any`/`All`/`Contains` or navigation filters, `ExecuteUpdate`/`ExecuteDelete`/`FromSql`, a predicate
+  duplicated across methods, or `Join`/`GroupBy`/`SelectMany`. Counting conditions alone is not the criterion.
+- For those queries, use the `linq-complexity-discovery` skill (`.github/skills/linq-complexity-discovery/SKILL.md`):
+  generate the SQL deliberately (`ToQueryString()` on a SQL Server-configured context, which needs no live database;
+  never InMemory) and keep it in a `// SQL (EF Core, SQL Server):` comment above the query. Never write that SQL from memory.
+- When you change such a query, regenerate and update the comment, or delete it if no trigger remains, and update the
+  method description in the same change.
+
 Performance
 - Use projection queries where possible to avoid unnecessary data loading (select only required columns).
 - Use pagination for large queries (Skip/Take) and ensure proper indexing.

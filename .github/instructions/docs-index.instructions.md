@@ -65,6 +65,7 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 | Need | Skill |
 |---|---|
 | Fast pre-commit check (BLOCKS MERGE only, no ceremony) | `.github/skills/code-validator/SKILL.md` |
+| Find non-obvious LINQ-to-EF queries and record their generated SQL above them (scan / annotate / verify) | `.github/skills/linq-complexity-discovery/SKILL.md` |
 | Generate Mermaid diagrams (GitHub + ADO wiki compatible) | `.github/skills/mermaid-diagram/SKILL.md` |
 | Keep `.github/context/*.md` in sync after ADR changes | `.github/skills/context-updater/SKILL.md` |
 | Scaffold CQRS command + result + handler (new BC) | `.github/skills/create-cqrs-handler/SKILL.md` |

@@ -27,6 +27,13 @@ namespace ECommerceApp.Infrastructure.Messaging.Repositories
         public async Task<IReadOnlyList<OutboxMessage>> GetDueAsync(int batchSize, CancellationToken ct = default)
         {
             var now = System.DateTime.UtcNow;
+
+            // SQL (EF Core, SQL Server):
+            //   WHERE ([o].[Status] = CAST(0 AS tinyint) AND [o].[NextAttemptAt] <= @now)
+            //      OR ([o].[Status] = CAST(1 AS tinyint) AND [o].[LockExpiresAt] < @now)
+            //   ORDER BY [o].[NextAttemptAt]  -- TOP(@p)
+            // Why: DUE (Pending, backoff elapsed) or ZOMBIE (Running, lease expired). Same predicate as
+            // TryAcquireLeaseAsync below and InMemoryOutboxClaimDecorator — change them together.
             return await _context.Outbox
                 .Where(m => (m.Status == OutboxStatus.Pending && m.NextAttemptAt <= now)
                          || (m.Status == OutboxStatus.Running && m.LockExpiresAt < now))
