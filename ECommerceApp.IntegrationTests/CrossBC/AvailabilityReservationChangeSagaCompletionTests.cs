@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Presale.Checkout.Messages;
+using ECommerceApp.Domain.Messaging;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Domain.Sagas;
 using ECommerceApp.Infrastructure.Messaging;
@@ -10,15 +11,58 @@ using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using System;
 using System.Linq;
-using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
-    public class AvailabilityReservationChangeSagaCompletionTests : BcBaseTest<IMessageBroker>
+    public class AvailabilityReservationChangeSagaCompletionTests
+        : BcBaseTest<IMessageBroker>, IClassFixture<MessageProcessingOperationsFixture>
     {
-        public AvailabilityReservationChangeSagaCompletionTests(ITestOutputHelper output) : base(output) { }
+        private readonly MessageProcessingOperationsFixture _messageProcessing;
+
+        public AvailabilityReservationChangeSagaCompletionTests(
+            ITestOutputHelper output,
+            MessageProcessingOperationsFixture messageProcessing) : base(output)
+        {
+            _messageProcessing = messageProcessing;
+        }
+
+        private async Task<OutboxStatus?> GetDroppedMessageStatusAsync(CancellationToken cancellationToken)
+        {
+            var key = MessageTypeRegistry.KeyFor(typeof(CheckoutReservationAvailabilityDropped));
+            var row = await GetRequiredService<MessagingDbContext>().Outbox
+                .AsNoTracking()
+                .Where(outboxMessage => outboxMessage.MessageTypeKey == key)
+                .SingleOrDefaultAsync(cancellationToken);
+            return row?.Status;
+        }
+
+        private sealed class DroppedMessageDispatchedOperation : IMessageProcessingOperation<OutboxStatus?>
+        {
+            private readonly AvailabilityReservationChangeSagaCompletionTests _test;
+
+            public DroppedMessageDispatchedOperation(AvailabilityReservationChangeSagaCompletionTests test)
+            {
+                _test = test;
+            }
+
+            public Task<OutboxStatus?> ReadAsync(CancellationToken cancellationToken)
+            {
+                return _test.GetDroppedMessageStatusAsync(cancellationToken);
+            }
+
+            public bool IsCompleted(OutboxStatus? state)
+            {
+                return state == OutboxStatus.Dispatched;
+            }
+
+            public string Describe(OutboxStatus? state)
+            {
+                return $"CheckoutReservationAvailabilityDropped outbox row has status {state?.ToString() ?? "<missing>"}, expected Dispatched.";
+            }
+        }
 
         [Fact]
         public async Task StockAvailabilityChanged_CompletesSagaAndRemovesNewestReservationsUntilCapacityFits()
@@ -39,14 +83,10 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                     CancellationToken);
             saga.Status.ShouldBe(SagaInstanceStatus.Completed);
 
-            var message = await GetRequiredService<MessagingDbContext>().Outbox
-                .AsNoTracking()
-                .Where(outboxMessage => outboxMessage.MessageTypeKey ==
-                    MessageTypeRegistry.KeyFor(typeof(CheckoutReservationAvailabilityDropped)))
-                .Select(outboxMessage => outboxMessage.Payload)
-                .SingleAsync(CancellationToken);
-            var dropped = JsonSerializer.Deserialize<CheckoutReservationAvailabilityDropped>(message)!;
-            await PublishAsync(dropped, CancellationToken);
+            // The running OutboxPollerService delivers the saga's dropped row on its own. Publishing it
+            // by hand as well would run InvalidateExcessForProductAsync twice concurrently and the loser
+            // fails deleting an already-deleted reservation — so wait for the poller instead.
+            await _messageProcessing.WaitUntilAsync(new DroppedMessageDispatchedOperation(this));
 
             var remaining = await reservations.GetByProductIdAsync(42, CancellationToken);
             remaining.ShouldHaveSingleItem();
