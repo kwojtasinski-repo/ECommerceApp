@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,41 +48,55 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
         {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ITimeManagementDbContext>();
-                var now = DateTime.UtcNow;
-
-                // A4: fetch both due-pending rows and zombie rows (Running with expired lock)
-                var candidates = await context.DeferredJobQueue
-                    .Where(d => (d.Status == DeferredJobStatus.Pending && d.RunAt <= now)
-                             || (d.Status == DeferredJobStatus.Running && d.LockExpiresAt < now))
-                    .OrderBy(d => d.RunAt)
-                    .Take(50)
-                    .ToListAsync(ct);
-
-                foreach (var instance in candidates)
+                IReadOnlyList<DeferredJobInstance> candidates;
+                using (var scope = _scopeFactory.CreateScope())
                 {
-                    // A4: zombie recovery — reset to Pending, do NOT dispatch immediately
-                    if (instance.Status == DeferredJobStatus.Running)
+                    var context = scope.ServiceProvider.GetRequiredService<ITimeManagementDbContext>();
+                    var now = DateTime.UtcNow;
+
+                    // A4: fetch both due-pending rows and zombie rows (Running with expired lock).
+                    // This is only a snapshot (untracked): the lease below, not this read, decides which
+                    // poller instance runs a row. Keep this predicate in sync with
+                    // IDeferredJobInstanceRepository.TryAcquireLeaseAsync (DUE or ZOMBIE).
+                    //
+                    // SQL (EF Core, SQL Server) (hand-written, not generated; derived from the lease statement,
+                    // whose SQL was captured from the real method):
+                    //   WHERE ([d].[Status] = CAST(0 AS tinyint) AND [d].[RunAt] <= @now)
+                    //      OR ([d].[Status] = CAST(1 AS tinyint) AND [d].[LockExpiresAt] < @now)
+                    //   ORDER BY [d].[RunAt]  -- TOP(50)
+                    candidates = await context.DeferredJobQueue
+                        .AsNoTracking()
+                        .Where(d => (d.Status == DeferredJobStatus.Pending && d.RunAt <= now)
+                                 || (d.Status == DeferredJobStatus.Running && d.LockExpiresAt < now))
+                        .OrderBy(d => d.RunAt)
+                        .Take(50)
+                        .ToListAsync(ct);
+                }
+
+                // Each candidate gets its own scope and its own try/catch, so one failing row does not abort
+                // the rest of the batch.
+                foreach (var candidate in candidates)
+                {
+                    if (ct.IsCancellationRequested)
                     {
-                        _logger.LogWarning(
-                            "Zombie detected for job '{JobName}' (id={Id}), resetting to Pending",
-                            instance.JobName, instance.Id.Value);
-                        instance.ResetZombie(now);
-                        await context.SaveChangesAsync(ct);
-                        continue;
+                        return;
                     }
 
-                    instance.MarkRunning(now + LockWindow);
-                    await context.SaveChangesAsync(ct);
-
-                    await _channel.WriteAsync(new JobTriggerRequest
+                    try
                     {
-                        JobName = instance.JobName.Value,
-                        EntityId = instance.EntityId.Value,
-                        Source = JobTriggerSource.Deferred,
-                        DeferredInstanceId = instance.Id.Value
-                    }, ct);
+                        await ProcessCandidateAsync(candidate, ct);
+                    }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(
+                            ex,
+                            "DeferredJobPollerService error processing job '{JobName}' (id={Id})",
+                            candidate.JobName, candidate.Id.Value);
+                    }
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -91,6 +106,47 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             {
                 _logger.LogError(ex, "DeferredJobPollerService error");
             }
+        }
+
+        private async Task ProcessCandidateAsync(DeferredJobInstance candidate, CancellationToken ct)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IDeferredJobInstanceRepository>();
+            var now = DateTime.UtcNow;
+
+            // LEASE: one atomic conditional UPDATE. When another poller instance leased the same row first
+            // — expected when several hosts share one database — it matches 0 rows and this poller silently
+            // skips it. Business reasoning and DOC-SYNC list: IDeferredJobInstanceRepository.TryAcquireLeaseAsync
+            // and docs/adr/0009/deferred-job-lease-and-inmemory-test-decorator.md
+            if (!await repository.TryAcquireLeaseAsync(candidate.Id, now, now + LockWindow, ct))
+            {
+                return;
+            }
+
+            // The candidate is an untracked snapshot taken before the lease, so its Status still tells a
+            // DUE Pending row (run it) from a ZOMBIE Running row (recover it).
+            //
+            // A4: zombie recovery — reset to Pending, do NOT dispatch immediately
+            if (candidate.Status == DeferredJobStatus.Running)
+            {
+                _logger.LogWarning(
+                    "Zombie detected for job '{JobName}' (id={Id}), resetting to Pending",
+                    candidate.JobName, candidate.Id.Value);
+
+                var context = scope.ServiceProvider.GetRequiredService<ITimeManagementDbContext>();
+                var instance = await context.DeferredJobQueue.FirstAsync(d => d.Id == candidate.Id, ct);
+                instance.ResetZombie(now);
+                await context.SaveChangesAsync(ct);
+                return;
+            }
+
+            await _channel.WriteAsync(new JobTriggerRequest
+            {
+                JobName = candidate.JobName.Value,
+                EntityId = candidate.EntityId.Value,
+                Source = JobTriggerSource.Deferred,
+                DeferredInstanceId = candidate.Id.Value
+            }, ct);
         }
     }
 }

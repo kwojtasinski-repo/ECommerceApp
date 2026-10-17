@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Domain.Supporting.TimeManagement;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM;
 using ECommerceApp.Web;
@@ -28,6 +29,9 @@ namespace ECommerceApp.Shared.TestInfrastructure
     ///   <item>Decorates <see cref="IOutboxRepository"/> with <see cref="InMemoryOutboxClaimDecorator"/>,
     ///         because the production Outbox claim (<c>ExecuteUpdateAsync</c>) cannot run on InMemory. See
     ///         docs/adr/0010/outbox-claim-and-inmemory-test-decorator.md.</item>
+    ///   <item>Decorates <see cref="IDeferredJobInstanceRepository"/> with
+    ///         <see cref="InMemoryDeferredJobLeaseDecorator"/> for the same reason (deferred job lease). See
+    ///         docs/adr/0009/deferred-job-lease-and-inmemory-test-decorator.md.</item>
     /// </list>
     /// </summary>
     public class BcWebApplicationFactory : CustomWebApplicationFactory<Startup>
@@ -42,6 +46,7 @@ namespace ECommerceApp.Shared.TestInfrastructure
                 BcDbContextTestSetup.ReplaceAllBcDbContextsWithInMemory(services);
                 BcDbContextTestSetup.MakeAllBcDbContextsTransient(services);
                 DecorateOutboxRepositoryForInMemory(services);
+                DecorateDeferredJobRepositoryForInMemory(services);
                 ReplaceMessageBrokerWithSynchronous(services);
                 BcDbContextTestSetup.ReplaceDbContextMigratorsWithNoOp(services);
                 EnsureIamDbContextCreatedAndSeeded(services);
@@ -70,6 +75,31 @@ namespace ECommerceApp.Shared.TestInfrastructure
                 sp => new InMemoryOutboxClaimDecorator(
                     (IOutboxRepository)ActivatorUtilities.CreateInstance(sp, original.ImplementationType),
                     sp.GetRequiredService<ECommerceApp.Infrastructure.Messaging.IMessagingDbContext>()),
+                original.Lifetime));
+        }
+
+        /// <summary>
+        /// Wraps the registered <see cref="IDeferredJobInstanceRepository"/> in
+        /// <see cref="InMemoryDeferredJobLeaseDecorator"/> while keeping its lifetime. Must run after the
+        /// InMemory swap: without it the deferred job poller's lease throws on InMemory and the poller silently
+        /// runs nothing. See docs/adr/0009/deferred-job-lease-and-inmemory-test-decorator.md.
+        /// </summary>
+        private static void DecorateDeferredJobRepositoryForInMemory(IServiceCollection services)
+        {
+            var original = services.FirstOrDefault(d => d.ServiceType == typeof(IDeferredJobInstanceRepository));
+            if (original?.ImplementationType is null)
+            {
+                throw new InvalidOperationException(
+                    "IDeferredJobInstanceRepository must be registered by implementation type so it can be decorated. "
+                    + "See docs/adr/0009/deferred-job-lease-and-inmemory-test-decorator.md.");
+            }
+
+            services.Remove(original);
+            services.Add(new ServiceDescriptor(
+                typeof(IDeferredJobInstanceRepository),
+                sp => new InMemoryDeferredJobLeaseDecorator(
+                    (IDeferredJobInstanceRepository)ActivatorUtilities.CreateInstance(sp, original.ImplementationType),
+                    sp.GetRequiredService<ECommerceApp.Infrastructure.Supporting.TimeManagement.ITimeManagementDbContext>()),
                 original.Lifetime));
         }
 

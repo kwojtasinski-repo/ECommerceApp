@@ -39,6 +39,10 @@ test classes and this document). The lease is specific to the Outbox dispatch tr
 InMemory stand-in share one predicate and must be changed together. The column keeps its historical name
 `LockExpiresAt`; it holds the lease expiry.
 
+The same lease pattern protects deferred jobs; see
+[ADR-0009: deferred job lease](../0009/deferred-job-lease-and-inmemory-test-decorator.md). Keep the two
+documents consistent when the pattern changes.
+
 ## What the claim does not cover
 
 - **Redelivery after a crash.** If the handler ran but the process died before `MarkDispatched`, the row
