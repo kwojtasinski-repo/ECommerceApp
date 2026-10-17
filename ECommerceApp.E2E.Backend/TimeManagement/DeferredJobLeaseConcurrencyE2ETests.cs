@@ -147,6 +147,99 @@ namespace ECommerceApp.E2E.Backend.TimeManagement
             }
         }
 
+        [Fact]
+        public async Task PollAsync_ZombieRow_IsResetToPendingWithoutDispatchThenDispatchedOnceDue()
+        {
+            var ct = TestContext.Current.CancellationToken;
+            var id = await AddDueRowAsync(ct);
+            await MakeZombieAsync(id, ct);
+            var instance = CreatePoller();
+            try
+            {
+                // Cycle 1: zombie recovery only. The row goes back to Pending with a backoff and is NOT dispatched.
+                await instance.Poll(ct);
+
+                CountDispatches(instance.Channel, id).ShouldBe(0);
+                (await GetStatusAsync(id, ct)).ShouldBe(DeferredJobStatus.Pending);
+
+                // Cycle 2 while the backoff has not elapsed: still nothing.
+                await instance.Poll(ct);
+                CountDispatches(instance.Channel, id).ShouldBe(0);
+
+                // Backoff elapsed: the next cycle dispatches the recovered row.
+                await MakeDueAsync(id, ct);
+                await instance.Poll(ct);
+
+                CountDispatches(instance.Channel, id).ShouldBe(1);
+                (await GetStatusAsync(id, ct)).ShouldBe(DeferredJobStatus.Running);
+            }
+            finally
+            {
+                await instance.Provider.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task PollAsync_ManyPollerInstancesOneZombieRow_RecoveredOnceAndDispatchedExactlyOnceWhenDue()
+        {
+            var ct = TestContext.Current.CancellationToken;
+            const int pollers = 8;
+
+            for (var repetition = 0; repetition < Repetitions; repetition++)
+            {
+                var id = await AddDueRowAsync(ct);
+                await MakeZombieAsync(id, ct);
+                var instances = Enumerable.Range(0, pollers).Select(_ => CreatePoller()).ToList();
+                try
+                {
+                    await PollAllConcurrentlyAsync(instances, ct);
+
+                    instances.Sum(i => CountDispatches(i.Channel, id)).ShouldBe(0, $"repetition {repetition}: zombie recovery must not dispatch");
+                    (await GetStatusAsync(id, ct)).ShouldBe(DeferredJobStatus.Pending);
+                    (await GetRetryCountAsync(id, ct)).ShouldBe(1, $"repetition {repetition}: zombie reset by more than one poller");
+
+                    await MakeDueAsync(id, ct);
+                    await PollAllConcurrentlyAsync(instances, ct);
+
+                    var dispatches = instances.Sum(i => CountDispatches(i.Channel, id));
+                    dispatches.ShouldBe(1, $"repetition {repetition}: {dispatches} of {pollers} poller instances dispatched recovered row {id.Value}");
+                }
+                finally
+                {
+                    foreach (var instance in instances)
+                    {
+                        await instance.Provider.DisposeAsync();
+                    }
+                }
+            }
+        }
+
+        private static async Task PollAllConcurrentlyAsync(IReadOnlyList<PollerInstance> instances, CancellationToken ct)
+        {
+            var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var polls = instances.Select(instance => Task.Run(async () =>
+            {
+                await gate.Task;
+                await instance.Poll(ct);
+            }, ct)).ToList();
+
+            gate.SetResult();
+            await Task.WhenAll(polls);
+        }
+
+        private async Task MakeDueAsync(DeferredJobInstanceId id, CancellationToken ct)
+        {
+            await using var context = CreateContext();
+            var past = DateTime.UtcNow.AddMinutes(-1);
+            await context.DeferredJobQueue.Where(d => d.Id == id).ExecuteUpdateAsync(s => s.SetProperty(d => d.RunAt, past), ct);
+        }
+
+        private async Task<int> GetRetryCountAsync(DeferredJobInstanceId id, CancellationToken ct)
+        {
+            await using var context = CreateContext();
+            return await context.DeferredJobQueue.AsNoTracking().Where(d => d.Id == id).Select(d => d.RetryCount).SingleAsync(ct);
+        }
+
         private sealed record PollerInstance(ServiceProvider Provider, JobTriggerChannel Channel, Func<CancellationToken, Task> Poll);
 
         private PollerInstance CreatePoller()
