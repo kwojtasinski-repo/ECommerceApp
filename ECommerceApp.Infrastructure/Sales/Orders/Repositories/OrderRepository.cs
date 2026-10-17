@@ -70,7 +70,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         {
             var query = _context.Orders.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Value.Contains(search));
+                query = WhereNumberContains(query, search);
             return await query
                 .OrderByDescending(o => o.Ordered)
                 .Skip(pageSize * (pageNo - 1))
@@ -82,7 +82,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         {
             var query = _context.Orders.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Value.Contains(search));
+                query = WhereNumberContains(query, search);
             return await query.CountAsync(ct);
         }
 
@@ -110,7 +110,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
                 o.Status == OrderStatus.PartiallyFulfilled ||
                 o.Status == OrderStatus.Fulfilled);
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Value.Contains(search));
+                query = WhereNumberContains(query, search);
             return await query
                 .OrderByDescending(o => o.Ordered)
                 .Skip(pageSize * (pageNo - 1))
@@ -125,9 +125,17 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
                 o.Status == OrderStatus.PartiallyFulfilled ||
                 o.Status == OrderStatus.Fulfilled);
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Value.Contains(search));
+                query = WhereNumberContains(query, search);
             return await query.CountAsync(ct);
         }
+
+        // SQL (EF Core, SQL Server):
+        //   WHERE CAST([o].[Number] AS nvarchar(max)) LIKE @search_contains ESCAPE N'\'   -- @search_contains = %term%, %/_/\ escaped
+        // Why: Number is an OrderNumber value object mapped with HasConversion, so `o.Number.Value.Contains(...)` cannot be
+        // translated (InMemory hides that); the implicit string conversion becomes the CAST. Shared by the four search
+        // methods (GetAll/GetAllCount/GetAllPaid/GetAllPaidCount) so the predicate stays in one place.
+        private static IQueryable<Order> WhereNumberContains(IQueryable<Order> query, string search)
+            => query.Where(o => ((string)o.Number).Contains(search));
 
         public async Task<int?> GetCustomerIdAsync(int orderId, CancellationToken ct = default)
             => await _context.Orders

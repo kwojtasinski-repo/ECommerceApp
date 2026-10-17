@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.AccountProfile;
+using ECommerceApp.Domain.AccountProfile.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,24 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
             => await Query(track).FirstOrDefaultAsync(p => p.UserId == userId);
 
         public async Task<List<UserProfile>> GetByEmailAsync(string email, bool track = false)
-            => await Query(track).Where(p => p.Email.Value == email).ToListAsync();
+        {
+            Email normalized;
+            try
+            {
+                normalized = new Email(email);
+            }
+            catch (ArgumentException)
+            {
+                // A string that is not a valid email cannot match any stored profile.
+                return new List<UserProfile>();
+            }
+
+            // SQL (EF Core, SQL Server):
+            //   WHERE [u].[Email] = @normalized
+            // Why: Email is a value object mapped with HasConversion, so EF sees one scalar column and can only
+            // compare the whole object; `p.Email.Value == email` cannot be translated (InMemory hides that).
+            return await Query(track).Where(p => p.Email == normalized).ToListAsync();
+        }
 
         public async Task UpdateAsync(UserProfile profile)
         {
