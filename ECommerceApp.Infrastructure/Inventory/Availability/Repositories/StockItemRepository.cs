@@ -65,33 +65,6 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task<IReadOnlyList<StockItem>> GetAvailableAsync(
-            int pageSize, int pageNo, string searchString, CancellationToken ct = default)
-        {
-            var query = _context.StockItems.AsNoTracking()
-                .Where(s => s.Quantity.Value - s.ReservedQuantity.Value > 0);
-
-            if (!string.IsNullOrWhiteSpace(searchString))
-                query = query.Where(s => s.ProductId.Value.ToString().Contains(searchString));
-
-            return await query
-                .OrderBy(s => s.ProductId)
-                .Skip((pageNo - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(ct);
-        }
-
-        public async Task<int> GetAvailableCountAsync(string searchString, CancellationToken ct = default)
-        {
-            var query = _context.StockItems.AsNoTracking()
-                .Where(s => s.Quantity.Value - s.ReservedQuantity.Value > 0);
-
-            if (!string.IsNullOrWhiteSpace(searchString))
-                query = query.Where(s => s.ProductId.Value.ToString().Contains(searchString));
-
-            return await query.CountAsync(ct);
-        }
-
         public async Task<IReadOnlyList<StockItem>> GetAllPagedAsync(
             int page, int pageSize, CancellationToken ct = default)
             => await _context.StockItems

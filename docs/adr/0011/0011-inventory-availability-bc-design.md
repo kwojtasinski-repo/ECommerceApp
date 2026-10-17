@@ -307,9 +307,8 @@ public interface IStockItemRepository
     Task<StockItem> GetByIdAsync(StockItemId id, CancellationToken ct = default);
     Task AddAsync(StockItem stockItem, CancellationToken ct = default);
     Task UpdateAsync(StockItem stockItem, CancellationToken ct = default);
-    Task<IReadOnlyList<StockItem>> GetAvailableAsync(
-        int pageSize, int pageNo, string searchString, CancellationToken ct = default);
-    Task<int> GetAvailableCountAsync(string searchString, CancellationToken ct = default);
+    Task<IReadOnlyList<StockItem>> GetAllPagedAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<int> GetAllCountAsync(CancellationToken ct = default);
 }
 
 public interface IReservationRepository
