@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { copilotCliScope, extractFilePaths, toNormalizedInput } from './go-gate-adapter.mjs';
@@ -120,8 +123,15 @@ describe('copilot adapter process', () => {
     });
     assert.equal(result.status, 0);
   });
-  it('fails open (exit 0) on malformed stdin', () => {
-    const result = spawnSync('node', [adapterPath], { input: '{{{', encoding: 'utf8' });
+  it('fails open, logs the error, and stays silent on malformed stdin', () => {
+    const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gate-copilot-error-'));
+    const result = spawnSync('node', [adapterPath], {
+      input: '{{{',
+      encoding: 'utf8',
+      env: { ...process.env, CI: '', GITHUB_ACTIONS: '', TMP: tempDirectory, TEMP: tempDirectory, TMPDIR: tempDirectory },
+    });
     assert.equal(result.status, 0);
+    assert.equal(result.stdout, '');
+    assert.equal(fs.existsSync(path.join(tempDirectory, 'ecommerceapp-go-gate', 'errors.log')), true);
   });
 });

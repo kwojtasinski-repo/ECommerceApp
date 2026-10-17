@@ -41,7 +41,7 @@ core / adapter error, bad payload --> ALLOW (fail-open, logged to <tmp>/ecommerc
 | Subagents | Not detected. Session-scoped GO marker shared by everyone in the session | A shared marker needs no detection and means agents never block each other |
 | Consent token | Case-sensitive uppercase `IMPLEMENT` at the start of the prompt (optionally after `APPROVE`); revoke `HOLD`/`STOP`. `APPROVE` alone does not unlock | A hook cannot understand intent. Lowercase prose must never unlock. Plan acceptance and permission to edit are different decisions |
 | Marker location | `<os tmp>/ecommerceapp-go-gate/<sessionId>.go`, TTL 12 h, directory excluded from the temp-dir allowance | Otherwise an agent could write its own GO marker |
-| Fail mode | Fail-open everywhere | A broken hook must never wedge agents |
+| Fail mode and visibility (C4) | Fail-open everywhere. Claude Code logs the error and emits one `systemMessage` per session (24 h deduplication); it exits 0 without a deny, so the action proceeds. Copilot adapters log to `errors.log` and stay silent because their output contract has no user-message field. No `SessionStart` hook is added for this warning | Preserve fail-open behavior while surfacing failures only where the adapter output contract supports it |
 | CI / cloud | Self-disabling when `CI` / `GITHUB_ACTIONS` is set; `ECOMMERCEAPP_GATE=off` switches it off locally | Copilot cloud agent reads `.github/hooks/*.json` and has no human to say GO |
 | Dialog answer | A question-tool answer is not a prompt, so the agent runs `gate-cli.mjs grant <sessionId>`; the deny reason names the exact command | Keeps one marker mechanism for prompts and dialogs |
 | Question tools | Claude `AskUserQuestion`; VS Code `#vscode/askQuestions`; Copilot CLI `ask_user`. Plain-text question is the contract when none exists | Codex `request_user_input` intentionally dropped (Codex out of scope) |
@@ -147,6 +147,7 @@ N/A
 
 - [ ] `tools/hooks/gate-core.mjs` contains no tool names; adapters only map payloads and output
 - [ ] Every hook entry point exits 0 on internal error (fail-open) and logs to `errors.log`
+- [ ] Claude failures emit one `systemMessage` per session (24 h deduplication) without blocking the action; Copilot failures remain log-only; no warning-specific `SessionStart` hook
 - [ ] Deny travels as JSON on stdout with exit 0, never exit code 2
 - [ ] Allow-listed globs stay limited to `.github/plans/**`, `docs/research/**`, `docs/reports/**`
 - [ ] Marker directory is excluded from the temp-dir write allowance
