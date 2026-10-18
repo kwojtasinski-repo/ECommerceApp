@@ -5,6 +5,10 @@ services:
             dockerfile: Dockerfile-api
         container_name: api
         restart: unless-stopped
+        environment:
+          # Dev-only signing key (HS256 needs >= 256 bits). The 144-bit key in appsettings.docker.json is
+          # too short. In any shared/prod deployment inject Jwt__Key from a secret instead of this value.
+          - Jwt__Key=dev-only-compose-jwt-signing-key-0123456789-abcdef-ECommerceApp
         ports:
           - 5001:80 
     

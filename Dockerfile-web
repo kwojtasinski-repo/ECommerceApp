@@ -4,9 +4,9 @@ COPY . .
 RUN dotnet restore
 RUN dotnet publish ECommerceApp.Web/ECommerceApp.Web.csproj -c release -o out
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra
 WORKDIR /app
 COPY --from=build /app/out .
-ENV ASPNETCORE_URLS http://*:80
-ENV ASPNETCORE_ENVIRONMENT docker
+ENV ASPNETCORE_URLS=http://*:80
+ENV ASPNETCORE_ENVIRONMENT=docker
 ENTRYPOINT ["dotnet", "ECommerceApp.Web.dll"]
