@@ -63,7 +63,7 @@ _Last updated: 2026-03-17_
 
 ## Files & operations
 
-- **No edits to `Infrastructure/Migrations/` files** without explicit human approval.
+- **No edits to `Infrastructure/HistoricalMigrations/` files** without explicit human approval.
 - **No production DB migrations** without explicit human approval.
 - **No preview SDK or preview major package upgrades** without confirmation.
 

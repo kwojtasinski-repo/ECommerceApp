@@ -117,7 +117,7 @@ Rules:
 ## Checklist
 
 - [ ] Pre-edit checklist completed
-- [ ] No edits to `Infrastructure/Migrations/` (or explicit approval cited)
+- [ ] No edits to `Infrastructure/HistoricalMigrations/` (or explicit approval cited)
 - [ ] No Polish UI text changed without approval
 - [ ] `agent-decisions.md` updated if a meaningful correction occurred
 ```

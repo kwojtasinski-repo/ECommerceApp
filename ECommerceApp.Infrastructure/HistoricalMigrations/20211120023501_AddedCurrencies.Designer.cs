@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace ECommerceApp.Infrastructure.Migrations
+namespace ECommerceApp.Infrastructure.HistoricalMigrations
 {
     [DbContext(typeof(Context))]
-    [Migration("20211120214316_SetPrecisionAndScaleOnRate")]
-    partial class SetPrecisionAndScaleOnRate
+    [Migration("20211120023501_AddedCurrencies")]
+    partial class AddedCurrencies
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -236,7 +236,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Rate")
-                        .HasColumnType("decimal(18,4)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -582,35 +582,35 @@ namespace ECommerceApp.Infrastructure.Migrations
                         new
                         {
                             Id = "Administrator",
-                            ConcurrencyStamp = "214260fe-916d-4419-b506-b83b6077bcc2",
+                            ConcurrencyStamp = "f7cfafb7-0798-4b6a-9387-90586f7b22f1",
                             Name = "Administrator",
                             NormalizedName = "ADMINISTRATOR"
                         },
                         new
                         {
                             Id = "Manager",
-                            ConcurrencyStamp = "ce41c70b-6ee7-4af6-bf95-c8c8717cf47c",
+                            ConcurrencyStamp = "e17981cc-2875-4b5d-8e94-fe3d3c170303",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
                             Id = "Service",
-                            ConcurrencyStamp = "3a8d6465-fd51-4388-ab7a-36d19fd95951",
+                            ConcurrencyStamp = "b4e347e7-9942-47ee-9e84-08421fa9d71e",
                             Name = "Service",
                             NormalizedName = "SERVICE"
                         },
                         new
                         {
                             Id = "User",
-                            ConcurrencyStamp = "2c1b5fef-1cbe-4139-bffc-9f67449870b1",
+                            ConcurrencyStamp = "4c6399c7-63aa-47c7-816a-8cd6cbbcc24b",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
                             Id = "NotRegister",
-                            ConcurrencyStamp = "f55e0d07-b280-4030-95f1-9f1e0f781b14",
+                            ConcurrencyStamp = "971bdc0a-851e-4f67-a32c-d012cb182c13",
                             Name = "NotRegister",
                             NormalizedName = "NOTREGISTER"
                         });
@@ -709,7 +709,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                         {
                             Id = "8e445865-a24d-4543-a6c6-9443d048cdb9",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "7a3d5a43-ac06-4e9b-ad6f-b82beec8b450",
+                            ConcurrencyStamp = "e044ea80-eea5-4500-9cc4-03f180e68915",
                             Email = "admin@localhost",
                             EmailConfirmed = true,
                             LockoutEnabled = false,

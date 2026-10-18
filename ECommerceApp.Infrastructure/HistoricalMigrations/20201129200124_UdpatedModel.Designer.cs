@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace ECommerceApp.Infrastructure.Migrations
+namespace ECommerceApp.Infrastructure.HistoricalMigrations
 {
     [DbContext(typeof(Context))]
     [Migration("20201129200124_UdpatedModel")]

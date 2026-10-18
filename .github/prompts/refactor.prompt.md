@@ -118,7 +118,7 @@ Produce a structured summary:
 - ❌ Does NOT add new features.
 - ❌ Does NOT change exception types or status codes.
 - ❌ Does NOT modify database schema or EF configurations.
-- ❌ Does NOT touch `Infrastructure/Migrations/`.
+- ❌ Does NOT touch `Infrastructure/HistoricalMigrations/`.
 - ❌ Does NOT cross BC boundaries (would need `IMessageBroker` design).
 - ❌ Does NOT rename `given_when_should` legacy tests (per anti-patterns).
 

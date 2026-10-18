@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ECommerceApp.Infrastructure.Migrations
+namespace ECommerceApp.Infrastructure.HistoricalMigrations
 {
     [DbContext(typeof(Context))]
     [Migration("20260503210742_RemoveIdentityFromLegacyContext")]

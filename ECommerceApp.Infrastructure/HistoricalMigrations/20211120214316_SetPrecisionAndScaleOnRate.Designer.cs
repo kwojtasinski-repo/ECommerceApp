@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace ECommerceApp.Infrastructure.Migrations
+namespace ECommerceApp.Infrastructure.HistoricalMigrations
 {
     [DbContext(typeof(Context))]
-    [Migration("20210904131549_AddedImages")]
-    partial class AddedImages
+    [Migration("20211120214316_SetPrecisionAndScaleOnRate")]
+    partial class SetPrecisionAndScaleOnRate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -191,6 +191,60 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.ToTable("CouponUsed");
                 });
 
+            modelBuilder.Entity("ECommerceApp.Domain.Model.Currency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(3)")
+                        .HasMaxLength(3);
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Currencies");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "PLN",
+                            Description = "Polski złoty"
+                        });
+                });
+
+            modelBuilder.Entity("ECommerceApp.Domain.Model.CurrencyRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<DateTime>("CurrencyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.ToTable("CurrencyRates");
+                });
+
             modelBuilder.Entity("ECommerceApp.Domain.Model.Customer", b =>
                 {
                     b.Property<int>("Id")
@@ -259,6 +313,9 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -277,6 +334,8 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BrandId");
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("TypeId");
 
@@ -311,6 +370,9 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int?>("CouponUsedId")
                         .HasColumnType("int");
 
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
@@ -339,6 +401,8 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("CustomerId");
 
@@ -402,6 +466,9 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
@@ -415,6 +482,8 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("CustomerId");
 
@@ -513,35 +582,35 @@ namespace ECommerceApp.Infrastructure.Migrations
                         new
                         {
                             Id = "Administrator",
-                            ConcurrencyStamp = "a40e09b6-86b9-4f0e-a100-c72097602be9",
+                            ConcurrencyStamp = "214260fe-916d-4419-b506-b83b6077bcc2",
                             Name = "Administrator",
                             NormalizedName = "ADMINISTRATOR"
                         },
                         new
                         {
                             Id = "Manager",
-                            ConcurrencyStamp = "576407b1-7db3-4f07-aa0d-534b7edf8475",
+                            ConcurrencyStamp = "ce41c70b-6ee7-4af6-bf95-c8c8717cf47c",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
                             Id = "Service",
-                            ConcurrencyStamp = "75aa4501-4fff-4a05-b4c1-5d7aab195ec3",
+                            ConcurrencyStamp = "3a8d6465-fd51-4388-ab7a-36d19fd95951",
                             Name = "Service",
                             NormalizedName = "SERVICE"
                         },
                         new
                         {
                             Id = "User",
-                            ConcurrencyStamp = "f3f9f13d-8999-4bde-96c3-7cd740bebae6",
+                            ConcurrencyStamp = "2c1b5fef-1cbe-4139-bffc-9f67449870b1",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
                             Id = "NotRegister",
-                            ConcurrencyStamp = "b10bac1c-ee97-47ce-8efd-af2dba13f2dd",
+                            ConcurrencyStamp = "f55e0d07-b280-4030-95f1-9f1e0f781b14",
                             Name = "NotRegister",
                             NormalizedName = "NOTREGISTER"
                         });
@@ -640,7 +709,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                         {
                             Id = "8e445865-a24d-4543-a6c6-9443d048cdb9",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "6f285ab8-0eff-4138-9074-ac41bbec7f20",
+                            ConcurrencyStamp = "7a3d5a43-ac06-4e9b-ad6f-b82beec8b450",
                             Email = "admin@localhost",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
@@ -792,6 +861,15 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ECommerceApp.Domain.Model.CurrencyRate", b =>
+                {
+                    b.HasOne("ECommerceApp.Domain.Model.Currency", "Currency")
+                        .WithMany("CurrencyRates")
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ECommerceApp.Domain.Model.Customer", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
@@ -812,6 +890,12 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.HasOne("ECommerceApp.Domain.Model.Brand", "Brand")
                         .WithMany("Items")
                         .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ECommerceApp.Domain.Model.Currency", "Currency")
+                        .WithMany("Items")
+                        .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -839,6 +923,12 @@ namespace ECommerceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Order", b =>
                 {
+                    b.HasOne("ECommerceApp.Domain.Model.Currency", "Currency")
+                        .WithMany("Orders")
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ECommerceApp.Domain.Model.Customer", "Customer")
                         .WithMany("Orders")
                         .HasForeignKey("CustomerId")
@@ -885,6 +975,12 @@ namespace ECommerceApp.Infrastructure.Migrations
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Payment", b =>
                 {
+                    b.HasOne("ECommerceApp.Domain.Model.Currency", "Currency")
+                        .WithMany("Payments")
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ECommerceApp.Domain.Model.Customer", "Customer")
                         .WithMany("Payments")
                         .HasForeignKey("CustomerId")

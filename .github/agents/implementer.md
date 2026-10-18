@@ -54,7 +54,7 @@ Reroute via @planner or provide an APPROVED plan.
 - **Bug-fix steps start with the red test.** Run the plan's reproducing test first and confirm it fails for the right reason (read the failure message) before touching production code; the same test must be green after the fix (see `testing.instructions.md` § "Bug fixes: red test first"). If the plan lacks the red test, surface it per the scope-discipline table below — do not silently add it.
 - **Real alternatives → let the user choose.** When a fix has genuinely different options, list 2–3 with one-line trade-offs and wait for the user's choice (same HITL idiom as the checkpoints below); do not pick silently. If the chosen option leaves the plan's file scope, STOP and return to `@planner` for a plan revision.
 - **Do NOT modify tests** unless the plan explicitly says so. Tests changing for a non-behavioral refactor is a red flag.
-- **Do NOT edit `Infrastructure/Migrations/`** — refuse and surface to human.
+- **Do NOT edit `Infrastructure/HistoricalMigrations/`** — refuse and surface to human.
 - **Do NOT translate Polish UI text.**
 - **Per anti-patterns-critical** — every edit must conform; if a plan step violates one, STOP and surface to human.
 

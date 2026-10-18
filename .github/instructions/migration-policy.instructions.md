@@ -1,6 +1,6 @@
 ---
 description: "Database migration policy for ECommerceApp Infrastructure" 
-applyTo: "ECommerceApp.Infrastructure/Migrations/**"
+applyTo: "ECommerceApp.Infrastructure/HistoricalMigrations/**"
 ---
 
 # Database Migration Policy

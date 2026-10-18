@@ -54,7 +54,7 @@ Scan the changed files and determine:
    | `Domain/Identity/`, `Application/Identity/`, `Infrastructure/Identity/` | Identity/IAM |
    | `Domain/Shared/` | Shared primitives |
    | `Domain/Model/`, `Application/Services/`, `Infrastructure/Repositories/` | Legacy horizontal code |
-   | `Infrastructure/Migrations/` | DB migration |
+   | `Infrastructure/HistoricalMigrations/` | DB migration |
 
 3. **Is this a parallel-change PR or a switch PR?**
    - Parallel-change: adds new code alongside existing, does not remove old registrations
@@ -72,7 +72,7 @@ Load **only** the ADRs that apply to the scope identified in Step 1:
 | AccountProfile BC touched | [ADR-0005](../../docs/adr/0005/README.md) |
 | `Domain/Shared/` or typed IDs / VOs touched | [ADR-0006](../../docs/adr/0006/README.md) |
 | Catalog BC touched | [ADR-0007](../../docs/adr/0007/README.md) |
-| `Infrastructure/Migrations/` touched | [`migration-policy.instructions.md`](../instructions/migration-policy.instructions.md) |
+| `Infrastructure/HistoricalMigrations/` touched | [`migration-policy.instructions.md`](../instructions/migration-policy.instructions.md) |
 
 ### Step 3 — Architectural conformance
 
@@ -129,7 +129,7 @@ Load and check **only** the instruction file matching the changed stack:
 - [ ] Test naming follows `Method_Conditions_ExpectedResult` — see [`testing.instructions.md`](../instructions/testing.instructions.md)
 - [ ] API integration tests use Flurl + Shouldly, NOT `BaseTest<T>`
 
-### Step 6 — Migrations (if `Infrastructure/Migrations/` is touched)
+### Step 6 — Migrations (if `Infrastructure/HistoricalMigrations/` is touched)
 
 - [ ] Migration created via `dotnet ef migrations add` — not hand-edited
 - [ ] Migration class has a header comment describing intent and data impact

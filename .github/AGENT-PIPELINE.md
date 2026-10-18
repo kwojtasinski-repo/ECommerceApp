@@ -175,7 +175,7 @@ Skip and edit directly when:
 Do NOT skip when:
 
 - The change touches a BC under the project-state "blocked" list — STOP, ask first.
-- The change touches `Infrastructure/Migrations/` — STOP, needs explicit human approval (per `safety.instructions.md`).
+- The change touches `Infrastructure/HistoricalMigrations/` — STOP, needs explicit human approval (per `safety.instructions.md`).
 - The change crosses BC boundaries — needs `@adr-generator` first if no ADR covers it.
 
 ---

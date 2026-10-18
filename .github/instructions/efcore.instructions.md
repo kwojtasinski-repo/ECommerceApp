@@ -18,7 +18,7 @@ Transactions
 - Ensure `SaveChangesAsync()` is called before publishing integration events or using outbox.
 
 Migrations policy (summary)
-- Migration files live under `ECommerceApp.Infrastructure/Migrations/`.
+- Migration files live under `ECommerceApp.Infrastructure/HistoricalMigrations/`.
 - Do NOT modify existing migration files once applied to shared environments.
 - Creating new migrations requires:
   - Unit/integration tests covering schema changes where feasible.

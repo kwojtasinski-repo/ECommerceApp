@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace ECommerceApp.Infrastructure.Migrations
+namespace ECommerceApp.Infrastructure.HistoricalMigrations
 {
     [DbContext(typeof(Context))]
-    [Migration("20201130153830_ChangesInContactDetailEntity")]
-    partial class ChangesInContactDetailEntity
+    [Migration("20201130145726_CorrectedMisspellTableName")]
+    partial class CorrectedMisspellTableName
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -84,7 +84,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("ContactDetailTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -650,11 +650,9 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ECommerceApp.Domain.Model.Customer", "Customer")
+                    b.HasOne("ECommerceApp.Domain.Model.Customer", null)
                         .WithMany("ContactDetails")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CustomerId");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Coupon", b =>

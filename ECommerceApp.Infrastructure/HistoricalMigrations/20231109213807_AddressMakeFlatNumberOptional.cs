@@ -1,18 +1,78 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace ECommerceApp.Infrastructure.Migrations
+#nullable disable
+
+namespace ECommerceApp.Infrastructure.HistoricalMigrations
 {
-    public partial class SetPrecisionAndScaleOnRate : Migration
+    /// <inheritdoc />
+    public partial class AddressMakeFlatNumberOptional : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<decimal>(
-                name: "Rate",
-                table: "CurrencyRates",
-                type: "decimal(18,4)",
+            migrationBuilder.AlterColumn<int>(
+                name: "FlatNumber",
+                table: "Addresses",
+                type: "int",
+                nullable: true,
+                oldClrType: typeof(int),
+                oldType: "int");
+
+            migrationBuilder.UpdateData(
+                table: "AspNetRoles",
+                keyColumn: "Id",
+                keyValue: "Administrator",
+                column: "ConcurrencyStamp",
+                value: null);
+
+            migrationBuilder.UpdateData(
+                table: "AspNetRoles",
+                keyColumn: "Id",
+                keyValue: "Manager",
+                column: "ConcurrencyStamp",
+                value: null);
+
+            migrationBuilder.UpdateData(
+                table: "AspNetRoles",
+                keyColumn: "Id",
+                keyValue: "NotRegister",
+                column: "ConcurrencyStamp",
+                value: null);
+
+            migrationBuilder.UpdateData(
+                table: "AspNetRoles",
+                keyColumn: "Id",
+                keyValue: "Service",
+                column: "ConcurrencyStamp",
+                value: null);
+
+            migrationBuilder.UpdateData(
+                table: "AspNetRoles",
+                keyColumn: "Id",
+                keyValue: "User",
+                column: "ConcurrencyStamp",
+                value: null);
+
+            migrationBuilder.UpdateData(
+                table: "AspNetUsers",
+                keyColumn: "Id",
+                keyValue: "8e445865-a24d-4543-a6c6-9443d048cdb9",
+                column: "ConcurrencyStamp",
+                value: "f1e89736-12ba-4cb9-b779-0a641daf3213");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AlterColumn<int>(
+                name: "FlatNumber",
+                table: "Addresses",
+                type: "int",
                 nullable: false,
-                oldClrType: typeof(decimal),
-                oldType: "decimal(18,2)");
+                defaultValue: 0,
+                oldClrType: typeof(int),
+                oldType: "int",
+                oldNullable: true);
 
             migrationBuilder.UpdateData(
                 table: "AspNetRoles",
@@ -55,59 +115,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                 keyValue: "8e445865-a24d-4543-a6c6-9443d048cdb9",
                 column: "ConcurrencyStamp",
                 value: "7a3d5a43-ac06-4e9b-ad6f-b82beec8b450");
-        }
-
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AlterColumn<decimal>(
-                name: "Rate",
-                table: "CurrencyRates",
-                type: "decimal(18,2)",
-                nullable: false,
-                oldClrType: typeof(decimal),
-                oldType: "decimal(18,4)");
-
-            migrationBuilder.UpdateData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValue: "Administrator",
-                column: "ConcurrencyStamp",
-                value: "f7cfafb7-0798-4b6a-9387-90586f7b22f1");
-
-            migrationBuilder.UpdateData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValue: "Manager",
-                column: "ConcurrencyStamp",
-                value: "e17981cc-2875-4b5d-8e94-fe3d3c170303");
-
-            migrationBuilder.UpdateData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValue: "NotRegister",
-                column: "ConcurrencyStamp",
-                value: "971bdc0a-851e-4f67-a32c-d012cb182c13");
-
-            migrationBuilder.UpdateData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValue: "Service",
-                column: "ConcurrencyStamp",
-                value: "b4e347e7-9942-47ee-9e84-08421fa9d71e");
-
-            migrationBuilder.UpdateData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValue: "User",
-                column: "ConcurrencyStamp",
-                value: "4c6399c7-63aa-47c7-816a-8cd6cbbcc24b");
-
-            migrationBuilder.UpdateData(
-                table: "AspNetUsers",
-                keyColumn: "Id",
-                keyValue: "8e445865-a24d-4543-a6c6-9443d048cdb9",
-                column: "ConcurrencyStamp",
-                value: "e044ea80-eea5-4500-9cc4-03f180e68915");
         }
     }
 }

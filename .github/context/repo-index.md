@@ -272,7 +272,7 @@ The original monolithic DbContext and its configuration files. All new BCs have 
 | Seed data           | `Infrastructure/Database/SeedData/`                                 |
 | DB initializer      | `Infrastructure/Database/DbInitializer.cs`, `DatabaseInitalizer.cs` |
 | Migrator            | `Infrastructure/Database/DbContextMigrator.cs`                      |
-| Legacy migrations   | `Infrastructure/Migrations/` (25 migration files)                   |
+| Legacy migrations   | `Infrastructure/HistoricalMigrations/` (25 migration files)                   |
 | Legacy repositories | `Infrastructure/Repositories/` (20 repository files)                |
 
 ---

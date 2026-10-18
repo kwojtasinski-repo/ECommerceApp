@@ -83,7 +83,7 @@ Files auto-loaded on **every** Copilot interaction (`applyTo: "**"` or always-at
 | `instructions/razorpages.instructions.md` | Loaded on agent demand | 632 |
 | `instructions/testing.instructions.md` | Loaded on agent demand | 662 |
 | `instructions/web-api.instructions.md` | Loaded on agent demand | 641 |
-| `instructions/migration-policy.instructions.md` | `ECommerceApp.Infrastructure/Migrations/**` | 357 |
+| `instructions/migration-policy.instructions.md` | `ECommerceApp.Infrastructure/HistoricalMigrations/**` | 357 |
 
 > ⚠️ **`dotnet.instructions.md` at 4,540 tokens is the largest on-demand file.**
 > Loading it on a cold turn adds 4,540 × 0.0003 = **~1.36 cr** beyond the fixed block.

@@ -143,7 +143,7 @@ Only after Steps 4–5 are complete and verified:
 1. Delete each legacy file identified in Step 3.
 2. Remove any `using` directives in remaining files that referenced the deleted namespaces.
 3. Do NOT delete:
-   - Any file under `Infrastructure/Migrations/` — migrations are never touched
+   - Any file under `Infrastructure/HistoricalMigrations/` — migrations are never touched
    - Any file that is still referenced by non-legacy code
    - Any test file — tests are updated, not deleted
 
@@ -215,7 +215,7 @@ Suggested commit message:
 
 ## Hard constraints (never bypass)
 
-- NEVER modify any file under `Infrastructure/Migrations/` or `Infrastructure/[BC]/Migrations/`.
+- NEVER modify any file under `Infrastructure/HistoricalMigrations/` or `Infrastructure/[BC]/Migrations/`.
 - NEVER remove a file that is still referenced by non-legacy production code.
 - NEVER merge or delete the new BC implementation files — only the legacy ones are removed.
 - NEVER run `dotnet ef database update` or any migration command.

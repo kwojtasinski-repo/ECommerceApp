@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace ECommerceApp.Infrastructure.Migrations
+namespace ECommerceApp.Infrastructure.HistoricalMigrations
 {
     /// <inheritdoc />
     public partial class PaymentTableAddedCostAndPaymentState : Migration

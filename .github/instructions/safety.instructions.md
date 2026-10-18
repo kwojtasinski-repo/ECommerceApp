@@ -12,7 +12,7 @@ applyTo: "**"
 
 ## Disallowed without explicit human approval
 
-- Any edits to files under `Infrastructure/Migrations/` or running production DB migrations.
+- Any edits to files under `Infrastructure/HistoricalMigrations/` or running production DB migrations.
 - Introducing or committing secrets or credentials.
 - Upgrading to preview SDKs or preview major package versions.
 - Large API-breaking changes, cross-service contract changes, or mass refactors without an accepted ADR and sign-off.

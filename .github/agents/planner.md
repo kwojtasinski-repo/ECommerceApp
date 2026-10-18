@@ -135,4 +135,4 @@ Plan APPROVED. Hand off to @implementer with this plan.
 - **Cite sources** — every constraint references an ADR/instruction/anti-pattern.
 - **Append to `agent-decisions.md`** if you were corrected on something not yet logged.
 - **Polish UI text** — never propose translation without human approval.
-- **Migrations** — never propose changes under `Infrastructure/Migrations/`.
+- **Migrations** — never propose changes under `Infrastructure/HistoricalMigrations/`.

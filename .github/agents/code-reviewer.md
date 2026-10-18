@@ -53,7 +53,7 @@ Then load **only the relevant** per-stack instructions based on which files chan
 | `.cshtml` or `wwwroot/`             | `frontend.instructions.md`          |
 | `Domain/Shared/`                    | `shared-primitives.instructions.md` |
 | `UnitTests/`, `IntegrationTests/`, `Web.IntegrationTests/`, `Web.E2E/`, `E2E.Backend/`, or `Shared.TestInfrastructure/` | `testing.instructions.md`           |
-| `Infrastructure/Migrations/`        | `migration-policy.instructions.md`  |
+| `Infrastructure/HistoricalMigrations/`        | `migration-policy.instructions.md`  |
 
 > **Context budget**: load at most 2 context files + relevant per-stack instructions. Never bulk-load everything.
 
@@ -144,7 +144,7 @@ If the change came from `/refactor.prompt.md` (or the diff is structural-only):
 1. **No behavioral change** — verify pre-existing tests pass without modification. Test changes in a refactor PR → **BLOCKS MERGE — behavioral change in refactor**.
 2. **No public API change** unless explicitly listed in the refactor's Step 1 scope. Surprise public API changes → **BLOCKS MERGE**.
 3. **No new cross-BC dependencies** — refactors must stay within their BC.
-4. **No new entries in `Infrastructure/Migrations/`** — refactors never touch migrations.
+4. **No new entries in `Infrastructure/HistoricalMigrations/`** — refactors never touch migrations.
 
 ---
 

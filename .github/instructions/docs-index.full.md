@@ -29,7 +29,7 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | `razorpages.instructions.md`          | `ECommerceApp.Web/**`               | MVC, Views, Razor Pages                                                                          |
 | `frontend.instructions.md`            | `wwwroot/**, **/*.cshtml`           | LibMan, JS modules, require.js                                                                   |
 | `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions                                                                   |
-| `migration-policy.instructions.md`    | `Infrastructure/Migrations/**`      | DB migration approval                                                                            |
+| `migration-policy.instructions.md`    | `Infrastructure/HistoricalMigrations/**`      | DB migration approval                                                                            |
 | `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**, Web.IntegrationTests/**, Web.E2E/**, E2E.Backend/**, Shared.TestInfrastructure/**` | Unit, integration, Web integration, browser E2E, backend E2E, and shared test infrastructure patterns |
 | `integration-web-e2e-testing.instructions.md` | `IntegrationTests/**, Web.IntegrationTests/**, Web.E2E/**, E2E.Backend/**, Shared.TestInfrastructure/**` | ASP.NET integration, Web, browser E2E, backend E2E, fixtures, lifecycle, and log-first diagnosis |
 | `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity                                                                  |
