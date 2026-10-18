@@ -68,7 +68,7 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 ## Open items (verified 2026-10-18)
 
 > Small and deferred leftovers found in a repo-wide sweep. Nothing here blocks anything. IDs are stable
-> (referenced from other docs); O5, O7, O10-O12, N1 and N2 were retired (O9, O13-O16 were closed and deleted), see "Retired" below.
+> (referenced from other docs); O5, O7, O10-O12, N1 and N2 were retired, see "Retired" below.
 >
 > **Order of work: backend first, then frontend.** Backend items come before any frontend item (O17).
 > "Size" is the rough cost; the concrete steps for an item live in its details section (`Left, in order`), as for O1.
