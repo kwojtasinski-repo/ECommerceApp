@@ -68,7 +68,7 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 ## Open items (verified 2026-10-18)
 
 > Small and deferred leftovers found in a repo-wide sweep. Nothing here blocks anything. IDs are stable
-> (referenced from other docs); O5, O7, O10-O12, N1 and N2 were retired, see "Retired" below.
+> (referenced from other docs); O5, O7, O10-O12, N1 and N2 were retired (O9, O13-O16 were closed and deleted), see "Retired" below.
 >
 > **Order of work: backend first, then frontend.** Backend items come before any frontend item (O17).
 > "Size" is the rough cost; the concrete steps for an item live in its details section (`Left, in order`), as for O1.
@@ -104,24 +104,10 @@ Accepted, not roadmap items: stale `CatalogList:*` image up to 15 s (DD-004) and
 **Rules:** gate on exit code / `error:` only (~220 warnings is the designed state); CI never writes a seed or loads Neo4j; no ontology or MCP-tool changes.
 **Known gap:** `View(...)` first arguments that are variables, calls, other-class constants or `this.View` are skipped silently by `RenderedViewIndex` (none exist today).
 
-### O14: E2E.Backend hang in a full solution run
-
-**Cause (reproduced 2026-10-18).** Hangs in 3 of 4 runs of plain `dotnet test ECommerceApp.sln` after `dotnet clean`; not in `--no-build` runs or Visual Studio. No test is at fault (a different one each time, SQL Server was healthy). Dumps show a two-way pipe deadlock: the xUnit v3 process is stuck in `WriteFile` on stdout and `testhost.exe` is stuck in `WriteFile` to it; both write, nobody reads. Console traffic is a precondition: with console output of the E2E hosts, containers and the Testcontainers logger enabled 4 of 15 runs hung, with it removed 0 of 12 (same log level). Which of the three sources matters is unknown.
-
-**Source of the traffic.** `TestLogging` (`ECommerceApp.Shared.TestInfrastructure`) is static, Debug level, `AddConsole()` in every E2E host, container output sent with `Consume.RedirectStdoutAndStderrToConsole()`. The log level stays as is by decision. E2E hosts call `Configure(logging)` without a sink, so their logs never reach a single test's output.
-
-**Decision (owner): not worth more time.** Use `dotnet build ECommerceApp.sln`, then `dotnet test ECommerceApp.sln --no-build`; CI keeps `--blame-hang --blame-hang-timeout 5m`.
-
-**Optional follow-up if it returns**
-1. Make `TestLogging` an instance owned by each fixture and send host logs to the xUnit sink (per-test output via `TestContext.Current.TestOutputHelper`; background-thread logs to a per-fixture file) instead of the console, same level. Check by pieces to find which source matters.
-2. Validate with 5+ plain `dotnet test ECommerceApp.sln` runs after `dotnet clean` (baseline 3 of 4 hang).
-3. Check newer `xunit.v3` / `xunit.runner.visualstudio` (now 3.2.2 / 3.1.5).
-
 ### Retired
 
-- **O5, O7, O10, O11, N1, N2, O15**: closed or moved (O11 to `known-issues.md` as DD-004 / DD-005; O15's SQL comment was re-captured from the real queries and matched).
+- **O5, O7, O10, O11, N1, N2**: closed or moved (O11 to `known-issues.md` as DD-004 / DD-005).
 - **O12**: branches `RAG_simplify`, `context_mode_improvement` and `origin/tydzien11` are POC/historical and kept on purpose.
-- **Shared IAM InMemory store** (2026-10-18): `CustomWebApplicationFactory` used one fixed store name for every host in the process, so hosts seeding the same test users raced. Now one store per factory (`InMemoryIamDatabase_{Guid}`), as `PlaywrightWebApplicationFactory` already did.
 
 Deferred by choice (see "Future architectural considerations" above): F2, F5 Phase 3, DD-003 (local outbox per BC), the checkout partial-availability modal idea, `ExpiredRefreshTokenCleanupJob`.
 
