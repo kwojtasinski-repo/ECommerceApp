@@ -65,23 +65,52 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 
 ---
 
-## Open items (verified 2026-10-15)
+## Open items (verified 2026-10-18)
 
-> Small and deferred leftovers found in a repo-wide sweep. Nothing here blocks anything.
+> Small and deferred leftovers found in a repo-wide sweep. Nothing here blocks anything. IDs are stable
+> (referenced from other docs); O5, O7, O10-O12, N1 and N2 were retired, see "Retired" below.
 
 | # | Item | Size | Notes |
 | - | ---- | ---- | ----- |
-| O1 | **KG adoption — CI validation gate** ([plan 08](../../.github/plans/08-phase-kg-workflow-adoption-implementation.md), workstream C) | M | Workstreams A (`ecommerceapp-kg-query` skill) ✅ and B (planner/verifier wired to the KG, `b336d0c4`) ✅ are done. Only C remains. Job `kg-validation` is **written in `.github/workflows/dotnet-ci.yml` but never run on a runner** (the workflow is still `workflow_dispatch`-only — **push/PR triggers are deliberately left off** until the open bugs are fixed and the CI flow is wired up; revisit then). Container run (`dotnet/sdk:10.0`, 2026-10-16) of every `kg-validation` step is green: `KgCodegen.Tests` 118/118, `--check` exit 0 (224 warnings, deterministic across two runs, none about views/ScriptModule), `KgMcp` tests 7/7, `tools/kg` untouched. Getting there needed three KG fixes: `PinnedRealGraphTests` refreshed for `ChunkedUploadCleanupTask`; `ScriptModuleParser` now accepts named AMD `define("x", […])`; new `RenderedViewIndex` maps views rendered under another name (`View(const)`, ternary, `nameof`) to their `Page` (11 `USES Page→ScriptModule` edges). Known gap: `View(...)` first arguments that are variables, calls, other-class constants or `this.View` are skipped silently (none exist today). Left to do, in order: (1) run the workflow once via `workflow_dispatch` and fix paths/SDK (KG tools are `net10.0`, the older job uses `7.0.x`); (2) **decide whether CI must detect a stale seed** — `kg-codegen --check` validates parsers/ontology and writes nothing, but does *not* diff against the committed `tools/kg/kg-seed.cypher`, so drift still passes; a diff step needs a deterministic emitter (unverified); (3) Testcontainers suites (`GraphServiceTests`, `RealGraphE2ETests`) are currently excluded from CI by filter — confirm or include them; (4) trigger: `**/*.cs` + `tools/kg/**` only, which needs the job split into its own workflow; (5) ADR-0031: plan 08 quotes a sentence “No Phase 8 is implied by this ADR” that is **not in the ADR text** — check the real wording, then record build-complete vs adoption. Rules: gate on exit code/`error:` only (~209 warnings is normal), CI never writes a seed or loads Neo4j, no ontology or MCP-tool changes (the two parser changes above were explicit one-off exceptions to plan 08). **Status 2026-10-16: done = job written + every step green in a container + parser/pinned-test fixes committed (`183b0c11`); remaining = steps (1)-(5) above.** |
+| O1 | **KG adoption: CI validation gate** ([plan 08](../../.github/plans/08-phase-kg-workflow-adoption-implementation.md), workstream C) | M | Job `kg-validation` is written and green in a container; never run on a GitHub runner, push/PR triggers deliberately off. Five steps left, see [O1 details](#o1-details-kg-ci-validation-gate). |
 | O2 | **ADR-0026 dead-code decision** | L | `PlaceOrderAsync(PlaceOrderDto)` + `OrderPlacementFailed` + 3 compensation handlers have no production caller. Deferred for blast radius; handoff: `adr-0026-legacy-order-placement-dead-code-investigation-prompt.md` (repo root). |
 | O3 | **Real email delivery** | M | `IEmailSender` has no real implementation (only used by Identity pages). Needs a provider decision first; see [`guest-checkout.md`](./guest-checkout.md). |
-| O4 | **`Context.cs` removal** | M | Empty legacy `DbContext` still referenced by test infrastructure (e.g. architecture tests); blocked by EF migration history. |
-| O6 | **`web-ui-views-report.md` ⚠️ rows** | XS | ✅ Report re-verified against code 2026-10-16; Orders/Payments `Details`, `MyPayments`, refund `View`/`Request`/Approve+Reject and Profile are all fine. Also closed a real hole: `ProfileController` `Edit`/`EditContactInfo` POST had no ownership check. Remaining: `Payments/Create` GET keeps `int orderId` (spec said `Guid paymentId`) — decision deferred, no change until the project is straightened out. |
-| O7 | **Test GO-gate live** (ADR-0033) | S | The gate was validated with piped payloads only. |
-| O8 | **Repo-root clutter** | XS | Untracked demo folders, `74,`, `*.log`, `screen_*.PNG` in the repo root. |
-| O9 | **Docker images with SkiaSharp** | S | Image upload now decodes/re-encodes with SkiaSharp (`14b44bdc`). `docker build` of both Dockerfiles and a container start with one image upload have never been run — native libs may be missing in the runtime image. Related, accepted and not roadmap items: stale `CatalogList:*` image up to 15 s (DD-004) and ICC loss / ~160 MB decode (DD-005) in [`known-issues.md`](../../.github/context/known-issues.md). `DeleteProduct` cache eviction fixed 2026-10-16. |
-| O10 | **`ProductService.DeleteProduct` does not evict the product-details cache** | XS | `ProductService.cs` `DeleteProduct` only calls `_productRepo.DeleteAsync`; a deleted product keeps being served from `CatalogProduct:{id}` until the TTL expires. `ImageService` already uses `IProductCacheInvalidator.InvalidateDetails` — inject it (or `_cache.Remove`) and add a test. |
-| O11 | **Image pipeline known limits** | S | (a) `ImageSanitizer` re-encodes and drops metadata, so an ICC profile is lost (wide-gamut photos may shift colour); (b) it decodes to a full `Rgba8888` bitmap (w*h*4 B), about 160 MB for a max-size file — check `MaxPixels` if memory matters; (c) only `.jpg`/`.png` accepted (deliberate); (d) `CatalogList:*` keys depend on page+query, so a list can show a stale main image for up to `CatalogListTtl` (15 s). Decide: accept and move to `.github/context/known-issues.md`, or fix. |
-| O12 | **Dev-test cleanups left from the 2026-10-16 audit** | XS | Branches `RAG_simplify`, `context_mode_improvement`, `origin/tydzien11` are unmerged POC/historical branches kept on purpose (no action). `CustomWebApplicationFactory.GetTokenAsync` key fix landed in `ad93d3c2`; confirm `ImageControllerTests`/`ValidationBehaviorTests` still assert real auth. |
+| O4 | **`Context.cs` removal** | S | Re-verified 2026-10-18: `Context` is not registered in DI and is dead at runtime. It stays on purpose: the 14 legacy `*.Designer.cs`, `ContextModelSnapshot` and `RemoveIdentityFromLegacyContext` reference `typeof(Context)`, and the old migration history is kept for now. Moved with the legacy migrations to `ECommerceApp.Infrastructure/HistoricalMigrations/` and marked DEPRECATED. Removal = delete that folder plus the `BcBaseTest` / `ImageApiTestFactory` references; do it when the history is no longer wanted. |
+| O6 | **`Payments/Create` GET route shape** | XS | Rest of `web-ui-views-report.md` re-verified 2026-10-16 and fixed (incl. the `ProfileController` ownership hole). Left: GET keeps `int orderId` while the spec said `Guid paymentId`. Decision deferred until the project is straightened out. |
+| O8 | **Repo-root clutter** | XS | Untracked demo folders, `74,`, `*.log`, `screen_*.PNG` in the repo root. The four stale `.claude/worktrees/*` and their `worktree-agent-*` / `docs/cron-coordination-d4` branches were checked (clean, every commit patch-equivalent on master) and removed 2026-10-18. |
+| O9 | **Docker images: end-to-end image upload** | S | 2026-10-18: both Dockerfiles build; SkiaSharp decode/encode works in the chiseled runtime. Found and fixed: runtime image needed ICU (`noble-chiseled-extra`), and `appsettings.docker.json` Jwt key is too short for HS256 (compose now sets a dev `Jwt__Key`). Left: the actual upload against the container API, blocked by O13. |
+| O13 | **API Bearer auth rejected in a container** | S | In the `docker` API image, `GET /api/images` with a valid `accessToken` returns 401: log shows `Identity.Application was challenged` and `Policy authentication schemes did not succeed`, so JwtBearer is not the default scheme (suspect `AddDefaultIdentity` in `AddIamInfrastructure` overriding `AddAuthentication(JwtBearer)`). `IntegrationTests` pass with Bearer, so find what differs. Not yet confirmed as a prod bug. |
+| O14 | **E2E.Backend run hangs** | S | Full `dotnet test ECommerceApp.sln` (2026-10-18): all other projects green (1347 + 78 + 289 + 30), E2E.Backend reported 39 passed then hung for 10+ min on one test and was killed. Test not identified yet. |
+
+Accepted, not roadmap items: stale `CatalogList:*` image up to 15 s (DD-004) and ICC loss / ~160 MB decode (DD-005), both in [`known-issues.md`](../../.github/context/known-issues.md). Only `.jpg`/`.png` are accepted by design.
+
+### O1 details: KG CI validation gate
+
+**Done**
+- Workstream A (`ecommerceapp-kg-query` skill) and B (planner/verifier wired to the KG, `b336d0c4`).
+- Job `kg-validation` in `.github/workflows/dotnet-ci.yml` (KgCodegen build + tests, `kg-codegen --check`, "nothing under `tools/kg` modified", KgMcp build + tests without the Testcontainers suites).
+- Every step green in a `dotnet/sdk:10.0` container on the committed state (2026-10-16): `KgCodegen.Tests` 118/118, `--check` exit 0 (224 warnings, deterministic, none about views/ScriptModule), `KgMcp` 7/7.
+- Three KG fixes needed on the way (`183b0c11`): `PinnedRealGraphTests` refreshed for `ChunkedUploadCleanupTask`; `ScriptModuleParser` accepts named AMD `define("x", [...])`; new `RenderedViewIndex` maps views rendered under another name (`View(const)`, ternary, `nameof`) to their `Page` (11 `USES Page->ScriptModule` edges). The two parser changes were explicit one-off exceptions to plan 08.
+
+**Left, in order**
+1. Run the workflow once via `workflow_dispatch` and fix paths/SDK (KG tools are `net10.0`, the older job uses `7.0.x`). Push/PR triggers stay off until the open bugs are fixed and the CI flow is wired up.
+2. Decide whether CI must detect a stale seed. `kg-codegen --check` validates parsers/ontology and writes nothing, but does not diff against the committed `tools/kg/kg-seed.cypher`, so drift still passes. A diff step needs a deterministic emitter (unverified).
+3. Testcontainers suites (`GraphServiceTests`, `RealGraphE2ETests`) are excluded from CI by filter; confirm or include them.
+4. Trigger scope `**/*.cs` + `tools/kg/**` only, which needs the job split into its own workflow (path filters are workflow-level).
+5. ADR-0031: plan 08 quotes "No Phase 8 is implied by this ADR", which is not in the ADR text. Check the real wording, then record build-complete vs adoption.
+
+**Rules:** gate on exit code / `error:` only (~220 warnings is the designed state); CI never writes a seed or loads Neo4j; no ontology or MCP-tool changes.
+**Known gap:** `View(...)` first arguments that are variables, calls, other-class constants or `this.View` are skipped silently by `RenderedViewIndex` (none exist today).
+
+### Retired
+
+- **O5**: never existed (numbering gap).
+- **O10** `DeleteProduct` cache eviction: fixed (`ProductService.DeleteProduct` now calls `InvalidateDetails`).
+- **O11** image pipeline limits: moved to `known-issues.md` as DD-004 / DD-005.
+- **O7** GO-gate live test: done 2026-10-18. A real `Write` before `IMPLEMENT` was denied by the hook, and a prompt starting with `IMPLEMENT` unlocked edits. Observed: a later prompt that does not start with `IMPLEMENT` re-locks the gate.
+- **N1** `CatalogList:*` stale image until TTL: not a bug, TTL is 15 s and already accepted as DD-004.
+- **N2** `GetTokenAsync` reads `token`: already fixed (reads `accessToken`, same as in O12).
+- **O12**: branches `RAG_simplify`, `context_mode_improvement` and `origin/tydzien11` are POC/historical and kept on purpose; the `GetTokenAsync` key fix landed in `ad93d3c2`.
 
 Deferred by choice (see "Future architectural considerations" above): F2, F5 Phase 3, DD-003 (local outbox per BC), the checkout partial-availability modal idea, `ExpiredRefreshTokenCleanupJob`.
 
@@ -97,4 +126,4 @@ requires it. This table previously listed the item as blocked; that was stale.)
 
 ---
 
-_Last reviewed: 2026-10-15_
+_Last reviewed: 2026-10-18_
