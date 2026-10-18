@@ -69,6 +69,9 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 
 > Small and deferred leftovers found in a repo-wide sweep. Nothing here blocks anything. IDs are stable
 > (referenced from other docs); O5, O7, O10-O12, N1 and N2 were retired, see "Retired" below.
+>
+> **Order of work: backend first, then frontend.** Backend items come before any frontend item (O17).
+> "Size" is the rough cost; the concrete steps for an item live in its details section (`Left, in order`), as for O1.
 
 | # | Item | Size | Notes |
 | - | ---- | ---- | ----- |
@@ -77,10 +80,9 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 | O3 | **Real email delivery** | M | `IEmailSender` has no real implementation (only used by Identity pages). Needs a provider decision first; see [`guest-checkout.md`](./guest-checkout.md). |
 | O4 | **`Context.cs` removal** | S | Re-verified 2026-10-18: `Context` is not registered in DI and is dead at runtime. It stays on purpose: the 14 legacy `*.Designer.cs`, `ContextModelSnapshot` and `RemoveIdentityFromLegacyContext` reference `typeof(Context)`, and the old migration history is kept for now. Moved with the legacy migrations to `ECommerceApp.Infrastructure/HistoricalMigrations/` and marked DEPRECATED. Removal = delete that folder plus the `BcBaseTest` / `ImageApiTestFactory` references; do it when the history is no longer wanted. |
 | O6 | **`Payments/Create` GET route shape** | XS | Rest of `web-ui-views-report.md` re-verified 2026-10-16 and fixed (incl. the `ProfileController` ownership hole). Left: GET keeps `int orderId` while the spec said `Guid paymentId`. Decision deferred until the project is straightened out. |
-| O8 | **Repo-root clutter** | XS | Untracked demo folders, `74,`, `*.log`, `screen_*.PNG` in the repo root. The four stale `.claude/worktrees/*` and their `worktree-agent-*` / `docs/cron-coordination-d4` branches were checked (clean, every commit patch-equivalent on master) and removed 2026-10-18. |
-| O9 | **Docker images: end-to-end image upload** | S | 2026-10-18: both Dockerfiles build; SkiaSharp decode/encode works in the chiseled runtime. Found and fixed: runtime image needed ICU (`noble-chiseled-extra`), and `appsettings.docker.json` Jwt key is too short for HS256 (compose now sets a dev `Jwt__Key`). Left: the actual upload against the container API, blocked by O13. |
-| O13 | **API Bearer auth rejected in a container** | S | In the `docker` API image, `GET /api/images` with a valid `accessToken` returns 401: log shows `Identity.Application was challenged` and `Policy authentication schemes did not succeed`, so JwtBearer is not the default scheme (suspect `AddDefaultIdentity` in `AddIamInfrastructure` overriding `AddAuthentication(JwtBearer)`). `IntegrationTests` pass with Bearer, so find what differs. Not yet confirmed as a prod bug. |
-| O14 | **E2E.Backend run hangs** | S | Full `dotnet test ECommerceApp.sln` (2026-10-18): all other projects green (1347 + 78 + 289 + 30), E2E.Backend reported 39 passed then hung for 10+ min on one test and was killed. Test not identified yet. |
+| O8 | **Repo-root images** | XS | The demo folders, `74,` and `*.log` are gone. Left: 39 `screen_*.PNG` + `schemat_bazy.png` tracked in the repo root (April 2026), referenced nowhere in docs or code; `assets/screens/` is the place for screenshots. Move them there or delete (owner decision). |
+| O18 | **Test independence: `E2E.Backend` latent risks** (backend) | S | Rule: no test may depend on another. Audit done 2026-10-18: no test changed result under 9 collection/case orders or when run per class (63/63). Latent risks, none failed yet, all from a shared SQL database per collection with background hosts running (outbox poller, deferred-job poller): (1) `OrderSearchQueryTranslationE2ETests` lines 91 and 118 assume a new order is within the first 1000 rows (`GetAllAsync(1000, 1, "")`), and line 41 asserts `count == 1` on a 6-hex fragment; (2) `DeferredJobLeaseConcurrencyE2ETests` `PollAsync_*` poll all due rows, including other tests' rows (`Take(50)`); (3) product ids come from two schemes (static counter from 1,000,000 in `StockServiceE2ETests`, `Random.Shared` in the saga tests); (4) `CartRecoverySagaE2ETests` and `OrderServiceRollbackE2ETests` have one test per container, so a second test there would start depending on order. Not verified: order of classes inside one collection (xunit.v3 3.2.2 has no class orderer) and `parallelizeTestCollections:true`. Fix when touched: unique data per test, filter polls by the test's own rows. |
+| O17 | **Identity email validation: client-side leftovers** (frontend, after the backend items) | S | Validation itself works (Register, Manage/Email, Development and Production). Left: jquery.validate + unobtrusive load twice on Identity pages (layout + `_ValidationScriptsPartial`); Register error summary keeps the stale e-mail entry after the field is fixed; submit of a valid new e-mail on Manage/Email never tried. |
 
 Accepted, not roadmap items: stale `CatalogList:*` image up to 15 s (DD-004) and ICC loss / ~160 MB decode (DD-005), both in [`known-issues.md`](../../.github/context/known-issues.md). Only `.jpg`/`.png` are accepted by design.
 
@@ -102,15 +104,24 @@ Accepted, not roadmap items: stale `CatalogList:*` image up to 15 s (DD-004) and
 **Rules:** gate on exit code / `error:` only (~220 warnings is the designed state); CI never writes a seed or loads Neo4j; no ontology or MCP-tool changes.
 **Known gap:** `View(...)` first arguments that are variables, calls, other-class constants or `this.View` are skipped silently by `RenderedViewIndex` (none exist today).
 
+### O14: E2E.Backend hang in a full solution run
+
+**Cause (reproduced 2026-10-18).** Hangs in 3 of 4 runs of plain `dotnet test ECommerceApp.sln` after `dotnet clean`; not in `--no-build` runs or Visual Studio. No test is at fault (a different one each time, SQL Server was healthy). Dumps show a two-way pipe deadlock: the xUnit v3 process is stuck in `WriteFile` on stdout and `testhost.exe` is stuck in `WriteFile` to it; both write, nobody reads. Console traffic is a precondition: with console output of the E2E hosts, containers and the Testcontainers logger enabled 4 of 15 runs hung, with it removed 0 of 12 (same log level). Which of the three sources matters is unknown.
+
+**Source of the traffic.** `TestLogging` (`ECommerceApp.Shared.TestInfrastructure`) is static, Debug level, `AddConsole()` in every E2E host, container output sent with `Consume.RedirectStdoutAndStderrToConsole()`. The log level stays as is by decision. E2E hosts call `Configure(logging)` without a sink, so their logs never reach a single test's output.
+
+**Decision (owner): not worth more time.** Use `dotnet build ECommerceApp.sln`, then `dotnet test ECommerceApp.sln --no-build`; CI keeps `--blame-hang --blame-hang-timeout 5m`.
+
+**Optional follow-up if it returns**
+1. Make `TestLogging` an instance owned by each fixture and send host logs to the xUnit sink (per-test output via `TestContext.Current.TestOutputHelper`; background-thread logs to a per-fixture file) instead of the console, same level. Check by pieces to find which source matters.
+2. Validate with 5+ plain `dotnet test ECommerceApp.sln` runs after `dotnet clean` (baseline 3 of 4 hang).
+3. Check newer `xunit.v3` / `xunit.runner.visualstudio` (now 3.2.2 / 3.1.5).
+
 ### Retired
 
-- **O5**: never existed (numbering gap).
-- **O10** `DeleteProduct` cache eviction: fixed (`ProductService.DeleteProduct` now calls `InvalidateDetails`).
-- **O11** image pipeline limits: moved to `known-issues.md` as DD-004 / DD-005.
-- **O7** GO-gate live test: done 2026-10-18. A real `Write` before `IMPLEMENT` was denied by the hook, and a prompt starting with `IMPLEMENT` unlocked edits. Observed: a later prompt that does not start with `IMPLEMENT` re-locks the gate.
-- **N1** `CatalogList:*` stale image until TTL: not a bug, TTL is 15 s and already accepted as DD-004.
-- **N2** `GetTokenAsync` reads `token`: already fixed (reads `accessToken`, same as in O12).
-- **O12**: branches `RAG_simplify`, `context_mode_improvement` and `origin/tydzien11` are POC/historical and kept on purpose; the `GetTokenAsync` key fix landed in `ad93d3c2`.
+- **O5, O7, O10, O11, N1, N2, O15**: closed or moved (O11 to `known-issues.md` as DD-004 / DD-005; O15's SQL comment was re-captured from the real queries and matched).
+- **O12**: branches `RAG_simplify`, `context_mode_improvement` and `origin/tydzien11` are POC/historical and kept on purpose.
+- **Shared IAM InMemory store** (2026-10-18): `CustomWebApplicationFactory` used one fixed store name for every host in the process, so hosts seeding the same test users raced. Now one store per factory (`InMemoryIamDatabase_{Guid}`), as `PlaywrightWebApplicationFactory` already did.
 
 Deferred by choice (see "Future architectural considerations" above): F2, F5 Phase 3, DD-003 (local outbox per BC), the checkout partial-availability modal idea, `ExpiredRefreshTokenCleanupJob`.
 
