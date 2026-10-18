@@ -88,7 +88,8 @@ namespace ECommerceApp.E2E.Backend.Persistence.QueryTranslation
         {
             var seeded = await SeedOrderAsync(paid: false);
 
-            var page = await Service.GetAllAsync(1000, 1, string.Empty, CancellationToken);
+            var total = await Service.GetAllCountAsync(string.Empty, CancellationToken);
+            var page = await Service.GetAllAsync(total, 1, string.Empty, CancellationToken);
 
             page.Select(o => o.Id.Value).ShouldContain(seeded.Id);
         }
@@ -115,7 +116,8 @@ namespace ECommerceApp.E2E.Backend.Persistence.QueryTranslation
         {
             var paid = await SeedOrderAsync(paid: true);
 
-            var page = await Service.GetAllPaidAsync(1000, 1, string.Empty, CancellationToken);
+            var total = await Service.GetAllPaidCountAsync(string.Empty, CancellationToken);
+            var page = await Service.GetAllPaidAsync(total, 1, string.Empty, CancellationToken);
 
             page.Select(o => o.Id.Value).ShouldContain(paid.Id);
         }

@@ -7,6 +7,7 @@ using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Domain.AccountProfile;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Shared;
+using ECommerceApp.E2E.Backend.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
@@ -64,7 +65,7 @@ namespace ECommerceApp.E2E.Backend.Sales.Orders
         private async Task<int> SeedCartItemAsync(string userId)
         {
             var repo = GetRequiredService<IOrderItemRepository>();
-            var item = OrderItem.Create(new OrderProductId(Random.Shared.Next(1, int.MaxValue)), 2, new UnitCost(10m), userId);
+            var item = OrderItem.Create(new OrderProductId(TestIds.Next()), 2, new UnitCost(10m), userId);
             return await repo.AddAsync(item, CancellationToken);
         }
 

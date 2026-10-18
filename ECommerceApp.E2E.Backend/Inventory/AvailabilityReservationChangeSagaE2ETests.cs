@@ -34,7 +34,7 @@ namespace ECommerceApp.E2E.Backend.Inventory
         [Fact]
         public async Task ReserveAsync_WhenAvailabilityDrops_CompletesSagaAndRemovesNewestActiveReservations()
         {
-            var productId = Random.Shared.Next(1_000_000, int.MaxValue);
+            var productId = TestIds.Next();
             var now = DateTime.UtcNow;
 
             await SeedScenarioAsync(productId, now);
@@ -46,7 +46,7 @@ namespace ECommerceApp.E2E.Backend.Inventory
                     .ReserveAsync(
                         new ReserveStockDto(
                             productId,
-                            Random.Shared.Next(1_000_000, int.MaxValue),
+                            TestIds.Next(),
                             1,
                             $"stock-holder-{Guid.NewGuid():N}",
                             now.AddHours(1)),

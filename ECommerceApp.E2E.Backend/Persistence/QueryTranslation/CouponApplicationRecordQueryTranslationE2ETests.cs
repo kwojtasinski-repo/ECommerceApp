@@ -47,7 +47,7 @@ namespace ECommerceApp.E2E.Backend.Persistence.QueryTranslation
         }
 
         // Unique per test: the database is shared by the whole collection.
-        private static int NewOrderId() => Random.Shared.Next(1_000_000, int.MaxValue);
+        private static int NewOrderId() => TestIds.Next();
 
         private async Task<CouponUsed> SeedCouponUsedAsync(int orderId)
         {

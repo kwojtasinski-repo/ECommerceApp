@@ -223,7 +223,7 @@ namespace ECommerceApp.E2E.Backend.Presale
             using (var scope = _sqlFixture.Services.CreateScope())
             {
                 var reservation = SoftReservation.Create(
-                    Random.Shared.Next(1_000_000, int.MaxValue),
+                    TestIds.Next(),
                     userId,
                     1,
                     10m,

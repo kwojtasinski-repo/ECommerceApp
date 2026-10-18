@@ -29,11 +29,9 @@ namespace ECommerceApp.E2E.Backend.Inventory
         public StockServiceE2ETests(MsSqlE2EFixture fixture) : base(fixture) { }
 
         private const string ProperCustomerId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
-        private static int _productIdSeed = 1_000_000;
-        private static int _orderIdSeed = 1_000_000;
 
-        private static int NextProductId() => Interlocked.Increment(ref _productIdSeed);
-        private static int NextOrderId() => Interlocked.Increment(ref _orderIdSeed);
+        private static int NextProductId() => TestIds.Next();
+        private static int NextOrderId() => TestIds.Next();
 
         private async Task SeedProductSnapshotAsync(
             int productId,

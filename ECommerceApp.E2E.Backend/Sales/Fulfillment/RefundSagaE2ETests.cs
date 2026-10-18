@@ -38,7 +38,7 @@ namespace ECommerceApp.E2E.Backend.Sales.Fulfillment
         [Fact]
         public async Task ApproveRefundAsync_RefundWithStockItem_CompletesSagaAndReturnsStock()
         {
-            var productId = Random.Shared.Next(1_000_000, int.MaxValue);
+            var productId = TestIds.Next();
             const int refundedQuantity = 3;
             const int initialQuantity = 10;
 

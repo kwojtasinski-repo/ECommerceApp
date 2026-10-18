@@ -42,6 +42,7 @@ namespace ECommerceApp.E2E.Backend.TimeManagement
         private const int Repetitions = 25;
 
         private readonly CrossContextSqlFixture _fixture;
+        private readonly List<DeferredJobInstanceId> _createdRows = new();
 
         public DeferredJobLeaseConcurrencyE2ETests(CrossContextSqlFixture fixture)
         {
@@ -54,7 +55,14 @@ namespace ECommerceApp.E2E.Backend.TimeManagement
             await context.Database.MigrateAsync(TestContext.Current.CancellationToken);
         }
 
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        // Rows are removed after each test so a leftover due row never competes for the poller's Take(50) batch
+        // in a later test.
+        public async ValueTask DisposeAsync()
+        {
+            await using var context = CreateContext();
+            var ids = _createdRows.ToList();
+            await context.DeferredJobQueue.Where(d => ids.Contains(d.Id)).ExecuteDeleteAsync();
+        }
 
         [Fact]
         public async Task TryAcquireLeaseAsync_DueRowLeasedConcurrently_ExactlyOneAttemptWins()
@@ -321,6 +329,7 @@ namespace ECommerceApp.E2E.Backend.TimeManagement
             var instance = DeferredJobInstance.Schedule("DeferredJobLeaseTest", Guid.NewGuid().ToString("N"), runAt);
             context.DeferredJobQueue.Add(instance);
             await context.SaveChangesAsync(ct);
+            _createdRows.Add(instance.Id);
             return instance.Id;
         }
 
