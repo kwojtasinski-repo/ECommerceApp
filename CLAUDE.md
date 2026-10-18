@@ -12,6 +12,13 @@ Start at [`.github/instructions/agent-workflow.instructions.md`](.github/instruc
 (front door for task routing) or [`.github/instructions/docs-index.instructions.md`](.github/instructions/docs-index.instructions.md)
 (full routing table).
 
+## Delegated work must show progress
+
+Every subagent or long task gets a numbered list of small steps, shown to the user up front, and writes a
+one-line progress file after each step (e.g. `progress.txt` in the scratchpad: `3/9 done: per-class runs`).
+When asked for status, answer "step N of M done, current X, remaining Y". Split anything expected to run 30+
+minutes into shorter agents that each report back.
+
 ## LINQ over EF Core: show the SQL when it is not obvious
 
 When you write or change LINQ over a `DbSet` (mixed `&&`/`||`, nullable columns, `TypedId`/converters,
