@@ -36,7 +36,9 @@ namespace ECommerceApp.Shared.TestInfrastructure
 
                 builder.ConfigureServices(services =>
                 {
-                    services.ReplaceDbContextWithInMemory<IamDbContext>("InMemoryIamDatabase");
+                    // A fixed name is one InMemory store shared by every factory in the process, so two hosts
+                    // seeding the same test users race on it. A store per factory keeps tests independent.
+                    services.ReplaceDbContextWithInMemory<IamDbContext>($"InMemoryIamDatabase_{Guid.NewGuid():N}");
 
                     services.AddScoped<IDatabaseInitializer, TestDatabaseInitializer>();
                     OverrideServicesImplementation(services);
