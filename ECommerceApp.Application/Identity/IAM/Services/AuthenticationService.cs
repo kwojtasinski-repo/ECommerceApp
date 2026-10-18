@@ -32,14 +32,16 @@ namespace ECommerceApp.Application.Identity.IAM.Services
 
         public async Task<SignInResponseDto> SignInAsync(SignInDto dto)
         {
-            var result = await _signInManager.PasswordSignInAsync(dto.Email, dto.Password, true, lockoutOnFailure: false);
+            var user = await _userManager.FindByNameAsync(dto.Email)
+                ?? throw new BusinessException("Invalid credentials");
+
+            // The API is token-only: validate the password without issuing the Identity cookie.
+            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: false);
             if (!result.Succeeded)
             {
                 throw new BusinessException("Invalid credentials");
             }
 
-            var user = await _userManager.FindByNameAsync(dto.Email)
-                ?? throw new BusinessException("Invalid credentials");
             var roles = await _userManager.GetRolesAsync(user);
             var userClaims = await _userManager.GetClaimsAsync(user);
             var jwt = _jwtManager.IssueToken(user.Id, user.Email, roles, userClaims);

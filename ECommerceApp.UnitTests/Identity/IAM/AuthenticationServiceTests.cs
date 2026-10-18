@@ -37,9 +37,9 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             => new(_signInManager.Object, _jwtManager.Object, _userManager.Object,
                    _refreshTokenRepository.Object, _refreshTokenOptions.Object);
 
-        private void SetupSignInResult(string email, string password, SignInResult result)
+        private void SetupSignInResult(ApplicationUser user, string password, SignInResult result)
         {
-            _signInManager.Setup(s => s.PasswordSignInAsync(email, password, true, false))
+            _signInManager.Setup(s => s.CheckPasswordSignInAsync(user, password, false))
                 .ReturnsAsync(result);
         }
 
@@ -76,7 +76,9 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         {
             // Arrange
             var dto = new SignInDto("test@test.com", "wrongPassword");
-            SetupSignInResult(dto.Email, dto.Password, SignInResult.Failed);
+            var user = new ApplicationUser { Id = "user-1", Email = dto.Email };
+            SetupUserLookup(dto.Email, user);
+            SetupSignInResult(user, dto.Password, SignInResult.Failed);
 
             var service = CreateService();
             // Act
@@ -88,11 +90,10 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         }
 
         [Fact]
-        public async Task SignInAsync_UserNotFoundAfterSignIn_ShouldThrowBusinessException()
+        public async Task SignInAsync_UnknownUser_ShouldThrowBusinessException()
         {
             // Arrange
             var dto = new SignInDto("ghost@test.com", "Password1!");
-            SetupSignInResult(dto.Email, dto.Password, SignInResult.Success);
             SetupUserLookup(dto.Email, null);
 
             var service = CreateService();
@@ -114,8 +115,8 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             const string expectedToken = "jwt-token-value";
             const string expectedJti = "test-jti-value";
 
-            SetupSignInResult(dto.Email, dto.Password, SignInResult.Success);
             SetupUserLookup(dto.Email, user);
+            SetupSignInResult(user, dto.Password, SignInResult.Success);
             SetupTokenIssuance(user, roles, expectedToken, expectedJti);
 
             var service = CreateService();
@@ -123,6 +124,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
             var result = await service.SignInAsync(dto);
 
             // Assert
+            _signInManager.Verify(s => s.PasswordSignInAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never);
             result.Should().NotBeNull();
             result.AccessToken.Should().Be(expectedToken);
             result.RefreshToken.Should().NotBeNullOrEmpty();
