@@ -7,6 +7,7 @@ using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Infrastructure;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -57,6 +58,14 @@ namespace ECommerceApp.API
             services.AddSingleton<ICartRequirements>(new CartRequirements(ApiPurchaseOptions.MaxQuantityPerOrderLine));
             services.AddApplication();
             services.AddInfrastructure(Configuration);
+            // AddInfrastructure registers ASP.NET Core Identity (AddDefaultIdentity), which makes the Identity
+            // cookie the default scheme and would win over the Bearer default set above. This API is token-only.
+            services.Configure<AuthenticationOptions>(options =>
+            {
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            });
             services.AddControllers(options =>
             {
                 options.Filters.Add<FluentValidationFilter>();
