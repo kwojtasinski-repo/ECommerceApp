@@ -1,7 +1,7 @@
 ﻿# ADR-0026: Implement Order Placement Saga via Choreography + Compensation (Option A)
 
 ## Status
-Accepted
+Superseded (2026-10-18) — implementation removed as dead code; kept for history. See README.
 
 ## Date
 2026-04-14

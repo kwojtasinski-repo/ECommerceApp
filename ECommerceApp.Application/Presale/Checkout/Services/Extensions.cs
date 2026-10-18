@@ -26,7 +26,6 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .AddScoped<IScheduledTask, SoftReservationExpiredJob>()
                 .AddScoped<IMessageHandler<StockAvailabilityChanged>, StockAvailabilityChangedHandler>()
                 .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()
-                .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>()
                 .AddScoped<IMessageHandler<CheckoutReservationRevertRequested>, CheckoutReservationRevertRequestedHandler>()
                 .AddScoped<IMessageHandler<CheckoutReservationAvailabilityDropped>, CheckoutReservationAvailabilityDroppedHandler>()
                 // Product metadata changes → evict storefront product-details cache

@@ -22,26 +22,6 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
     {
         public OrderServiceTests(ITestOutputHelper output) : base(output) { }
 
-        // ── PlaceOrderAsync — guard conditions (InMemory-safe) ────────────────
-
-        [Fact]
-        public async Task PlaceOrderAsync_NonExistentCustomer_ShouldReturnCustomerNotFound()
-        {
-            // CustomerExistenceChecker queries the in-memory Context (empty) →
-            // returns false → PlaceOrderResult.CustomerNotFound before hitting OrdersDbContext
-            var dto = new PlaceOrderDto(
-                CustomerId: 99999,
-                CurrencyId: 1,
-                UserId: PROPER_CUSTOMER_ID,
-                CartItemIds: new List<int> { 1 });
-
-            var result = await _service.PlaceOrderAsync(dto, CancellationToken);
-
-            result.IsSuccess.ShouldBeFalse();
-            result.CustomerId.ShouldBe(99999);
-            result.FailureReason.ShouldContain("99999");
-        }
-
         // ── GetOrderDetailsAsync — requires OrdersDbContext (SQL Server) ──────
 
         [Fact]

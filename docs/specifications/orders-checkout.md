@@ -21,7 +21,7 @@ Describe the checkout flow exactly as currently implemented by checkout service/
 - `InitiateAsync` reservation attempt and cart handling.
 - `PlaceOrderAsync` reservation checks, commit/revert behavior, and order placement call.
 - API result mapping in `CheckoutController`.
-- Integration messages `OrderPlaced` and `OrderPlacementFailed` emitted by order service.
+- Integration message `OrderPlaced` emitted by order service.
 
 ### Excluded
 
@@ -110,7 +110,6 @@ Source: `ECommerceApp.API/Controllers/Presale/CheckoutController.cs`.
 ## Integration messages used in this flow
 
 - `OrderPlaced`
-- `OrderPlacementFailed`
 
 Produced by:
 
@@ -119,7 +118,6 @@ Produced by:
 Consumed in checkout area by:
 
 - `ECommerceApp.Application/Presale/Checkout/Handlers/OrderPlacedHandler.cs`
-- `ECommerceApp.Application/Presale/Checkout/Handlers/OrderPlacementFailedHandler.cs`
 
 ---
 

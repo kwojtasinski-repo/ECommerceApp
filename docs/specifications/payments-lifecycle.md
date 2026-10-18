@@ -21,7 +21,6 @@ Describe only the payment lifecycle that is currently implemented in payment dom
 - Payment creation on `OrderPlaced`.
 - Payment timeout expiration job.
 - Payment confirmation API/service path.
-- Compensation cancellation on `OrderPlacementFailed`.
 - Refund processing on `RefundApproved`.
 
 ### Excluded
@@ -66,13 +65,6 @@ Source: `ECommerceApp.Domain/Sales/Payments/PaymentStatus.cs`.
 - Domain action: `payment.Expire()`
 - Publishes message: `PaymentExpired`.
 
-### Cancel payment (compensation)
-
-- Trigger message: `OrderPlacementFailed`
-- Handler: `Sales.Payments.Handlers.OrderPlacementFailedHandler`
-- Domain action: `payment.Cancel()`
-- Cancels scheduled timeout job.
-
 ### Refund payment
 
 - Trigger message: `RefundApproved`
@@ -92,7 +84,6 @@ Sources:
 Payments extension registers:
 
 - `IMessageHandler<OrderPlaced>`
-- `IMessageHandler<OrderPlacementFailed>`
 - `IMessageHandler<RefundApproved>`
 - scheduled task `PaymentWindowExpiredJob`
 

@@ -19,10 +19,6 @@ graph TD
     J -->|Yes| L(payment.Expire)
     L --> M(Publish PaymentExpired)
 
-    B --> N(OrderPlacementFailed message)
-    N --> O(payment.Cancel)
-    O --> P(Cancel timeout job)
-
     H --> Q(RefundApproved message)
     Q --> R(ProcessRefundAsync)
     R --> S(payment.Refund -> Refunded)

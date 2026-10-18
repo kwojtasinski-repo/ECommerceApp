@@ -11,7 +11,7 @@ graph TD
     D --> E(ConfirmHoldsByOrderAsync)
     E --> F(StockHold status = Confirmed)
 
-    C --> G(PaymentExpired / OrderCancelled / OrderPlacementFailed)
+    C --> G(PaymentExpired / OrderCancelled)
     G --> H(ReleaseAsync or ReleaseAllHoldsForOrderAsync)
     H --> I(StockHold status = Released)
 

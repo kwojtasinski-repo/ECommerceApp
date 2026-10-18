@@ -48,7 +48,6 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(StockAvailabilityChanged), "inventory.stock.availability-changed");
             Register(typeof(StockReconciliationRequired), "inventory.stock.reconciliation-required");
             Register(typeof(OrderPlaced), "orders.order.placed");
-            Register(typeof(OrderPlacementFailed), "orders.order.placement-failed");
             Register(typeof(OrderShipped), "orders.order.shipped");
             Register(typeof(OrderCancelled), "orders.order.cancelled");
             Register(typeof(CheckoutReservationRevertRequested), "presale.checkout.reservation-revert-requested");

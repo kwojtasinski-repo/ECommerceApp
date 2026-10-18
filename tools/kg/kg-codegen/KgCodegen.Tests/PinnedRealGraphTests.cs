@@ -533,22 +533,6 @@ public sealed class PinnedRealGraphTests
     }
 
     /// <summary>
-    /// `OrderService` declares the message in a local variable and enqueues the identifier, not a
-    /// `new` expression. Missing this edge is the difference between seeing order placement in the
-    /// graph and not seeing it at all.
-    /// </summary>
-    [Fact]
-    public void Real_graph_follows_a_message_published_through_a_local_variable()
-    {
-        var graph = BuildRealGraph();
-
-        Assert.Contains(graph.Edges, edge =>
-            edge.Type == "PUBLISHES" &&
-            edge.SourceId == "ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderAsync" &&
-            edge.TargetId == "ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced");
-    }
-
-    /// <summary>
     /// The three `StockReconciliationRequired` publishes live in handlers, and the two job publishes
     /// in `*Job.cs`. Neither can originate a `PUBLISHES` edge, and neither is a parse failure — so
     /// both are silent. Pinned so the silence stays deliberate. See `MessageParser`'s summary.

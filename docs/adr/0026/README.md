@@ -1,7 +1,9 @@
 ﻿# ADR-0026: Order Lifecycle Saga
 
-**Status**: Accepted
+**Status**: Superseded — implementation removed 2026-10-18 (legacy `PlaceOrderAsync(PlaceOrderDto)` had no production caller; order failures are handled by the saga engine, roadmap F3)
 **BC**: Cross-BC (Sales/Orders, Sales/Payments, Inventory, Presale)
+
+> **Superseded.** `OrderPlacementFailed`, its 3 handlers, `PlaceOrderAsync(PlaceOrderDto)` and the fan-out tests were deleted as unreachable. This record is kept for history only.
 
 ## What this decision covers
 Option A compensation saga for failed order placement:

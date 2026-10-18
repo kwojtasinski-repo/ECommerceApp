@@ -95,7 +95,7 @@
   explicit parameter at all — see `[DD-003]` above.
 - **Not touched**: `WithdrawHoldAsync` has no caller that already holds an open transaction (only
   `StockController`, a top-level request) — no transaction-accepting overload added, to avoid
-  unrequested API surface. `OrderCancelledHandler`/`OrderPlacementFailedHandler`/
+  unrequested API surface. `OrderCancelledHandler`/
   `PaymentExpiredHandler` call `StockService` methods without opening their own transaction first —
   not affected by this bug class.
 

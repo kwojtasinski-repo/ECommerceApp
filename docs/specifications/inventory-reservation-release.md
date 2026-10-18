@@ -20,7 +20,7 @@ Describe the current hard-reservation lifecycle in inventory, including confirm/
 
 - Reservation creation on `OrderPlaced`.
 - Confirmation on `PaymentConfirmed`.
-- Release on `PaymentExpired`, `OrderCancelled`, `OrderPlacementFailed`, and shipment-failure paths.
+- Release on `PaymentExpired`, `OrderCancelled`, and shipment-failure paths.
 - Fulfillment on shipment-delivered paths.
 - Manual withdrawal via stock service.
 
@@ -67,7 +67,6 @@ Release triggers currently implemented:
 
 - `PaymentExpired` -> `ReleaseAllHoldsForOrderAsync(...)`
 - `OrderCancelled` -> `ReleaseAsync(...)` per item
-- `OrderPlacementFailed` -> `ReleaseAsync(...)` per item
 - `ShipmentFailed` -> `ReleaseAsync(...)` per failed item
 - `ShipmentPartiallyDelivered` -> `ReleaseAsync(...)` for failed items
 

@@ -55,7 +55,8 @@ MERGE (n:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeRef
 MERGE (n:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeUserService.GetUserDetailAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeUserService.GetUsersAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeVerificationService.GetPendingAsync'});
-MERGE (n:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUpload'});
+MERGE (n:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.GetStatus'});
+MERGE (n:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUploadAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.UploadChunkAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Catalog.Images.Services.ImageService.Add'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Catalog.Images.Services.ImageService.AddImages'});
@@ -156,6 +157,7 @@ MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponServ
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.DeleteCouponAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponsAsync'});
+MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetRuleCatalog'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.RemoveCouponAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.SimulateCouponAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.UpdateCouponAsync'});
@@ -194,7 +196,6 @@ MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderServic
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrdersByUserIdAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.MarkAsDeliveredAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.MarkAsPaidAsync'});
-MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderFromPresaleAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.RemoveCouponAsync'});
 MERGE (n:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.RemoveRefundByRefundIdAsync'});
@@ -243,6 +244,7 @@ MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.Get
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.GetAll', httpMethod: 'GET', route: 'api/images'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.InitUpload', httpMethod: 'POST', route: 'api/images/init-upload'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadChunk', httpMethod: 'POST', route: 'api/images/upload-chunk'});
+MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadStatus', httpMethod: 'GET', route: 'api/images/upload-status'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Login', httpMethod: 'POST', route: 'api/auth/login'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Refresh', httpMethod: 'POST', route: 'api/auth/refresh'});
 MERGE (n:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Revoke', httpMethod: 'POST', route: 'api/auth/revoke'});
@@ -316,6 +318,7 @@ MERGE (n:Host {id: 'ApiHost', path: 'ECommerceApp.API'});
 MERGE (n:Host {id: 'WebHost', path: 'ECommerceApp.Web'});
 MERGE (n:Job {id: 'ECommerceApp.Application.AccountProfile.Handlers.GuestAccountLinkCheckJob', taskName: 'GuestAccountLinkCheckJob'});
 MERGE (n:Job {id: 'ECommerceApp.Application.AccountProfile.Services.UnclaimedGuestProfileCleanupTask', taskName: 'UnclaimedGuestProfileCleanup'});
+MERGE (n:Job {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadCleanupTask', taskName: 'ChunkedUploadCleanup'});
 MERGE (n:Job {id: 'ECommerceApp.Application.Identity.IAM.Services.RefreshTokenCleanupTask', taskName: 'RefreshTokenCleanup'});
 MERGE (n:Job {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.StockAdjustmentJob', taskName: 'StockAdjustmentJob', triggerMode: 'Deferred'});
 MERGE (n:Job {id: 'ECommerceApp.Application.Messaging.Services.InboxCleanupTask', taskName: 'InboxCleanup'});
@@ -348,7 +351,6 @@ MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Fulfillment.Messages.Shipm
 MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Fulfillment.Messages.ShipmentPartiallyDelivered', key: 'fulfillment.shipment.partially-delivered'});
 MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderCancelled', key: 'orders.order.cancelled'});
 MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced', key: 'orders.order.placed'});
-MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlacementFailed', key: 'orders.order.placement-failed'});
 MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderRequiresAttention'});
 MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderShipped', key: 'orders.order.shipped'});
 MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentConfirmed', key: 'payments.payment.confirmed'});
@@ -357,7 +359,6 @@ MERGE (n:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.RefundAp
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Catalog.Products.Handlers.ProductCacheInvalidationHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderCancelledHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderPlacedHandler', idAware: true});
-MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderPlacementFailedHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderShippedHandler', idAware: true});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentConfirmedHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentExpiredHandler', idAware: false});
@@ -371,7 +372,6 @@ MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Ha
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.CheckoutReservationAvailabilityDroppedHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.CheckoutReservationRevertRequestedHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.OrderPlacedHandler', idAware: false});
-MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.OrderPlacementFailedHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.ProductDetailsCacheInvalidationHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.StockAvailabilityChangedHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Sales.Coupons.Handlers.CategoryNameChangedHandler', idAware: false});
@@ -392,7 +392,6 @@ MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Sales.Orders.Handlers.Ord
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Sales.Orders.Handlers.OrderShipmentFailedHandler', idAware: true});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Sales.Orders.Handlers.OrderShipmentPartiallyDeliveredHandler', idAware: true});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacedHandler', idAware: true});
-MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacementFailedHandler', idAware: true});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.PaymentRefundApprovedHandler', idAware: false});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Supporting.Communication.Handlers.OrderCancelledEmailHandler', idAware: true});
 MERGE (n:MessageHandler {id: 'ECommerceApp.Application.Supporting.Communication.Handlers.OrderCancelledNotificationHandler', idAware: true});
@@ -483,6 +482,7 @@ MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.D
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.InitUpload', httpMethod: 'POST'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadChunk', httpMethod: 'POST'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadImages', httpMethod: 'POST'});
+MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadStatus', httpMethod: 'GET'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImagesController.Get', httpMethod: 'GET', route: 'catalog/images/{id}'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All', httpMethod: 'GET'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All#2', httpMethod: 'POST'});
@@ -562,7 +562,7 @@ MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Ed
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Edit#2', httpMethod: 'POST'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index', httpMethod: 'GET'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index#2', httpMethod: 'POST'});
-MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.ByItem', httpMethod: 'GET'});
+MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets', httpMethod: 'GET'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Details', httpMethod: 'GET'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index', httpMethod: 'GET'});
 MERGE (n:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index#2', httpMethod: 'POST'});
@@ -652,7 +652,9 @@ MERGE (n:ScriptModule {id: 'ajaxRequest'});
 MERGE (n:ScriptModule {id: 'buttonTemplate'});
 MERGE (n:ScriptModule {id: 'cartNotification'});
 MERGE (n:ScriptModule {id: 'checkout-placeorder'});
+MERGE (n:ScriptModule {id: 'chunked-upload'});
 MERGE (n:ScriptModule {id: 'common'});
+MERGE (n:ScriptModule {id: 'coupon-rule-builder'});
 MERGE (n:ScriptModule {id: 'dialogTemplate'});
 MERGE (n:ScriptModule {id: 'errors'});
 MERGE (n:ScriptModule {id: 'forms'});
@@ -694,6 +696,7 @@ MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.C
 MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.GetAll'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.InitUpload'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadChunk'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadStatus'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Login'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Refresh'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'ApiHost'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Revoke'}) MERGE (s)-[:CONTAINS]->(t);
@@ -752,7 +755,9 @@ MATCH (s:Module {id: 'Backoffice'}), (t:Action {id: 'ECommerceApp.Application.Ba
 MATCH (s:Module {id: 'Backoffice'}), (t:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeUserService.GetUserDetailAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Backoffice'}), (t:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeUserService.GetUsersAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Backoffice'}), (t:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeVerificationService.GetPendingAsync'}) MERGE (s)-[:CONTAINS]->(t);
-MATCH (s:Module {id: 'Catalog'}), (t:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUpload'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Catalog'}), (t:Job {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadCleanupTask'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Catalog'}), (t:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.GetStatus'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Catalog'}), (t:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUploadAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Catalog'}), (t:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.UploadChunkAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Catalog'}), (t:Action {id: 'ECommerceApp.Application.Catalog.Images.Services.ImageService.Add'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Catalog'}), (t:Action {id: 'ECommerceApp.Application.Catalog.Images.Services.ImageService.AddImages'}) MERGE (s)-[:CONTAINS]->(t);
@@ -799,7 +804,6 @@ MATCH (s:Module {id: 'Catalog'}), (t:Entity {id: 'ECommerceApp.Domain.Catalog.Pr
 MATCH (s:Module {id: 'Checkout'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.CheckoutReservationAvailabilityDroppedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Checkout'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.CheckoutReservationRevertRequestedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Checkout'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.OrderPlacedHandler'}) MERGE (s)-[:CONTAINS]->(t);
-MATCH (s:Module {id: 'Checkout'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.OrderPlacementFailedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Checkout'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.ProductDetailsCacheInvalidationHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Checkout'}), (t:Job {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.SoftReservationExpiredJob'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Checkout'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.StockAvailabilityChangedHandler'}) MERGE (s)-[:CONTAINS]->(t);
@@ -871,6 +875,7 @@ MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales
 MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.DeleteCouponAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponsAsync'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetRuleCatalog'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.RemoveCouponAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.SimulateCouponAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Coupons'}), (t:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.UpdateCouponAsync'}) MERGE (s)-[:CONTAINS]->(t);
@@ -950,7 +955,6 @@ MATCH (s:Module {id: 'IAM'}), (t:Repository {id: 'ECommerceApp.Domain.Identity.I
 MATCH (s:Module {id: 'IAM'}), (t:Entity {id: 'ECommerceApp.Domain.Identity.IAM.RefreshToken'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Inventory'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderCancelledHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Inventory'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderPlacedHandler'}) MERGE (s)-[:CONTAINS]->(t);
-MATCH (s:Module {id: 'Inventory'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderPlacementFailedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Inventory'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderShippedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Inventory'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentConfirmedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Inventory'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentExpiredHandler'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1026,7 +1030,6 @@ MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrdersByUserIdAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.MarkAsDeliveredAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.MarkAsPaidAsync'}) MERGE (s)-[:CONTAINS]->(t);
-MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderFromPresaleAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.RemoveCouponAsync'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.RemoveRefundByRefundIdAsync'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1040,7 +1043,6 @@ MATCH (s:Module {id: 'Orders'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructu
 MATCH (s:Module {id: 'Orders'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.CustomersWithOrdersQueryHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Orders'}), (t:QueryHandler {id: 'ECommerceApp.Infrastructure.Sales.Orders.Handlers.OrderExistsQueryHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Payments'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacedHandler'}) MERGE (s)-[:CONTAINS]->(t);
-MATCH (s:Module {id: 'Payments'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacementFailedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Payments'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.PaymentRefundApprovedHandler'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Payments'}), (t:Job {id: 'ECommerceApp.Application.Sales.Payments.Handlers.PaymentWindowExpiredJob'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Module {id: 'Payments'}), (t:Action {id: 'ECommerceApp.Application.Sales.Payments.Services.PaymentService.ConfirmAsync'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1076,7 +1078,9 @@ MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'ajaxRequest'}) MERGE (s)-[
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'buttonTemplate'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'cartNotification'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'checkout-placeorder'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'chunked-upload'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'common'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'coupon-rule-builder'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'dialogTemplate'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.AddAddress'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.AddAddress#2'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1137,6 +1141,7 @@ MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Con
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.InitUpload'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadChunk'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadImages'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadStatus'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImagesController.Get'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All#2'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1216,7 +1221,7 @@ MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Contr
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Edit#2'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index#2'}) MERGE (s)-[:CONTAINS]->(t);
-MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.ByItem'}) MERGE (s)-[:CONTAINS]->(t);
+MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Details'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index#2'}) MERGE (s)-[:CONTAINS]->(t);
@@ -1264,6 +1269,7 @@ MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'forms'}) MERGE (s)-[:CONTA
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'modalService'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:Host {id: 'WebHost'}), (t:ScriptModule {id: 'validations'}) MERGE (s)-[:CONTAINS]->(t);
 MATCH (s:ScriptModule {id: 'cartNotification'}), (t:ScriptModule {id: 'modalService'}) MERGE (s)-[:DEPENDS_ON]->(t);
+MATCH (s:ScriptModule {id: 'coupon-rule-builder'}), (t:ScriptModule {id: 'ajaxRequest'}) MERGE (s)-[:DEPENDS_ON]->(t);
 MATCH (s:ScriptModule {id: 'modalService'}), (t:ScriptModule {id: 'buttonTemplate'}) MERGE (s)-[:DEPENDS_ON]->(t);
 MATCH (s:ScriptModule {id: 'modalService'}), (t:ScriptModule {id: 'dialogTemplate'}) MERGE (s)-[:DEPENDS_ON]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.GuestPromotionService.PromoteAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.CreateAccount'}) MERGE (s)-[:EXPOSED_BY]->(t);
@@ -1282,7 +1288,9 @@ MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfi
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.GetAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.Edit'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.GetAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.EditContactInfo'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.GetDetailsAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.Details'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.GetDetailsAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.Edit#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.GetDetailsAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.EditAddress'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.GetDetailsAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.EditContactInfo#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.RemoveAddressAsync'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.AccountProfile.AddressesController.Remove'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.RemoveAddressAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.AccountProfile.Controllers.ProfileController.DeleteAddress'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.AccountProfile.Services.UserProfileService.UpdateAddressAsync'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.AccountProfile.AddressesController.Update'}) MERGE (s)-[:EXPOSED_BY]->(t);
@@ -1321,8 +1329,10 @@ MATCH (s:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeUse
 MATCH (s:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeUserService.GetUsersAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Backoffice.Controllers.UsersController.Index'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeUserService.GetUsersAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Backoffice.Controllers.UsersController.Index#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Backoffice.Services.BackofficeVerificationService.GetPendingAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Backoffice.Controllers.GuestVerificationController.Index'}) MERGE (s)-[:EXPOSED_BY]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUpload'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.InitUpload'}) MERGE (s)-[:EXPOSED_BY]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUpload'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.InitUpload'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.GetStatus'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadStatus'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.GetStatus'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadStatus'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUploadAsync'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.InitUpload'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.InitUploadAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.InitUpload'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.UploadChunkAsync'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadChunk'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.ChunkedUpload.ChunkedUploadService.UploadChunkAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadChunk'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Images.Services.ImageService.Add'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.AddImage'}) MERGE (s)-[:EXPOSED_BY]->(t);
@@ -1341,12 +1351,14 @@ MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.Categor
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.CategoryService.GetAllCategories'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Create#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.CategoryService.GetAllCategories'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.CategoryService.GetAllCategories'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.CategoryService.GetAllCategories'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.CategoryService.GetCategory'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.CategoryController.Edit'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.CategoryService.UpdateCategory'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.CategoryController.Edit#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.AddProduct'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Create#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.DeleteProduct'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Delete'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.GetAllProducts'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.GetAllProducts'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.GetAllProducts'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.GetProductDetails'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.CatalogController.GetItem'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.GetProductDetails'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Details'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.GetProductDetails'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit'}) MERGE (s)-[:EXPOSED_BY]->(t);
@@ -1362,6 +1374,7 @@ MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.Product
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductTagService.GetAllTags'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductTagService.GetTag'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.TagController.Edit'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductTagService.GetTagsWithUsageAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.TagController.Index'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductTagService.SearchTags'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductTagService.UpdateTag'}), (t:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.TagController.Edit#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Identity.IAM.Services.AuthenticationService.RefreshAsync'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Refresh'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Identity.IAM.Services.AuthenticationService.RevokeAsync'}), (t:Endpoint {id: 'ECommerceApp.API.Controllers.IAM.AuthController.Revoke'}) MERGE (s)-[:EXPOSED_BY]->(t);
@@ -1422,6 +1435,7 @@ MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponServ
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.DeleteCouponAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.DeleteConfirmed'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Details'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Edit'}) MERGE (s)-[:EXPOSED_BY]->(t);
+MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Edit#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponsAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.GetCouponsAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.UpdateCouponAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Edit#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
@@ -1443,7 +1457,6 @@ MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.Shipme
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.ShipmentService.MarkAsDeliveredAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.ShipmentController.Deliver'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.ShipmentService.MarkAsFailedAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.ShipmentController.Fail'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.ShipmentService.MarkAsInTransitAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.ShipmentController.Dispatch'}) MERGE (s)-[:EXPOSED_BY]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderItemService.GetAllPagedAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.ByItem'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderItemService.GetAllPagedAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderItemService.GetAllPagedAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index#2'}) MERGE (s)-[:EXPOSED_BY]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderItemService.GetByIdAsync'}), (t:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Details'}) MERGE (s)-[:EXPOSED_BY]->(t);
@@ -1514,6 +1527,9 @@ MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.Ini
 MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadChunk'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadChunk'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadChunk'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadStatus'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadStatus'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Catalog.ImageController.UploadStatus'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Inventory.InventoryController.AdjustStock'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Inventory.InventoryController.AdjustStock'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Endpoint {id: 'ECommerceApp.API.Controllers.Inventory.InventoryController.AdjustStock'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
@@ -1655,6 +1671,9 @@ MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.U
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadImages'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadImages'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadImages'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadStatus'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadStatus'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ImageController.UploadStatus'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.All'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
@@ -1815,10 +1834,9 @@ MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.In
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index#2'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index#2'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Index#2'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
-MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.ByItem'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
-MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.ByItem'}), (t:Policy {id: 'CustomerOrGuest'}) MERGE (s)-[:GOVERNED_BY]->(t);
-MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.ByItem'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
-MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.ByItem'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets'}), (t:Role {id: 'Manager'}) MERGE (s)-[:GOVERNED_BY]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.ScopeTargets'}), (t:Role {id: 'Service'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Details'}), (t:Policy {id: 'CustomerOrGuest'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index'}), (t:Role {id: 'Administrator'}) MERGE (s)-[:GOVERNED_BY]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.OrderItemsController.Index'}), (t:Policy {id: 'CustomerOrGuest'}) MERGE (s)-[:GOVERNED_BY]->(t);
@@ -1984,9 +2002,6 @@ MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlace
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced'}), (t:MessageHandler {id: 'ECommerceApp.Application.Supporting.Communication.Handlers.OrderPlacedEmailHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced'}), (t:MessageHandler {id: 'ECommerceApp.Application.Supporting.Communication.Handlers.OrderPlacedNotificationHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
-MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlacementFailed'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderPlacementFailedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
-MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlacementFailed'}), (t:MessageHandler {id: 'ECommerceApp.Application.Presale.Checkout.Handlers.OrderPlacementFailedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
-MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlacementFailed'}), (t:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacementFailedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderRequiresAttention'}), (t:MessageHandler {id: 'ECommerceApp.Application.Supporting.Communication.Handlers.OrderRequiresAttentionNotificationHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderShipped'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.OrderShippedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
 MATCH (s:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentConfirmed'}), (t:MessageHandler {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.PaymentConfirmedHandler'}) MERGE (s)-[:HANDLED_BY]->(t);
@@ -2041,11 +2056,7 @@ MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.Product
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.UnpublishProduct'}), (t:Message {id: 'ECommerceApp.Application.Catalog.Products.Messages.ProductUnpublished'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Catalog.Products.Services.ProductService.UpdateProduct'}), (t:Message {id: 'ECommerceApp.Application.Catalog.Products.Messages.ProductUpdated'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Job {id: 'ECommerceApp.Application.Inventory.Availability.Handlers.StockAdjustmentJob'}), (t:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}) MERGE (s)-[:PUBLISHES]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Inventory.Availability.Services.StockService.FulfillAsync'}), (t:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Inventory.Availability.Services.StockService.InitializeStockAsync'}), (t:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}) MERGE (s)-[:PUBLISHES]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Inventory.Availability.Services.StockService.ReleaseAsync'}), (t:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}) MERGE (s)-[:PUBLISHES]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Inventory.Availability.Services.StockService.ReserveAsync'}), (t:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}) MERGE (s)-[:PUBLISHES]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Inventory.Availability.Services.StockService.ReturnAsync'}), (t:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Inventory.Availability.Services.StockService.WithdrawHoldAsync'}), (t:Message {id: 'ECommerceApp.Application.Inventory.Availability.Messages.StockAvailabilityChanged'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.ApplyCouponAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Coupons.Messages.CouponApplied'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.ApplyCouponAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Coupons.Messages.OrderPriceAdjusted'}) MERGE (s)-[:PUBLISHES]->(t);
@@ -2058,8 +2069,6 @@ MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.Shipme
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.ShipmentService.MarkAsPartiallyDeliveredAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Fulfillment.Messages.ShipmentPartiallyDelivered'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.CancelOrderAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderCancelled'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.MarkAsDeliveredAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderShipped'}) MERGE (s)-[:PUBLISHES]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced'}) MERGE (s)-[:PUBLISHES]->(t);
-MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlacementFailed'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderFromPresaleAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Job {id: 'ECommerceApp.Application.Sales.Payments.Handlers.PaymentWindowExpiredJob'}), (t:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentExpired'}) MERGE (s)-[:PUBLISHES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Payments.Services.PaymentService.ConfirmAsync'}), (t:Message {id: 'ECommerceApp.Application.Sales.Payments.Messages.PaymentConfirmed'}) MERGE (s)-[:PUBLISHES]->(t);
@@ -2069,5 +2078,14 @@ MATCH (s:MessageHandler {id: 'ECommerceApp.Application.Sales.Payments.Handlers.O
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Coupons.Services.CouponService.ApplyCouponAsync'}), (t:Query {id: 'ECommerceApp.Application.Messaging.OrderExistsQuery'}) MERGE (s)-[:USES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.RefundService.RequestRefundAsync'}), (t:Query {id: 'ECommerceApp.Application.Messaging.OrderExistsQuery'}) MERGE (s)-[:USES]->(t);
 MATCH (s:Action {id: 'ECommerceApp.Application.Sales.Fulfillment.Services.ShipmentService.CreateShipmentAsync'}), (t:Query {id: 'ECommerceApp.Application.Messaging.OrderExistsQuery'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Create'}), (t:ScriptModule {id: 'chunked-upload'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Create#2'}), (t:ScriptModule {id: 'chunked-upload'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit'}), (t:ScriptModule {id: 'chunked-upload'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Catalog.Controllers.ProductController.Edit#2'}), (t:ScriptModule {id: 'chunked-upload'}) MERGE (s)-[:USES]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder'}), (t:ScriptModule {id: 'checkout-placeorder'}) MERGE (s)-[:USES]->(t);
 MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder#2'}), (t:ScriptModule {id: 'checkout-placeorder'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.ResumeOrder'}), (t:ScriptModule {id: 'checkout-placeorder'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Create'}), (t:ScriptModule {id: 'coupon-rule-builder'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Create#2'}), (t:ScriptModule {id: 'coupon-rule-builder'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Edit'}), (t:ScriptModule {id: 'coupon-rule-builder'}) MERGE (s)-[:USES]->(t);
+MATCH (s:Page {id: 'ECommerceApp.Web.Areas.Sales.Controllers.CouponController.Edit#2'}), (t:ScriptModule {id: 'coupon-rule-builder'}) MERGE (s)-[:USES]->(t);

@@ -70,7 +70,7 @@ namespace ECommerceApp.Application.{{PublisherModule}}.{{PublisherBC}}.Messages
 }
 ```
 
-Existing example: see `OrderPlacementFailed` in `Application/Sales/Orders/Messages/`.
+Existing example: see `OrderPlaced` in `Application/Sales/Orders/Messages/`.
 
 ---
 

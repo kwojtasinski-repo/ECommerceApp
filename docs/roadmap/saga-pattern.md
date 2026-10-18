@@ -2,7 +2,8 @@
 
 > **Status**: In Progress — Option A (choreography + compensation) implemented, including all three
 > `OrderPlacementFailed` handlers (Payments, Inventory, Presale — cart restore shipped 2026-07-26).
-> ADR-0026 Accepted. As part of the same amendment, the `PaymentExpired`→`OrderCancelled` implicit
+> **Note (2026-10-18):** `OrderPlacementFailed` and its three handlers described here were later removed as dead code (ADR-0026 Superseded); this document is historical.
+> ADR-0026 was Accepted at the time. As part of the same amendment, the `PaymentExpired`→`OrderCancelled` implicit
 > chain described in Gap 3 below was flattened: `OrderPaymentExpiredHandler` no longer publishes
 > `OrderCancelled`. That event is still live, though — it's published directly by
 > `OrderService.CancelOrderAsync` on the manual-cancel path, with 4 active handlers.
