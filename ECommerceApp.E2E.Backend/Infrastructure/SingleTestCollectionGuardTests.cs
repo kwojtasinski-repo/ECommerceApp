@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using ECommerceApp.E2E.Backend.Presale;
+using ECommerceApp.E2E.Backend.Sales.Orders;
 using Shouldly;
 using Xunit;
 
@@ -16,6 +17,7 @@ namespace ECommerceApp.E2E.Backend.Infrastructure
     {
         [Theory]
         [InlineData(CartRecoveryE2EFixture.CollectionName)]
+        [InlineData(OrderRollbackE2EFixture.CollectionName)]
         public void Collection_WithItsOwnContainer_HasExactlyOneTest(string collectionName)
         {
             var tests = typeof(SingleTestCollectionGuardTests).Assembly.GetTypes()
