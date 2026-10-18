@@ -70,7 +70,6 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 > Small and deferred leftovers found in a repo-wide sweep. Nothing here blocks anything. IDs are stable
 > (referenced from other docs); O5, O7, O10-O12, N1 and N2 were retired, see "Retired" below.
 >
-> **Order of work: backend first, then frontend.** Backend items come before any frontend item (O17).
 > "Size" is the rough cost; the concrete steps for an item live in its details section (`Left, in order`), as for O1.
 
 | # | Item | Size | Notes |
@@ -81,7 +80,6 @@ All BC implementation + switch tracks are done. Current per-BC state: [`bounded-
 | O6 | **`Payments/Create` GET route shape** | XS | Rest of `web-ui-views-report.md` re-verified 2026-10-16 and fixed (incl. the `ProfileController` ownership hole). Left: GET keeps `int orderId` while the spec said `Guid paymentId`. Decision deferred until the project is straightened out. |
 | O8 | **Repo-root images** | XS | The demo folders, `74,` and `*.log` are gone. Left: 39 `screen_*.PNG` + `schemat_bazy.png` tracked in the repo root (April 2026), referenced nowhere in docs or code; `assets/screens/` is the place for screenshots. Move them there or delete (owner decision). |
 | O18 | **Test independence: `E2E.Backend` remaining checks** (backend) | S | Rule: no test may depend on another. Audit 2026-10-18: no test changed result under 9 collection/case orders or per class. Fixed since: unique ids from `TestIds.Next()`, order search no longer assumes the first 1000 rows, the deferred-job lease test deletes its own rows, `SingleTestCollectionGuardTests` fails when a second test lands in a single-test container collection. Still open: (1) `OrderSearchQueryTranslationE2ETests` asserts `count == 1` on a 6-hex fragment (16.7M values, collision unlikely); (2) not verified: order of classes inside one collection (xunit.v3 3.2.2 has no class orderer) and `parallelizeTestCollections:true`; (3) a scheduled run in random order would catch new dependencies, not built yet. |
-| O17 | **Identity email validation: client-side leftovers** (frontend, after the backend items) | S | Validation itself works (Register, Manage/Email, Development and Production). Left: jquery.validate + unobtrusive load twice on Identity pages (layout + `_ValidationScriptsPartial`); Register error summary keeps the stale e-mail entry after the field is fixed; submit of a valid new e-mail on Manage/Email never tried. |
 
 Accepted, not roadmap items: stale `CatalogList:*` image up to 15 s (DD-004) and ICC loss / ~160 MB decode (DD-005), both in [`known-issues.md`](../../.github/context/known-issues.md). Only `.jpg`/`.png` are accepted by design.
 
