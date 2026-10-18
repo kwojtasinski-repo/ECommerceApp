@@ -38,15 +38,6 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
             }
         }
 
-        public async Task<IReadOnlyList<OrderItem>> GetByIdsAsync(IReadOnlyList<int> ids, CancellationToken ct = default)
-        {
-            var typedIds = ids.Select(id => new OrderItemId(id)).ToList();
-            return await _context.OrderItems
-                .AsNoTracking()
-                .Where(oi => typedIds.Contains(oi.Id))
-                .ToListAsync(ct);
-        }
-
         public async Task<IReadOnlyList<OrderItem>> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
         {
             var typedOrderId = new OrderId(orderId);
@@ -54,20 +45,6 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
                 .AsNoTracking()
                 .Where(oi => oi.OrderId == typedOrderId)
                 .ToListAsync(ct);
-        }
-
-        public async Task AssignToOrderAsync(IReadOnlyList<int> itemIds, int orderId, CancellationToken ct = default)
-        {
-            var typedIds = itemIds.Select(id => new OrderItemId(id)).ToList();
-            var typedOrderId = new OrderId(orderId);
-            var items = await _context.OrderItems
-                .Where(oi => typedIds.Contains(oi.Id))
-                .ToListAsync(ct);
-
-            foreach (var item in items)
-                _context.Entry(item).Property(oi => oi.OrderId).CurrentValue = typedOrderId;
-
-            await _context.SaveChangesAsync(ct);
         }
 
         public async Task SetSnapshotsAsync(IReadOnlyList<(int ItemId, OrderProductSnapshot Snapshot)> snapshots, CancellationToken ct = default)

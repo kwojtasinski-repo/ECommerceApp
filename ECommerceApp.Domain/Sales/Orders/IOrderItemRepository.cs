@@ -9,9 +9,7 @@ namespace ECommerceApp.Domain.Sales.Orders
         Task<OrderItem> GetByIdAsync(int id, CancellationToken ct = default);
         Task<int> AddAsync(OrderItem item, CancellationToken ct = default);
         Task DeleteAsync(int id, CancellationToken ct = default);
-        Task<IReadOnlyList<OrderItem>> GetByIdsAsync(IReadOnlyList<int> ids, CancellationToken ct = default);
         Task<IReadOnlyList<OrderItem>> GetByOrderIdAsync(int orderId, CancellationToken ct = default);
-        Task AssignToOrderAsync(IReadOnlyList<int> itemIds, int orderId, CancellationToken ct = default);
         Task SetSnapshotsAsync(IReadOnlyList<(int ItemId, OrderProductSnapshot Snapshot)> snapshots, CancellationToken ct = default);
         Task<IReadOnlyList<OrderItem>> GetUnsnapshottedOrderItemsAsync(int batchSize, CancellationToken ct = default);
         Task<IReadOnlyList<OrderItem>> GetCartItemsByUserIdAsync(string userId, CancellationToken ct = default);
