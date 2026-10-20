@@ -4,6 +4,11 @@ name: .NET CI
 # When ready to enable on every push/PR, uncomment the `push` and `pull_request` blocks below.
 on:
   workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: 'Also run ECommerceApp.E2E.Backend (starts SQL Server containers, slower)'
+        type: boolean
+        default: false
   # push:
   #   branches: [main, develop]
   # pull_request:
@@ -62,6 +67,32 @@ jobs:
           name: test-results
           path: ./TestResults/*.trx
           retention-days: 14
+
+  # E2E.Backend on real SQL Server (Testcontainers). Opt-in: workflow_dispatch with run_e2e=true.
+  # To detach it, delete this job (and the run_e2e input); nothing else depends on it.
+  # Test independence: no test may depend on another, and we do NOT enforce or randomize test order
+  # (by design - the test framework is built so tests do not need a fixed order). The suite is fast,
+  # so a scheduled random-order run is deferred; revisit it when the suite gets slow enough to hurt.
+  # NOT YET RUN on a real runner - ubuntu-latest has Docker, but timing and memory are unmeasured.
+  e2e-backend:
+    name: E2E.Backend (SQL Server containers)
+    if: ${{ inputs.run_e2e }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: E2E.Backend tests
+        run: >
+          dotnet test ECommerceApp.E2E.Backend/ECommerceApp.E2E.Backend.csproj
+          --configuration ${{ env.CONFIGURATION }}
 
   # Knowledge-graph validation gate (plan 08, workstream C; ADR-0031).
   # NOT YET RUN on a real runner - first execution may need path / SDK tweaks.

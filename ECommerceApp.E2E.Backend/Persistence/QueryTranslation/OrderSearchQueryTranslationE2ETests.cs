@@ -127,9 +127,13 @@ namespace ECommerceApp.E2E.Backend.Persistence.QueryTranslation
             await _fixture.EnsureTestCustomerAsync();
 
             // Valid ORD-YYYYMMDD-XXXXXXXX number whose suffix always contains letters ("AB" + 6 random hex), so the
-            // letter-case test can never pass trivially on an all-digit fragment. 16.7M random values keep the
-            // fragment unique within the shared database.
-            var uniqueFragment = "AB" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+            // letter-case test can never pass trivially on an all-digit fragment. The suffix is the whole 8-hex part
+            // of the number, taken from a GUID, with its first character forced to a letter (A-F). The search matches
+            // a substring ('%...%') and the tests assert exact counts, so the fragment has to be unique in the shared
+            // database; 6 * 16^7 (~1.6 billion) values make a collision negligible.
+            var guidBytes = Guid.NewGuid().ToByteArray();
+            var uniqueFragment = (char)('A' + guidBytes[0] % 6) + Convert.ToHexString(guidBytes, 1, 4)[..7];
+
             var number = OrderNumber.Parse($"ORD-{DateTime.UtcNow:yyyyMMdd}-{uniqueFragment}");
             var order = Order.Create(
                 1,
